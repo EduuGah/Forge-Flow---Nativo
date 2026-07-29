@@ -2,7 +2,9 @@ package com.forgeflow.feature.exercises.presentation
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -36,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -55,6 +58,7 @@ import com.forgeflow.core.model.PersonalRecordType
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.WorkoutSetType
 import com.forgeflow.feature.exercises.R
+import kotlin.math.roundToInt
 
 @Composable
 fun ExerciseDetailsScreen(
@@ -286,8 +290,16 @@ private fun androidx.compose.foundation.lazy.LazyListScope.exerciseSummary(
                     color = ForgeFlowDesign.colors.textSecondary,
                     style = MaterialTheme.typography.labelSmall,
                 )
-                exercise.personalRecords.take(6).forEach { record ->
-                    PersonalRecordRow(record = record)
+                exercise.personalRecords.forEachIndexed { index, record ->
+                    if (index > 0) {
+                        HorizontalDivider(
+                            color = ForgeFlowDesign.colors.divider.copy(alpha = 0.65f),
+                        )
+                    }
+                    PersonalRecordRow(
+                        record = record,
+                        isLatest = index == 0,
+                    )
                 }
             }
         }
@@ -343,6 +355,11 @@ private fun androidx.compose.foundation.lazy.LazyListScope.exerciseInstructions(
 
 @Composable
 private fun ExerciseProgressChart(exercise: ExerciseDetailsUiModel) {
+    val points = exercise.chartPoints
+    var selectedPointIndex by remember(points) {
+        mutableIntStateOf(points.lastIndex)
+    }
+    val selectedPoint = points.getOrNull(selectedPointIndex)
     ForgeFlowCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -367,48 +384,99 @@ private fun ExerciseProgressChart(exercise: ExerciseDetailsUiModel) {
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            exercise.chartPoints.lastOrNull()?.let {
-                Text(
-                    text = "${it.value.toDouble().toCleanString()} " +
-                        exercise.weightUnit.shortLabel(),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.titleMedium,
-                )
+            selectedPoint?.let { point ->
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${point.value.toDouble().toCleanString()} " +
+                            exercise.weightUnit.shortLabel(),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        text = point.label,
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
             }
         }
         val lineColor = MaterialTheme.colorScheme.primary
         val gridColor = ForgeFlowDesign.colors.divider
-        val points = exercise.chartPoints
-        Canvas(
+        val selectedHaloColor = MaterialTheme.colorScheme.surface
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(170.dp),
-        ) {
-            repeat(4) { line ->
-                val y = size.height * line / 3f
-                drawLine(gridColor, Offset(0f, y), Offset(size.width, y))
-            }
-            if (points.isNotEmpty()) {
-                val min = points.minOf { it.value }
-                val max = points.maxOf { it.value }
-                val range = (max - min).coerceAtLeast(1f)
-                val path = Path()
-                points.forEachIndexed { index, point ->
-                    val x = if (points.size == 1) {
-                        size.width / 2f
-                    } else {
-                        size.width * index / (points.size - 1)
+                .height(170.dp)
+                .pointerInput(points) {
+                    detectTapGestures { tap ->
+                        if (points.isNotEmpty()) {
+                            selectedPointIndex = if (points.size == 1) {
+                                0
+                            } else {
+                                (
+                                    tap.x / size.width * (points.size - 1)
+                                    ).roundToInt().coerceIn(points.indices)
+                            }
+                        }
                     }
-                    val y = size.height - ((point.value - min) / range * size.height * 0.8f) -
-                        size.height * 0.1f
-                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-                    drawCircle(lineColor, radius = 5.dp.toPx(), center = Offset(x, y))
+                },
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                repeat(4) { line ->
+                    val y = size.height * line / 3f
+                    drawLine(gridColor, Offset(0f, y), Offset(size.width, y))
                 }
-                drawPath(
-                    path = path,
-                    color = lineColor,
-                    style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
-                )
+                if (points.isNotEmpty()) {
+                    val min = points.minOf { it.value }
+                    val max = points.maxOf { it.value }
+                    val range = (max - min).coerceAtLeast(1f)
+                    val pointOffsets = points.mapIndexed { index, point ->
+                        val x = if (points.size == 1) {
+                            size.width / 2f
+                        } else {
+                            size.width * index / (points.size - 1)
+                        }
+                        val y = size.height -
+                            ((point.value - min) / range * size.height * 0.8f) -
+                            size.height * 0.1f
+                        Offset(x, y)
+                    }
+                    val path = Path().apply {
+                        pointOffsets.forEachIndexed { index, offset ->
+                            if (index == 0) {
+                                moveTo(offset.x, offset.y)
+                            } else {
+                                lineTo(offset.x, offset.y)
+                            }
+                        }
+                    }
+                    drawPath(
+                        path = path,
+                        color = lineColor,
+                        style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+                    )
+                    pointOffsets.forEachIndexed { index, offset ->
+                        val isSelected = index == selectedPointIndex
+                        if (isSelected) {
+                            drawLine(
+                                color = lineColor.copy(alpha = 0.35f),
+                                start = Offset(offset.x, 0f),
+                                end = Offset(offset.x, size.height),
+                                strokeWidth = 1.dp.toPx(),
+                            )
+                            drawCircle(
+                                color = selectedHaloColor,
+                                radius = 9.dp.toPx(),
+                                center = offset,
+                            )
+                        }
+                        drawCircle(
+                            color = lineColor,
+                            radius = if (isSelected) 6.dp.toPx() else 4.dp.toPx(),
+                            center = offset,
+                        )
+                    }
+                }
             }
         }
         if (points.isNotEmpty()) {
@@ -489,7 +557,16 @@ private fun ExerciseSessionCard(
 }
 
 @Composable
-private fun PersonalRecordRow(record: ExercisePersonalRecordUiModel) {
+private fun PersonalRecordRow(
+    record: ExercisePersonalRecordUiModel,
+    isLatest: Boolean,
+) {
+    val context = LocalContext.current
+    val emphasisColor = if (isLatest) {
+        ForgeFlowDesign.colors.warning
+    } else {
+        ForgeFlowDesign.colors.textSecondary
+    }
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
@@ -498,22 +575,37 @@ private fun PersonalRecordRow(record: ExercisePersonalRecordUiModel) {
         Icon(
             imageVector = Icons.Outlined.EmojiEvents,
             contentDescription = null,
-            tint = ForgeFlowDesign.colors.warning,
+            tint = emphasisColor,
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(record.type.labelResource()),
+                text = record.types.joinToString(" + ") { type ->
+                    context.getString(type.labelResource())
+                },
+                color = if (isLatest) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    ForgeFlowDesign.colors.textSecondary
+                },
                 style = MaterialTheme.typography.titleSmall,
             )
             Text(
-                text = "${record.workoutName} • ${record.date}",
+                text = stringResource(
+                    if (isLatest) R.string.record_current else R.string.record_previous,
+                    record.workoutName,
+                    record.date,
+                ),
                 color = ForgeFlowDesign.colors.textSecondary,
                 style = MaterialTheme.typography.bodySmall,
             )
         }
         Text(
             text = record.performance,
-            color = MaterialTheme.colorScheme.primary,
+            color = if (isLatest) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                ForgeFlowDesign.colors.textSecondary
+            },
             style = MaterialTheme.typography.labelLarge,
         )
     }

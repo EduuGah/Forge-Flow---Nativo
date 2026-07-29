@@ -3,6 +3,7 @@ package com.forgeflow.app.ui
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.forgeflow.app.icon.LauncherIconManager
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.data.settings.SettingsRepository
 import com.forgeflow.core.data.workout.WorkoutRepository
@@ -12,6 +13,8 @@ import com.forgeflow.core.platform.notification.ActiveWorkoutNotifier
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.stateIn
@@ -39,6 +42,7 @@ class AppViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     workoutRepository: WorkoutRepository,
     private val activeWorkoutNotifier: ActiveWorkoutNotifier,
+    private val launcherIconManager: LauncherIconManager,
 ) : ViewModel() {
     val uiState = combine(
         settingsRepository.observeSettings(),
@@ -71,6 +75,12 @@ class AppViewModel @Inject constructor(
         )
 
     init {
+        viewModelScope.launch {
+            settingsRepository.observeSettings()
+                .map { it.accentColor }
+                .distinctUntilChanged()
+                .collect(launcherIconManager::sync)
+        }
         viewModelScope.launch {
             uiState.collect { state ->
                 state.activeWorkout?.let { activeWorkoutNotifier.show(it) }

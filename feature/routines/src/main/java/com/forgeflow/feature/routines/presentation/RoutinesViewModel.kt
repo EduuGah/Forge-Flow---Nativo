@@ -66,12 +66,20 @@ class RoutinesViewModel @Inject constructor(
             RoutinesAction.CreateFolder -> editors.update {
                 it.copy(folder = RoutineFolderEditorUiState())
             }
+            RoutinesAction.CreateFolderInEditor -> editors.update {
+                it.copy(
+                    folder = RoutineFolderEditorUiState(selectAfterSave = true),
+                )
+            }
             RoutinesAction.CloseEditor -> editors.update { it.copy(routine = null) }
             RoutinesAction.CloseFolderEditor -> editors.update { it.copy(folder = null) }
             RoutinesAction.DismissError -> operationState.update { it.copy(error = null) }
             is RoutinesAction.DescriptionChanged -> updateEditor { copy(description = action.value) }
             is RoutinesAction.NameChanged -> updateEditor { copy(name = action.value) }
             is RoutinesAction.SearchChanged -> updateEditor { copy(query = action.value) }
+            is RoutinesAction.MuscleGroupChanged -> updateEditor {
+                copy(selectedMuscleGroup = action.value)
+            }
             is RoutinesAction.FolderChanged -> updateEditor { copy(folderId = action.id) }
             is RoutinesAction.FolderNameChanged -> editors.update {
                 it.copy(folder = it.folder?.copy(name = action.value))
@@ -227,7 +235,16 @@ class RoutinesViewModel @Inject constructor(
                 name = current.name,
             )
             if (result is DataResult.Success) {
-                editors.update { it.copy(folder = null) }
+                editors.update { state ->
+                    state.copy(
+                        routine = if (current.selectAfterSave) {
+                            state.routine?.copy(folderId = result.value.value)
+                        } else {
+                            state.routine
+                        },
+                        folder = null,
+                    )
+                }
             }
         }
     }

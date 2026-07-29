@@ -4,6 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -16,6 +18,16 @@ interface ExerciseDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(exercises: List<ExerciseEntity>): List<Long>
+
+    @Update
+    suspend fun updateAll(exercises: List<ExerciseEntity>)
+
+    @Transaction
+    suspend fun seedBuiltIns(exercises: List<ExerciseEntity>): List<Long> {
+        val insertedRows = insertAll(exercises)
+        updateAll(exercises)
+        return insertedRows
+    }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(exercise: ExerciseEntity)

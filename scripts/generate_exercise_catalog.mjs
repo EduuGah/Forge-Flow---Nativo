@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { access, mkdir, writeFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 import path from 'node:path'
 
@@ -26,20 +26,43 @@ const existingExerciseIds = new Set([
   'barbell-shoulder-press',
 ])
 
-const exercisesWithoutMedia = new Set(['hip-thrust', 'plank', 'side-plank'])
+const sourceMediaRoot = path.resolve(
+  sourceRoot,
+  '..',
+  '..',
+  '..',
+  'public',
+  'exercise-media',
+)
 
 const groupAliases = new Map([
   ['peito', 'CHEST'],
+  ['peitoral', 'CHEST'],
+  ['peitoral superior', 'CHEST'],
+  ['peitoral inferior', 'CHEST'],
   ['costas', 'BACK'],
+  ['dorsal', 'BACK'],
+  ['trapézio', 'BACK'],
   ['ombros', 'SHOULDERS'],
+  ['deltoides', 'SHOULDERS'],
+  ['deltoide anterior', 'SHOULDERS'],
+  ['deltoide lateral', 'SHOULDERS'],
+  ['deltoide posterior', 'SHOULDERS'],
   ['quadríceps', 'QUADRICEPS'],
   ['posteriores', 'HAMSTRINGS'],
   ['posterior de coxa', 'HAMSTRINGS'],
   ['glúteos', 'GLUTES'],
   ['bíceps', 'BICEPS'],
+  ['bíceps braquial', 'BICEPS'],
+  ['bíceps e antebraços', 'BICEPS'],
+  ['braquial', 'BICEPS'],
+  ['braquiorradial', 'BICEPS'],
   ['tríceps', 'TRICEPS'],
+  ['cabeça longa do tríceps', 'TRICEPS'],
   ['panturrilhas', 'CALVES'],
   ['abdômen', 'CORE'],
+  ['abdômen inferior', 'CORE'],
+  ['oblíquos', 'CORE'],
   ['core', 'CORE'],
   ['lombar', 'BACK'],
 ])
@@ -71,7 +94,25 @@ function equipment(value) {
   return 'OTHER'
 }
 
+async function bundledMedia(mediaFolder, exerciseId) {
+  for (const extension of ['gif', 'png']) {
+    const sourcePath = path.join(
+      sourceMediaRoot,
+      mediaFolder,
+      `${exerciseId}.${extension}`,
+    )
+    try {
+      await access(sourcePath)
+      return `file:///android_asset/exercise-media/${mediaFolder}/${exerciseId}.${extension}`
+    } catch {
+      // Keep checking supported local formats.
+    }
+  }
+  return null
+}
+
 const catalog = []
+const missingMedia = []
 
 for (const [fileName, fallbackGroup, mediaFolder] of sources) {
   const moduleUrl = pathToFileURL(path.join(sourceRoot, fileName)).href
@@ -81,18 +122,21 @@ for (const [fileName, fallbackGroup, mediaFolder] of sources) {
   for (const exercise of exercises) {
     if (existingExerciseIds.has(exercise.id)) continue
 
+    const mediaUri = await bundledMedia(mediaFolder, exercise.id)
+    if (!mediaUri) missingMedia.push(`${mediaFolder}/${exercise.id}`)
     catalog.push({
       id: `forgeflow-catalog-${exercise.id}`,
       name: exercise.name,
-      primaryMuscleGroup: muscleGroup(exercise.muscleGroup, fallbackGroup),
+      primaryMuscleGroup: muscleGroup(
+        exercise.targetMuscle || exercise.muscleGroup,
+        fallbackGroup,
+      ),
       secondaryMuscleGroups: (exercise.secondaryMuscles || [])
         .map((value) => muscleGroup(value, null))
         .filter(Boolean),
       equipment: equipment(exercise.equipment),
       instructions: (exercise.instructions || []).join('\n'),
-      mediaUri: exercisesWithoutMedia.has(exercise.id)
-        ? null
-        : `file:///android_asset/exercise-media/${mediaFolder}/${exercise.id}.gif`,
+      mediaUri,
     })
   }
 }
@@ -100,3 +144,6 @@ for (const [fileName, fallbackGroup, mediaFolder] of sources) {
 await mkdir(path.dirname(outputFile), { recursive: true })
 await writeFile(outputFile, `${JSON.stringify(catalog, null, 2)}\n`, 'utf8')
 console.log(`Generated ${catalog.length} native exercise definitions.`)
+if (missingMedia.length > 0) {
+  console.log(`Missing source media (${missingMedia.length}): ${missingMedia.join(', ')}`)
+}

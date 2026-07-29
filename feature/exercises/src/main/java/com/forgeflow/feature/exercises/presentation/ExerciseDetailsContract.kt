@@ -66,7 +66,7 @@ val ExerciseSessionSetUiModel.isPersonalRecord: Boolean
 
 @Immutable
 data class ExercisePersonalRecordUiModel(
-    val type: PersonalRecordType,
+    val types: Set<PersonalRecordType>,
     val workoutName: String,
     val date: String,
     val performance: String,

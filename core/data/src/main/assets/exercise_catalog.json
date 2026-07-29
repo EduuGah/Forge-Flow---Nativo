@@ -179,8 +179,9 @@
   {
     "id": "forgeflow-catalog-diamond-push-up",
     "name": "Flexão diamante",
-    "primaryMuscleGroup": "CHEST",
+    "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
+      "CHEST",
       "SHOULDERS",
       "CORE"
     ],
@@ -284,7 +285,8 @@
     "name": "Remada baixa no cabo",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
-      "BICEPS"
+      "BICEPS",
+      "BACK"
     ],
     "equipment": "CABLE",
     "instructions": "Sente-se com os pés apoiados e segure o puxador.\nMantenha a coluna neutra.\nPuxe o cabo em direção ao abdômen.\nRetorne lentamente alongando as costas.",
@@ -295,7 +297,8 @@
     "name": "Remada unilateral com halter",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
-      "BICEPS"
+      "BICEPS",
+      "BACK"
     ],
     "equipment": "DUMBBELL",
     "instructions": "Apoie uma mão e um joelho no banco.\nSegure o halter com o braço livre.\nPuxe o halter em direção ao quadril.\nDesça lentamente até alongar as costas.",
@@ -306,7 +309,8 @@
     "name": "Remada T",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
-      "BICEPS"
+      "BICEPS",
+      "BACK"
     ],
     "equipment": "BARBELL",
     "instructions": "Posicione-se no equipamento ou barra T.\nMantenha o tronco inclinado e a coluna neutra.\nPuxe a carga em direção ao tronco.\nDesça com controle até alongar as costas.",
@@ -317,7 +321,8 @@
     "name": "Rack pull",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
-      "GLUTES"
+      "GLUTES",
+      "BACK"
     ],
     "equipment": "BARBELL",
     "instructions": "Ajuste a barra em uma altura elevada no rack.\nSegure a barra com a coluna neutra.\nEstenda o quadril até ficar em pé.\nDesça a barra de volta ao suporte com controle.",
@@ -352,7 +357,8 @@
     "name": "Barra fixa pegada aberta",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
-      "BICEPS"
+      "BICEPS",
+      "BACK"
     ],
     "equipment": "BODYWEIGHT",
     "instructions": "Segure a barra com uma pegada mais aberta que os ombros.\nMantenha o tronco firme e o abdômen contraído.\nPuxe o corpo levando o peito em direção à barra.\nDesça lentamente até estender os braços com controle.",
@@ -385,7 +391,8 @@
     "name": "Remada unilateral no cabo",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
-      "BICEPS"
+      "BICEPS",
+      "BACK"
     ],
     "equipment": "CABLE",
     "instructions": "Ajuste a polia na altura adequada e segure a alça com uma mão.\nMantenha o tronco firme e o braço estendido à frente.\nPuxe a alça em direção ao tronco levando o cotovelo para trás.\nRetorne lentamente até alongar as costas.",
@@ -396,7 +403,8 @@
     "name": "Remada na máquina",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
-      "BICEPS"
+      "BICEPS",
+      "BACK"
     ],
     "equipment": "MACHINE",
     "instructions": "Ajuste o banco para que as pegadas fiquem alinhadas ao tronco.\nSegure as alças e mantenha o peito apoiado ou estável.\nPuxe as alças em direção ao corpo.\nRetorne lentamente sem deixar o peso bater.",
@@ -408,6 +416,7 @@
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
       "BICEPS",
+      "BACK",
       "CORE"
     ],
     "equipment": "BARBELL",
@@ -458,7 +467,9 @@
     "id": "forgeflow-catalog-dumbbell-lateral-raise",
     "name": "Elevação lateral com halteres",
     "primaryMuscleGroup": "SHOULDERS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "BACK"
+    ],
     "equipment": "DUMBBELL",
     "instructions": "Segure um halter em cada mão ao lado do corpo.\nEleve os braços até a altura dos ombros.\nMantenha leve flexão nos cotovelos.\nDesça lentamente.",
     "mediaUri": "file:///android_asset/exercise-media/shoulders/dumbbell-lateral-raise.gif"
@@ -467,7 +478,9 @@
     "id": "forgeflow-catalog-cable-lateral-raise",
     "name": "Elevação lateral no cabo",
     "primaryMuscleGroup": "SHOULDERS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "BACK"
+    ],
     "equipment": "CABLE",
     "instructions": "Ajuste a polia na posição baixa.\nSegure a alça com o braço oposto ao cabo.\nEleve o braço lateralmente até a altura do ombro.\nRetorne lentamente mantendo tensão.",
     "mediaUri": "file:///android_asset/exercise-media/shoulders/cable-lateral-raise.gif"
@@ -476,7 +489,9 @@
     "id": "forgeflow-catalog-front-raise",
     "name": "Elevação frontal",
     "primaryMuscleGroup": "SHOULDERS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "CHEST"
+    ],
     "equipment": "DUMBBELL",
     "instructions": "Segure os halteres à frente do corpo.\nEleve os braços até a altura dos ombros.\nMantenha controle durante todo o movimento.\nDesça lentamente.",
     "mediaUri": "file:///android_asset/exercise-media/shoulders/front-raise.gif"
@@ -485,7 +500,9 @@
     "id": "forgeflow-catalog-rear-delt-fly",
     "name": "Crucifixo inverso",
     "primaryMuscleGroup": "SHOULDERS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "BACK"
+    ],
     "equipment": "DUMBBELL",
     "instructions": "Incline o tronco mantendo a coluna neutra.\nSegure os halteres abaixo do peito.\nAbra os braços lateralmente.\nVolte lentamente à posição inicial.",
     "mediaUri": "file:///android_asset/exercise-media/shoulders/rear-delt-fly.gif"
@@ -494,7 +511,9 @@
     "id": "forgeflow-catalog-face-pull",
     "name": "Face pull",
     "primaryMuscleGroup": "SHOULDERS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "BACK"
+    ],
     "equipment": "CABLE",
     "instructions": "Ajuste a polia na altura do rosto.\nSegure a corda com as duas mãos.\nPuxe a corda em direção ao rosto abrindo os cotovelos.\nRetorne lentamente mantendo controle.",
     "mediaUri": "file:///android_asset/exercise-media/shoulders/face-pull.gif"
@@ -503,7 +522,9 @@
     "id": "forgeflow-catalog-upright-row",
     "name": "Remada alta",
     "primaryMuscleGroup": "SHOULDERS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "BACK"
+    ],
     "equipment": "BARBELL",
     "instructions": "Segure a barra à frente do corpo.\nPuxe a barra para cima próxima ao tronco.\nSuba até uma altura confortável.\nDesça controlando.",
     "mediaUri": "file:///android_asset/exercise-media/shoulders/upright-row.gif"
@@ -511,7 +532,7 @@
   {
     "id": "forgeflow-catalog-shrug",
     "name": "Encolhimento de ombros",
-    "primaryMuscleGroup": "SHOULDERS",
+    "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [],
     "equipment": "DUMBBELL",
     "instructions": "Segure os halteres ao lado do corpo.\nEleve os ombros em direção às orelhas.\nContraia o trapézio no topo.\nDesça lentamente.",
@@ -522,7 +543,8 @@
     "name": "Desenvolvimento sentado com barra",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
-      "TRICEPS"
+      "TRICEPS",
+      "BACK"
     ],
     "equipment": "BARBELL",
     "instructions": "Sente-se com as costas firmes no banco.\nSegure a barra na altura dos ombros.\nEmpurre a barra acima da cabeça com controle.\nDesça lentamente até a posição inicial.",
@@ -554,7 +576,9 @@
     "id": "forgeflow-catalog-cable-front-raise",
     "name": "Elevação frontal no cabo",
     "primaryMuscleGroup": "SHOULDERS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "CHEST"
+    ],
     "equipment": "CABLE",
     "instructions": "Ajuste a polia na posição baixa.\nSegure a alça ou barra à frente do corpo.\nEleve os braços até a altura dos ombros.\nRetorne lentamente mantendo tensão no cabo.",
     "mediaUri": "file:///android_asset/exercise-media/shoulders/cable-front-raise.gif"
@@ -563,7 +587,9 @@
     "id": "forgeflow-catalog-plate-front-raise",
     "name": "Elevação frontal com anilha",
     "primaryMuscleGroup": "SHOULDERS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "CHEST"
+    ],
     "equipment": "OTHER",
     "instructions": "Segure uma anilha com as duas mãos à frente do corpo.\nMantenha os braços levemente flexionados.\nEleve a anilha até a altura dos ombros.\nDesça lentamente até a posição inicial.",
     "mediaUri": "file:///android_asset/exercise-media/shoulders/plate-front-raise.gif"
@@ -572,7 +598,9 @@
     "id": "forgeflow-catalog-reverse-pec-deck-fly",
     "name": "Crucifixo inverso na máquina",
     "primaryMuscleGroup": "SHOULDERS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "BACK"
+    ],
     "equipment": "MACHINE",
     "instructions": "Ajuste o banco da máquina para alinhar as mãos aos ombros.\nSegure as alças com os braços à frente do corpo.\nAbra os braços contraindo a parte posterior dos ombros.\nRetorne lentamente sem deixar o peso bater.",
     "mediaUri": "file:///android_asset/exercise-media/shoulders/reverse-pec-deck-fly.gif"
@@ -581,7 +609,9 @@
     "id": "forgeflow-catalog-barbell-front-raise",
     "name": "Elevação frontal com barra",
     "primaryMuscleGroup": "SHOULDERS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "CHEST"
+    ],
     "equipment": "BARBELL",
     "instructions": "Segure a barra à frente do corpo com pegada firme.\nMantenha o abdômen contraído e o tronco estável.\nEleve a barra até a altura dos ombros.\nDesça lentamente até a posição inicial.",
     "mediaUri": "file:///android_asset/exercise-media/shoulders/barbell-front-raise.gif"
@@ -675,7 +705,9 @@
     "id": "forgeflow-catalog-zottman-curl",
     "name": "Rosca Zottman",
     "primaryMuscleGroup": "BICEPS",
-    "secondaryMuscleGroups": [],
+    "secondaryMuscleGroups": [
+      "BICEPS"
+    ],
     "equipment": "DUMBBELL",
     "instructions": "Suba os halteres com pegada supinada.\nNo topo, gire as palmas para baixo.\nDesça com pegada pronada.\nGire novamente para iniciar a próxima repetição.",
     "mediaUri": "file:///android_asset/exercise-media/biceps/zottman-curl.gif"
@@ -944,7 +976,7 @@
   {
     "id": "forgeflow-catalog-lying-leg-curl",
     "name": "Mesa flexora",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
       "CALVES"
     ],
@@ -955,7 +987,7 @@
   {
     "id": "forgeflow-catalog-romanian-deadlift",
     "name": "Levantamento terra romeno",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
       "GLUTES",
       "BACK"
@@ -967,7 +999,7 @@
   {
     "id": "forgeflow-catalog-stiff-leg-deadlift",
     "name": "Stiff",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
       "GLUTES",
       "BACK"
@@ -1003,7 +1035,7 @@
   {
     "id": "forgeflow-catalog-hip-thrust",
     "name": "Elevação pélvica",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "GLUTES",
     "secondaryMuscleGroups": [
       "HAMSTRINGS",
       "CORE"
@@ -1015,7 +1047,7 @@
   {
     "id": "forgeflow-catalog-standing-calf-raise",
     "name": "Panturrilha em pé",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "CALVES",
     "secondaryMuscleGroups": [],
     "equipment": "MACHINE",
     "instructions": "Fique em pé com a ponta dos pés apoiada.\nEleve os calcanhares o máximo possível.\nContraia a panturrilha no topo.\nDesça lentamente até alongar.",
@@ -1024,7 +1056,7 @@
   {
     "id": "forgeflow-catalog-seated-calf-raise",
     "name": "Panturrilha sentada",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "CALVES",
     "secondaryMuscleGroups": [],
     "equipment": "MACHINE",
     "instructions": "Sente-se na máquina com os pés apoiados.\nEleve os calcanhares contraindo a panturrilha.\nPause brevemente no topo.\nDesça lentamente até alongar.",
@@ -1056,7 +1088,7 @@
   {
     "id": "forgeflow-catalog-sumo-deadlift",
     "name": "Levantamento terra sumô",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
       "GLUTES",
       "BACK"
@@ -1068,7 +1100,7 @@
   {
     "id": "forgeflow-catalog-good-morning",
     "name": "Good morning",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
       "GLUTES",
       "BACK"
@@ -1080,7 +1112,7 @@
   {
     "id": "forgeflow-catalog-glute-bridge",
     "name": "Ponte de glúteos",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "GLUTES",
     "secondaryMuscleGroups": [
       "HAMSTRINGS",
       "CORE"
@@ -1092,7 +1124,7 @@
   {
     "id": "forgeflow-catalog-cable-pull-through",
     "name": "Pull through no cabo",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "GLUTES",
     "secondaryMuscleGroups": [
       "HAMSTRINGS",
       "BACK"
@@ -1104,7 +1136,7 @@
   {
     "id": "forgeflow-catalog-seated-leg-curl",
     "name": "Cadeira flexora",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
       "CALVES"
     ],
@@ -1115,7 +1147,7 @@
   {
     "id": "forgeflow-catalog-standing-leg-curl",
     "name": "Flexora em pé",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
       "CALVES"
     ],
@@ -1137,7 +1169,7 @@
   {
     "id": "forgeflow-catalog-calf-press-on-leg-press",
     "name": "Panturrilha no leg press",
-    "primaryMuscleGroup": "QUADRICEPS",
+    "primaryMuscleGroup": "CALVES",
     "secondaryMuscleGroups": [],
     "equipment": "MACHINE",
     "instructions": "Sente-se no leg press com a ponta dos pés apoiada na plataforma.\nMantenha os joelhos levemente flexionados.\nEmpurre a plataforma usando a ponta dos pés.\nDesça lentamente até alongar a panturrilha.",
@@ -1260,7 +1292,8 @@
     "name": "Ab wheel rollout",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [
-      "SHOULDERS"
+      "SHOULDERS",
+      "BACK"
     ],
     "equipment": "OTHER",
     "instructions": "Ajoelhe-se segurando a roda abdominal à frente do corpo.\nContraia o abdômen e glúteos antes de iniciar.\nRole a roda para frente mantendo a coluna estável.\nPuxe a roda de volta usando o core.",
@@ -1318,7 +1351,8 @@
     "name": "Wood chop no cabo",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [
-      "SHOULDERS"
+      "SHOULDERS",
+      "BACK"
     ],
     "equipment": "CABLE",
     "instructions": "Ajuste a polia na altura desejada.\nSegure a alça com as duas mãos.\nGire o tronco levando o cabo em diagonal pelo corpo.\nRetorne lentamente controlando a rotação.",

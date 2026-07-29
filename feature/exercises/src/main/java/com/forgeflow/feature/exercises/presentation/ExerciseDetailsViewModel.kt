@@ -114,6 +114,29 @@ class ExerciseDetailsViewModel @Inject constructor(
                     )
                 }
         }
+        val personalRecordTimeline = matchingSessions.flatMap { (workout, details) ->
+            details.sets
+                .filter { it.isCompleted && it.repetitions.count > 0 }
+                .mapNotNull { set ->
+                    val recordTypes = personalRecordsBySet[set.id.value].orEmpty()
+                    if (recordTypes.isEmpty()) {
+                        null
+                    } else {
+                        ExercisePersonalRecordUiModel(
+                            types = recordTypes,
+                            workoutName = workout.session.name,
+                            date = DATE_FORMATTER.format(
+                                workout.session.startedAt.atZone(
+                                    ZoneId.systemDefault(),
+                                ),
+                            ),
+                            performance = "${
+                                set.weight.valueIn(settings.weightUnit).toCleanString()
+                            } × ${set.repetitions.count} ${settings.weightUnit.shortLabel()}",
+                        )
+                    }
+                }
+        }.take(3)
         return ExerciseDetailsUiModel(
             id = id.value,
             name = name,
@@ -144,27 +167,11 @@ class ExerciseDetailsViewModel @Inject constructor(
                 "${it.weight.valueIn(settings.weightUnit).toCleanString()} × " +
                     it.repetitions.count
             } ?: "—",
-            personalRecordCount = personalRecordsBySet.values.sumOf { it.size },
-            personalRecords = matchingSessions.flatMap { (workout, details) ->
-                details.sets
-                    .filter { it.isCompleted && it.repetitions.count > 0 }
-                    .flatMap { set ->
-                        personalRecordsBySet[set.id.value].orEmpty().map { type ->
-                            ExercisePersonalRecordUiModel(
-                                type = type,
-                                workoutName = workout.session.name,
-                                date = DATE_FORMATTER.format(
-                                    workout.session.startedAt.atZone(
-                                        ZoneId.systemDefault(),
-                                    ),
-                                ),
-                                performance = "${
-                                    set.weight.valueIn(settings.weightUnit).toCleanString()
-                                } × ${set.repetitions.count} ${settings.weightUnit.shortLabel()}",
-                            )
-                        }
-                    }
-            },
+            personalRecordCount = personalRecordsBySet.values
+                .flatten()
+                .distinct()
+                .size,
+            personalRecords = personalRecordTimeline,
             chartPoints = chart,
             sessions = matchingSessions.map { (workout, details) ->
                 ExerciseSessionUiModel(

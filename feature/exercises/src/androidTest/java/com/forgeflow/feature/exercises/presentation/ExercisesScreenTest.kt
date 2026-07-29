@@ -26,6 +26,7 @@ class ExercisesScreenTest {
                     state = ExercisesUiState(isLoading = false),
                     onAction = {},
                     onBack = {},
+                    onOpenExercise = {},
                 )
             }
         }
@@ -53,6 +54,7 @@ class ExercisesScreenTest {
                     ),
                     onAction = {},
                     onBack = {},
+                    onOpenExercise = {},
                 )
             }
         }

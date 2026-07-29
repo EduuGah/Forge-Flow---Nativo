@@ -4,11 +4,20 @@ import java.time.Instant
 
 data class WorkoutRoutine(
     val id: RoutineId,
+    val folderId: RoutineFolderId?,
     val name: String,
     val description: String,
     val createdAt: Instant,
     val updatedAt: Instant,
     val archivedAt: Instant?,
+)
+
+data class RoutineFolder(
+    val id: RoutineFolderId,
+    val name: String,
+    val position: Int,
+    val createdAt: Instant,
+    val updatedAt: Instant,
 )
 
 data class RoutineExercise(
@@ -42,10 +51,59 @@ data class RoutineExerciseDraft(
 
 data class RoutineDraft(
     val id: RoutineId? = null,
+    val folderId: RoutineFolderId? = null,
     val name: String,
     val description: String = "",
     val exercises: List<RoutineExerciseDraft>,
 )
+
+enum class PersonalRecordType {
+    WEIGHT,
+    REPETITIONS_AT_WEIGHT,
+    ESTIMATED_ONE_REP_MAX,
+    SET_VOLUME,
+}
+
+fun WorkoutSet.estimatedOneRepMaxGrams(): Double {
+    if (weight.grams == 0L || repetitions.count == 0) return 0.0
+    return weight.grams * (1.0 + repetitions.count / 30.0)
+}
+
+fun WorkoutSet.personalRecordsAgainst(previous: List<WorkoutSet>): Set<PersonalRecordType> {
+    if (
+        !isCompleted ||
+        setType == WorkoutSetType.WARM_UP ||
+        weight.grams == 0L ||
+        repetitions.count == 0
+    ) {
+        return emptySet()
+    }
+    val comparable = previous.filter {
+        it.isCompleted &&
+            it.setType != WorkoutSetType.WARM_UP &&
+            it.weight.grams > 0 &&
+            it.repetitions.count > 0
+    }
+    val records = mutableSetOf<PersonalRecordType>()
+    if (comparable.none { it.weight.grams >= weight.grams }) {
+        records += PersonalRecordType.WEIGHT
+    }
+    if (
+        comparable
+            .filter { it.weight.grams == weight.grams }
+            .none { it.repetitions.count >= repetitions.count }
+    ) {
+        records += PersonalRecordType.REPETITIONS_AT_WEIGHT
+    }
+    if (comparable.none { it.estimatedOneRepMaxGrams() >= estimatedOneRepMaxGrams() }) {
+        records += PersonalRecordType.ESTIMATED_ONE_REP_MAX
+    }
+    val volume = weight.grams * repetitions.count
+    if (comparable.none { it.weight.grams * it.repetitions.count >= volume }) {
+        records += PersonalRecordType.SET_VOLUME
+    }
+    return records
+}
 
 enum class WorkoutSessionStatus {
     ACTIVE,
@@ -112,7 +170,11 @@ data class WorkoutDetails(
     val exercises: List<WorkoutExerciseDetails>,
 ) {
     val completedSetCount: Int
-        get() = exercises.sumOf { exercise -> exercise.sets.count(WorkoutSet::isCompleted) }
+        get() = exercises.sumOf { exercise ->
+            exercise.sets.count {
+                it.isCompleted && it.repetitions.count > 0
+            }
+        }
 
     val totalSetCount: Int
         get() = exercises.sumOf { exercise -> exercise.sets.size }

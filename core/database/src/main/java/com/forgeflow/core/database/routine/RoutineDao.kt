@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RoutineDao {
+    @Query("SELECT * FROM routine_folders ORDER BY position, name")
+    fun observeFolders(): Flow<List<RoutineFolderEntity>>
+
     @Transaction
     @Query(
         """
@@ -22,6 +25,15 @@ interface RoutineDao {
     @Transaction
     @Query("SELECT * FROM routines WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): RoutineRecord?
+
+    @Query("SELECT * FROM routine_folders WHERE id = :id LIMIT 1")
+    suspend fun getFolderById(id: String): RoutineFolderEntity?
+
+    @Query("SELECT COUNT(*) FROM routine_folders")
+    suspend fun getFolderCount(): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertFolder(folder: RoutineFolderEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertRoutine(routine: RoutineEntity)
@@ -41,6 +53,18 @@ interface RoutineDao {
         """,
     )
     suspend fun archive(routineId: String, archivedAt: Long)
+
+    @Query("UPDATE routines SET folder_id = NULL WHERE folder_id = :folderId")
+    suspend fun clearFolder(folderId: String)
+
+    @Query("DELETE FROM routine_folders WHERE id = :folderId")
+    suspend fun deleteFolderEntity(folderId: String)
+
+    @Transaction
+    suspend fun deleteFolder(folderId: String) {
+        clearFolder(folderId)
+        deleteFolderEntity(folderId)
+    }
 
     @Transaction
     suspend fun replace(

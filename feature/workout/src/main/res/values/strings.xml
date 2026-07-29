@@ -43,4 +43,23 @@
     <string name="workout_location_enabled">O local será associado a esta sessão.</string>
     <string name="capturing_workout_location">Obtendo o local antes de finalizar…</string>
     <string name="location_permission_denied">Permissão negada. O treino será salvo sem local.</string>
+    <string name="previous_header">Anterior</string>
+    <string name="personal_record">Recorde pessoal</string>
+    <string name="toggle_set_completion">Alternar conclusão da série</string>
+    <string name="delete_set">Excluir série</string>
+    <string name="set_type_warm_up">Aquecimento</string>
+    <string name="set_type_normal">Série normal</string>
+    <string name="set_type_drop">Drop set</string>
+    <string name="set_type_failure">Até a falha</string>
+    <string name="last_performance">Último: %1$s %2$s</string>
+    <string name="no_previous_performance">Primeiro registro deste exercício</string>
+    <string name="total_volume_metric">Volume (%1$s)</string>
+    <string name="completed_sets_metric">Séries feitas</string>
+    <string name="personal_records_metric">PRs</string>
+    <string name="finish_sheet_title">Finalizar treino</string>
+    <string name="finish_sheet_description">Revise os dados opcionais antes de guardar esta sessão no histórico.</string>
+    <string name="location_name_label">Nome do local</string>
+    <string name="location_name_placeholder">Ex.: Academia do Centro</string>
+    <string name="location_name_support">O nome e a posição ficam somente neste histórico.</string>
+    <string name="save_workout">Salvar no histórico</string>
 </resources>

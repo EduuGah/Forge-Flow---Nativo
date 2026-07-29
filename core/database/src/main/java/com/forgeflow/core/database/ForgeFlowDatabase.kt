@@ -7,6 +7,7 @@ import com.forgeflow.core.database.exercise.ExerciseEntity
 import com.forgeflow.core.database.routine.RoutineDao
 import com.forgeflow.core.database.routine.RoutineEntity
 import com.forgeflow.core.database.routine.RoutineExerciseEntity
+import com.forgeflow.core.database.routine.RoutineFolderEntity
 import com.forgeflow.core.database.workout.WorkoutDao
 import com.forgeflow.core.database.workout.WorkoutSessionEntity
 import com.forgeflow.core.database.workout.WorkoutSessionExerciseEntity
@@ -17,11 +18,12 @@ import com.forgeflow.core.database.workout.WorkoutSetEntity
         ExerciseEntity::class,
         RoutineEntity::class,
         RoutineExerciseEntity::class,
+        RoutineFolderEntity::class,
         WorkoutSessionEntity::class,
         WorkoutSessionExerciseEntity::class,
         WorkoutSetEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class ForgeFlowDatabase : RoomDatabase() {

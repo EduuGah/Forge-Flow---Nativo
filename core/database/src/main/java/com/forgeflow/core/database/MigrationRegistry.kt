@@ -52,11 +52,55 @@ object MigrationRegistry {
         }
     }
 
+    private val migration4To5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `routine_folders` (
+                    `id` TEXT NOT NULL,
+                    `name` TEXT NOT NULL,
+                    `position` INTEGER NOT NULL,
+                    `created_at_epoch_millis` INTEGER NOT NULL,
+                    `updated_at_epoch_millis` INTEGER NOT NULL,
+                    PRIMARY KEY(`id`)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_routine_folders_position` " +
+                    "ON `routine_folders` (`position`)",
+            )
+            db.execSQL("ALTER TABLE `routines` ADD COLUMN `folder_id` TEXT")
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_routines_folder_id` " +
+                    "ON `routines` (`folder_id`)",
+            )
+            updateDefaultExerciseMedia(db)
+        }
+    }
+
     val all: Array<Migration> = arrayOf(
         migration1To2,
         migration2To3,
         migration3To4,
+        migration4To5,
     )
+
+    private fun updateDefaultExerciseMedia(database: SupportSQLiteDatabase) {
+        val mediaById = mapOf(
+            "04f35c8f-e525-469e-8238-25e31087e07a" to "forgeflow://exercise/bench-press",
+            "42e026cb-c0a2-442c-8d46-a5c2ae5e4293" to "forgeflow://exercise/back-squat",
+            "234590ba-5ae9-407f-afaa-3bfaf62a1c42" to "forgeflow://exercise/deadlift",
+            "eae8a5fc-acb1-465a-8162-246bcbafd7b1" to "forgeflow://exercise/barbell-row",
+            "ca3218ec-516b-455b-af27-51dc846065e0" to "forgeflow://exercise/overhead-press",
+        )
+        mediaById.forEach { (id, uri) ->
+            database.execSQL(
+                "UPDATE `exercises` SET `media_uri` = ?, `media_type` = 'IMAGE' WHERE `id` = ?",
+                arrayOf(uri, id),
+            )
+        }
+    }
 
     private fun createRoutineTables(database: SupportSQLiteDatabase) {
         database.execSQL(

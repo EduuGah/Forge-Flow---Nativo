@@ -21,6 +21,7 @@ import com.forgeflow.feature.history.R
 @Composable
 fun HistoryScreen(
     state: HistoryUiState,
+    onOpenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -29,7 +30,11 @@ fun HistoryScreen(
                 contentDescription = stringResource(R.string.history_loading),
             )
         } else {
-            HistoryContent(state = state, contentPadding = innerPadding)
+            HistoryContent(
+                state = state,
+                contentPadding = innerPadding,
+                onOpenExercise = onOpenExercise,
+            )
         }
     }
 }
@@ -38,6 +43,7 @@ fun HistoryScreen(
 private fun HistoryContent(
     state: HistoryUiState,
     contentPadding: PaddingValues,
+    onOpenExercise: (String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -95,6 +101,7 @@ private fun HistoryContent(
                         workout = workout,
                         weightUnit = state.weightUnit,
                         expandedByDefault = index == 0,
+                        onOpenExercise = onOpenExercise,
                     )
                 }
             }

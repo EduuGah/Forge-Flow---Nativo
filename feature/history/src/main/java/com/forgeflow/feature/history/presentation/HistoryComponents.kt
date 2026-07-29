@@ -44,6 +44,7 @@ internal fun HistoryWorkoutCard(
     workout: HistoryWorkoutUiModel,
     weightUnit: WeightUnit,
     expandedByDefault: Boolean,
+    onOpenExercise: (String) -> Unit,
 ) {
     var expanded by rememberSaveable(workout.id) { mutableStateOf(expandedByDefault) }
     ForgeFlowCard(
@@ -115,7 +116,11 @@ internal fun HistoryWorkoutCard(
             Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium)) {
                 HorizontalDivider(color = ForgeFlowDesign.colors.divider)
                 workout.exercises.forEach { exercise ->
-                    HistoryExerciseRow(exercise = exercise, weightUnit = weightUnit)
+                    HistoryExerciseRow(
+                        exercise = exercise,
+                        weightUnit = weightUnit,
+                        onOpenExercise = onOpenExercise,
+                    )
                 }
             }
         }
@@ -172,7 +177,7 @@ private fun SessionSummary(
         )
         HistoryStat(
             value = workout.volume.asDisplayValue(),
-            label = weightUnit.symbol,
+            label = stringResource(R.string.summary_total_volume, weightUnit.symbol),
         )
     }
 }

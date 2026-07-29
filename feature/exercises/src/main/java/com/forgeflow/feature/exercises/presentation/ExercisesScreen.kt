@@ -24,6 +24,7 @@ fun ExercisesScreen(
     state: ExercisesUiState,
     onAction: (ExercisesAction) -> Unit,
     onBack: () -> Unit,
+    onOpenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -99,7 +100,11 @@ fun ExercisesScreen(
                     )
                 }
                 else -> items(state.exercises, key = ExerciseUiModel::id) { exercise ->
-                    ExerciseListItem(exercise = exercise, onAction = onAction)
+                    ExerciseListItem(
+                        exercise = exercise,
+                        onAction = onAction,
+                        onOpenExercise = onOpenExercise,
+                    )
                 }
             }
         }

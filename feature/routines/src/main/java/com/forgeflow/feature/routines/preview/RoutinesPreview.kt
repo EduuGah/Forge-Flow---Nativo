@@ -14,6 +14,7 @@ private fun RoutinesScreenPreview() {
             state = RoutinesUiState(isLoading = false),
             onAction = {},
             onOpenExercises = {},
+            onOpenExercise = {},
         )
     }
 }

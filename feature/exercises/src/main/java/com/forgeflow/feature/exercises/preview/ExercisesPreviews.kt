@@ -27,6 +27,7 @@ private fun ExerciseListPreview() {
             ),
             onAction = {},
             onBack = {},
+            onOpenExercise = {},
         )
     }
 }
@@ -39,6 +40,7 @@ private fun ExerciseEmptyPreview() {
             state = ExercisesUiState(isLoading = false),
             onAction = {},
             onBack = {},
+            onOpenExercise = {},
         )
     }
 }

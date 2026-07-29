@@ -152,6 +152,29 @@ class DefaultWorkoutRepository @Inject constructor(
         onFailure = { DataResult.Failure(AppError.WriteFailed) },
     )
 
+    override suspend fun updateSetType(
+        setId: WorkoutSetId,
+        type: WorkoutSetType,
+    ): DataResult<Unit> = runCatching {
+        requireNotNull(workoutDao.getSet(setId.value))
+        workoutDao.updateSetType(
+            setId = setId.value,
+            setType = type.name,
+            updatedAt = clock.now().toEpochMilli(),
+        )
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun deleteSet(setId: WorkoutSetId): DataResult<Unit> = runCatching {
+        requireNotNull(workoutDao.getSet(setId.value))
+        workoutDao.deleteSet(setId.value)
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
     override suspend fun finishWorkout(
         sessionId: WorkoutSessionId,
         location: WorkoutLocation?,

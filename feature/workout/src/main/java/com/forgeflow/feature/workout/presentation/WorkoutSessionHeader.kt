@@ -6,84 +6,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowEyebrow
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.feature.workout.R
-
-@Composable
-internal fun SessionLocationPreference(
-    checked: Boolean,
-    isCapturing: Boolean,
-    permissionDenied: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(ForgeFlowDesign.spacing.card),
-        horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.LocationOn,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-        )
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraSmall),
-        ) {
-            Text(
-                text = stringResource(R.string.save_workout_location),
-                style = MaterialTheme.typography.titleSmall,
-            )
-            Text(
-                text = when {
-                    isCapturing -> stringResource(R.string.capturing_workout_location)
-                    permissionDenied -> stringResource(R.string.location_permission_denied)
-                    checked -> stringResource(R.string.workout_location_enabled)
-                    else -> stringResource(R.string.workout_location_description)
-                },
-                color = if (permissionDenied) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    ForgeFlowDesign.colors.textSecondary
-                },
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-        if (isCapturing) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 2.dp,
-            )
-        } else {
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-            )
-        }
-    }
-}
 
 @Composable
 internal fun WorkoutHeader(
@@ -159,6 +96,48 @@ internal fun WorkoutProgress(workout: ActiveWorkoutUiModel) {
         LinearProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            WorkoutMetric(
+                value = workout.totalVolume,
+                label = stringResource(
+                    R.string.total_volume_metric,
+                    stringResource(
+                        if (workout.weightUnit == com.forgeflow.core.model.WeightUnit.KILOGRAM) {
+                            R.string.weight_header_kg
+                        } else {
+                            R.string.weight_header_lb
+                        },
+                    ),
+                ),
+            )
+            WorkoutMetric(
+                value = workout.completedSets.toString(),
+                label = stringResource(R.string.completed_sets_metric),
+            )
+            WorkoutMetric(
+                value = workout.personalRecordCount.toString(),
+                label = stringResource(R.string.personal_records_metric),
+            )
+        }
+    }
+}
+
+@Composable
+private fun WorkoutMetric(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text = label,
+            color = ForgeFlowDesign.colors.textSecondary,
+            style = MaterialTheme.typography.labelSmall,
         )
     }
 }

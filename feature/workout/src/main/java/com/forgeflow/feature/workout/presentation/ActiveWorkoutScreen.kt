@@ -38,6 +38,9 @@ fun ActiveWorkoutScreen(
     modifier: Modifier = Modifier,
 ) {
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var showFinishSheet by remember { mutableStateOf(false) }
+    var includeLocation by remember { mutableStateOf(false) }
+    var locationLabel by remember { mutableStateOf("") }
     var locationPermissionDenied by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -46,22 +49,12 @@ fun ActiveWorkoutScreen(
         val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         locationPermissionDenied = !granted
-        onAction(ActiveWorkoutAction.IncludeLocationChanged(granted))
-    }
-    val onLocationPreferenceChanged: (Boolean) -> Unit = { enabled ->
-        when {
-            !enabled -> {
-                locationPermissionDenied = false
-                onAction(ActiveWorkoutAction.IncludeLocationChanged(false))
-            }
-            context.hasLocationPermission() -> {
-                locationPermissionDenied = false
-                onAction(ActiveWorkoutAction.IncludeLocationChanged(true))
-            }
-            else -> locationPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
+        if (granted) {
+            showFinishSheet = false
+            onAction(
+                ActiveWorkoutAction.Finish(
+                    includeLocation = true,
+                    locationLabel = locationLabel,
                 ),
             )
         }
@@ -72,7 +65,7 @@ fun ActiveWorkoutScreen(
             state.workout?.let { workout ->
                 WorkoutBottomActions(
                     canFinish = workout.completedSets > 0 && !state.isCapturingLocation,
-                    onFinish = { onAction(ActiveWorkoutAction.Finish) },
+                    onFinish = { showFinishSheet = true },
                     onDiscard = { showDiscardDialog = true },
                 )
             }
@@ -97,10 +90,6 @@ fun ActiveWorkoutScreen(
                 workout = state.workout,
                 onAction = onAction,
                 onBack = onBack,
-                includeLocation = state.includeLocation,
-                isCapturingLocation = state.isCapturingLocation,
-                locationPermissionDenied = locationPermissionDenied,
-                onLocationPreferenceChanged = onLocationPreferenceChanged,
                 contentPadding = innerPadding,
             )
         }
@@ -114,6 +103,48 @@ fun ActiveWorkoutScreen(
             onDismiss = { showDiscardDialog = false },
         )
     }
+    if (showFinishSheet) {
+        FinishWorkoutSheet(
+            includeLocation = includeLocation,
+            locationLabel = locationLabel,
+            locationPermissionDenied = locationPermissionDenied,
+            isFinishing = state.isCapturingLocation,
+            onIncludeLocationChanged = {
+                includeLocation = it
+                locationPermissionDenied = false
+            },
+            onLocationLabelChanged = { locationLabel = it },
+            onConfirm = {
+                when {
+                    !includeLocation -> {
+                        showFinishSheet = false
+                        onAction(
+                            ActiveWorkoutAction.Finish(
+                                includeLocation = false,
+                                locationLabel = "",
+                            ),
+                        )
+                    }
+                    context.hasLocationPermission() -> {
+                        showFinishSheet = false
+                        onAction(
+                            ActiveWorkoutAction.Finish(
+                                includeLocation = true,
+                                locationLabel = locationLabel,
+                            ),
+                        )
+                    }
+                    else -> locationPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION,
+                        ),
+                    )
+                }
+            },
+            onDismiss = { showFinishSheet = false },
+        )
+    }
 }
 
 @Composable
@@ -121,10 +152,6 @@ private fun WorkoutContent(
     workout: ActiveWorkoutUiModel,
     onAction: (ActiveWorkoutAction) -> Unit,
     onBack: () -> Unit,
-    includeLocation: Boolean,
-    isCapturingLocation: Boolean,
-    locationPermissionDenied: Boolean,
-    onLocationPreferenceChanged: (Boolean) -> Unit,
     contentPadding: PaddingValues,
 ) {
     LazyColumn(
@@ -142,14 +169,6 @@ private fun WorkoutContent(
         }
         item {
             WorkoutProgress(workout = workout)
-        }
-        item {
-            SessionLocationPreference(
-                checked = includeLocation,
-                isCapturing = isCapturingLocation,
-                permissionDenied = locationPermissionDenied,
-                onCheckedChange = onLocationPreferenceChanged,
-            )
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraSmall)) {

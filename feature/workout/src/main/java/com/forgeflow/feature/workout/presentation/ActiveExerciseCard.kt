@@ -1,33 +1,25 @@
 package com.forgeflow.feature.workout.presentation
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.FitnessCenter
-import androidx.compose.material.icons.outlined.GifBox
-import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
+import com.forgeflow.core.designsystem.component.ForgeFlowExerciseMedia
 import com.forgeflow.core.designsystem.component.ForgeFlowEyebrow
 import com.forgeflow.core.designsystem.component.ForgeFlowOutlinedButton
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
-import com.forgeflow.core.model.ExerciseMediaType
 import com.forgeflow.core.model.MuscleGroup
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.feature.workout.R
@@ -42,9 +34,13 @@ internal fun ActiveExerciseCard(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
-            ExerciseMediaPlaceholder(exercise)
+            ForgeFlowExerciseMedia(
+                mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
+                contentDescription = exercise.name,
+                modifier = Modifier.size(64.dp),
+            )
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraSmall),
@@ -54,7 +50,19 @@ internal fun ActiveExerciseCard(
                 )
                 Text(text = exercise.name, style = MaterialTheme.typography.titleLarge)
                 Text(
-                    text = stringResource(R.string.exercise_set_count, exercise.sets.size),
+                    text = exercise.lastPerformance?.let {
+                        stringResource(
+                            R.string.last_performance,
+                            it,
+                            stringResource(
+                                if (weightUnit == WeightUnit.KILOGRAM) {
+                                    R.string.weight_header_kg
+                                } else {
+                                    R.string.weight_header_lb
+                                },
+                            ),
+                        )
+                    } ?: stringResource(R.string.no_previous_performance),
                     color = ForgeFlowDesign.colors.textSecondary,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -72,28 +80,6 @@ internal fun ActiveExerciseCard(
             modifier = Modifier.fillMaxWidth(),
             icon = Icons.Outlined.Add,
             iconContentDescription = null,
-        )
-    }
-}
-
-@Composable
-private fun ExerciseMediaPlaceholder(exercise: ActiveExerciseUiModel) {
-    val icon = when {
-        exercise.mediaType == ExerciseMediaType.ANIMATED_IMAGE -> Icons.Outlined.GifBox
-        exercise.mediaUri != null -> Icons.Outlined.Image
-        else -> Icons.Outlined.FitnessCenter
-    }
-    Box(
-        modifier = Modifier
-            .size(56.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.primaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
         )
     }
 }

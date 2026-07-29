@@ -1,72 +1,205 @@
 package com.forgeflow.feature.routines.presentation
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
-import com.forgeflow.core.designsystem.component.ForgeFlowEyebrow
 import com.forgeflow.core.designsystem.component.ForgeFlowPill
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.feature.routines.R
 
 @Composable
-internal fun RoutineCard(
-    routine: RoutineUiModel,
+internal fun RoutineFolderSection(
+    folder: RoutineFolderUiModel?,
+    routines: List<RoutineUiModel>,
     onAction: (RoutinesAction) -> Unit,
+    onDeleteRoutine: (RoutineUiModel) -> Unit,
+    onDeleteFolder: (RoutineFolderUiModel) -> Unit,
 ) {
-    ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+    var expanded by rememberSaveable(folder?.id ?: "unfiled") { mutableStateOf(true) }
+    var menuExpanded by rememberSaveable { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded },
+            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                ForgeFlowEyebrow(text = stringResource(R.string.routine_label))
-                Text(text = routine.name, style = MaterialTheme.typography.titleLarge)
-                if (routine.description.isNotBlank()) {
+            Icon(
+                imageVector = if (expanded) {
+                    Icons.Outlined.ExpandLess
+                } else {
+                    Icons.Outlined.ExpandMore
+                },
+                contentDescription = null,
+                tint = ForgeFlowDesign.colors.textSecondary,
+            )
+            Text(
+                text = folder?.name ?: stringResource(R.string.unfiled_routines),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            ForgeFlowPill(
+                text = stringResource(R.string.folder_routine_count, routines.size),
+            )
+            if (folder != null) {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        Icons.Outlined.MoreVert,
+                        contentDescription = stringResource(R.string.folder_options),
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.rename_folder)) },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                        onClick = {
+                            menuExpanded = false
+                            onAction(RoutinesAction.EditFolder(folder.id))
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.delete_folder)) },
+                        leadingIcon = {
+                            Icon(Icons.Outlined.DeleteOutline, contentDescription = null)
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onDeleteFolder(folder)
+                        },
+                    )
+                }
+            }
+        }
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically(),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
+                routines.forEach { routine ->
+                    RoutineCard(
+                        routine = routine,
+                        onAction = onAction,
+                        onDelete = { onDeleteRoutine(routine) },
+                    )
+                }
+                if (routines.isEmpty()) {
                     Text(
-                        text = routine.description,
+                        text = stringResource(R.string.folder_empty),
                         color = ForgeFlowDesign.colors.textSecondary,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
-            IconButton(onClick = { onAction(RoutinesAction.EditRoutine(routine.id)) }) {
-                Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.edit_routine))
+        }
+    }
+}
+
+@Composable
+private fun RoutineCard(
+    routine: RoutineUiModel,
+    onAction: (RoutinesAction) -> Unit,
+    onDelete: () -> Unit,
+) {
+    var menuExpanded by rememberSaveable { mutableStateOf(false) }
+    ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraSmall),
+            ) {
+                Text(
+                    text = routine.name,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = routine.exerciseNames.joinToString(),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
-            IconButton(onClick = { onAction(RoutinesAction.ArchiveRoutine(routine.id)) }) {
+            IconButton(onClick = { menuExpanded = true }) {
                 Icon(
-                    Icons.Outlined.DeleteOutline,
-                    contentDescription = stringResource(R.string.archive_routine),
+                    Icons.Outlined.MoreVert,
+                    contentDescription = stringResource(R.string.routine_options),
+                )
+            }
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.edit_routine)) },
+                    leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                    onClick = {
+                        menuExpanded = false
+                        onAction(RoutinesAction.EditRoutine(routine.id))
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.delete_routine)) },
+                    leadingIcon = {
+                        Icon(Icons.Outlined.DeleteOutline, contentDescription = null)
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onDelete()
+                    },
                 )
             }
         }
-        RoutineSummary(routine)
-        HorizontalDivider(color = ForgeFlowDesign.colors.divider)
-        RoutineExerciseList(names = routine.exerciseNames)
+        Row(horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
+            ForgeFlowPill(
+                text = stringResource(
+                    R.string.compact_exercise_count,
+                    routine.exerciseNames.size,
+                ),
+            )
+            ForgeFlowPill(text = stringResource(R.string.compact_set_count, routine.totalSets))
+        }
         ForgeFlowButton(
             text = stringResource(R.string.start_routine),
             onClick = { onAction(RoutinesAction.StartRoutine(routine.id)) },
@@ -74,83 +207,5 @@ internal fun RoutineCard(
             icon = Icons.Outlined.PlayArrow,
             iconContentDescription = null,
         )
-    }
-}
-
-@Composable
-private fun RoutineSummary(routine: RoutineUiModel) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(ForgeFlowDesign.spacing.medium),
-        horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraLarge),
-    ) {
-        RoutineStat(
-            value = routine.exerciseNames.size.toString(),
-            label = stringResource(R.string.summary_exercises),
-        )
-        RoutineStat(
-            value = routine.totalSets.toString(),
-            label = stringResource(R.string.summary_sets),
-        )
-    }
-}
-
-@Composable
-private fun RoutineStat(value: String, label: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(text = value, style = MaterialTheme.typography.titleLarge)
-        Text(
-            text = label,
-            color = ForgeFlowDesign.colors.textSecondary,
-            style = MaterialTheme.typography.labelSmall,
-        )
-    }
-}
-
-@Composable
-private fun RoutineExerciseList(names: List<String>) {
-    Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
-        Text(
-            text = stringResource(R.string.routine_composition),
-            style = MaterialTheme.typography.labelLarge,
-        )
-        names.take(4).forEachIndexed { index, name ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = (index + 1).toString(),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                }
-                Text(
-                    text = name,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        }
-        if (names.size > 4) {
-            Text(
-                text = stringResource(R.string.more_exercises, names.size - 4),
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelMedium,
-            )
-        }
     }
 }

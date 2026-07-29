@@ -10,6 +10,9 @@ import com.forgeflow.feature.history.presentation.HistoryUiState
 @Composable
 private fun HistoryScreenPreview() {
     ForgeFlowTheme {
-        HistoryScreen(state = HistoryUiState(isLoading = false))
+        HistoryScreen(
+            state = HistoryUiState(isLoading = false),
+            onOpenExercise = {},
+        )
     }
 }

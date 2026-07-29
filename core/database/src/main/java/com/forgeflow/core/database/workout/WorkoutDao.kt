@@ -81,6 +81,12 @@ interface WorkoutDao {
         updatedAt: Long,
     )
 
+    @Query("UPDATE workout_sets SET set_type = :setType, updated_at_epoch_millis = :updatedAt WHERE id = :setId")
+    suspend fun updateSetType(setId: String, setType: String, updatedAt: Long)
+
+    @Query("DELETE FROM workout_sets WHERE id = :setId")
+    suspend fun deleteSet(setId: String)
+
     @Query(
         """
         UPDATE workout_sessions

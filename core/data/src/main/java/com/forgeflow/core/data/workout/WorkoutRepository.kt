@@ -1,0 +1,32 @@
+package com.forgeflow.core.data.workout
+
+import com.forgeflow.core.common.result.DataResult
+import com.forgeflow.core.model.Repetitions
+import com.forgeflow.core.model.RoutineId
+import com.forgeflow.core.model.SessionExerciseId
+import com.forgeflow.core.model.Weight
+import com.forgeflow.core.model.WorkoutDetails
+import com.forgeflow.core.model.WorkoutSessionId
+import com.forgeflow.core.model.WorkoutSetId
+import kotlinx.coroutines.flow.Flow
+
+interface WorkoutRepository {
+    fun observeActiveWorkout(): Flow<DataResult<WorkoutDetails?>>
+
+    fun observeHistory(): Flow<DataResult<List<WorkoutDetails>>>
+
+    suspend fun startRoutine(routineId: RoutineId): DataResult<WorkoutSessionId>
+
+    suspend fun updateSet(
+        setId: WorkoutSetId,
+        weight: Weight,
+        repetitions: Repetitions,
+        completed: Boolean,
+    ): DataResult<Unit>
+
+    suspend fun addSet(sessionExerciseId: SessionExerciseId): DataResult<Unit>
+
+    suspend fun finishWorkout(sessionId: WorkoutSessionId): DataResult<Unit>
+
+    suspend fun discardActiveWorkout(): DataResult<Unit>
+}

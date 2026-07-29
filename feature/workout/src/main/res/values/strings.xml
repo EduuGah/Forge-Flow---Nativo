@@ -1,0 +1,19 @@
+<resources>
+    <string name="navigate_back">Voltar</string>
+    <string name="active_workout_loading">Carregando treino ativo</string>
+    <string name="active_workout_error_title">Não foi possível abrir o treino</string>
+    <string name="active_workout_error_message">Os dados locais do treino não estão disponíveis.</string>
+    <string name="active_workout_unavailable_title">Nenhum treino ativo</string>
+    <string name="active_workout_unavailable_message">Inicie uma rotina para registrar suas séries.</string>
+    <string name="workout_in_progress">Treino em andamento</string>
+    <string name="set_progress">%1$d de %2$d séries</string>
+    <string name="discard_workout">Descartar</string>
+    <string name="finish_workout">Finalizar</string>
+    <string name="set_header">Série</string>
+    <string name="weight_header">kg</string>
+    <string name="repetitions_header">reps</string>
+    <string name="done_header">Feita</string>
+    <string name="weight_placeholder">0</string>
+    <string name="repetitions_placeholder">0</string>
+    <string name="add_set">Adicionar série</string>
+</resources>

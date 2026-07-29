@@ -1,0 +1,18 @@
+<resources>
+    <string name="settings_eyebrow">Preferências</string>
+    <string name="settings_title">Configurações</string>
+    <string name="settings_description">Ajuste a aparência e as unidades usadas nos seus treinos.</string>
+    <string name="appearance_title">Aparência</string>
+    <string name="appearance_description">Tema e cor principal</string>
+    <string name="theme_dark">Escuro</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_system">Sistema</string>
+    <string name="accent_title">Cor principal</string>
+    <string name="compact_mode_title">Modo compacto</string>
+    <string name="compact_mode_description">Reduz espaços para mostrar mais conteúdo.</string>
+    <string name="training_title">Treino</string>
+    <string name="training_description">Unidade usada para registrar cargas</string>
+    <string name="weight_kg">Quilogramas</string>
+    <string name="weight_lb">Libras</string>
+    <string name="open_exercise_library">Biblioteca de exercícios</string>
+</resources>

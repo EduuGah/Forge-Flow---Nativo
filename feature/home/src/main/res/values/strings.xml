@@ -1,0 +1,22 @@
+<resources>
+    <string name="home_loading">Carregando resumo</string>
+    <string name="home_eyebrow">ForgeFlow offline</string>
+    <string name="home_title">Seu centro de treino</string>
+    <string name="last_workout">Último treino: %1$s</string>
+    <string name="first_workout_message">Comece registrando seu primeiro treino.</string>
+    <string name="workout_in_progress">Treino em andamento</string>
+    <string name="active_progress">%1$d de %2$d séries concluídas</string>
+    <string name="continue_workout">Continuar treino</string>
+    <string name="next_action">Próxima ação</string>
+    <string name="create_routine_title">Crie sua primeira rotina</string>
+    <string name="create_routine_message">Escolha exercícios e inicie uma sessão quando estiver pronto.</string>
+    <string name="open_routines">Montar rotina</string>
+    <string name="metric_routines">Rotinas</string>
+    <string name="metric_week">7 dias</string>
+    <string name="metric_volume">Volume</string>
+    <string name="metric_saved">salvas</string>
+    <string name="metric_workouts">treinos</string>
+    <string name="metric_total">total</string>
+    <string name="volume_value">%1$d kg</string>
+    <string name="open_exercise_library">Biblioteca de exercícios</string>
+</resources>

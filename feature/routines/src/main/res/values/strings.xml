@@ -1,0 +1,30 @@
+<resources>
+    <string name="routines_eyebrow">Treino</string>
+    <string name="routines_title">Rotinas</string>
+    <string name="routines_description">Escolha, edite ou inicie seus treinos.</string>
+    <string name="routines_loading">Carregando rotinas</string>
+    <string name="routines_error_title">Não foi possível carregar</string>
+    <string name="routines_error_message">Verifique os dados locais e tente novamente.</string>
+    <string name="dismiss">Fechar</string>
+    <string name="new_routine">Novo treino</string>
+    <string name="metric_routines">Rotinas</string>
+    <string name="metric_exercises">Exercícios</string>
+    <string name="metric_saved">salvas</string>
+    <string name="metric_library">na biblioteca</string>
+    <string name="routines_empty_title">Crie sua primeira rotina</string>
+    <string name="routines_empty_message">Monte um treino simples e ajuste os exercícios quando precisar.</string>
+    <string name="open_exercise_library">Abrir biblioteca de exercícios</string>
+    <string name="routine_label">Rotina</string>
+    <string name="edit_routine">Editar rotina</string>
+    <string name="archive_routine">Arquivar rotina</string>
+    <string name="exercise_count">%1$d exercícios</string>
+    <string name="set_count">%1$d séries</string>
+    <string name="start_routine">Iniciar treino</string>
+    <string name="create_routine_title">Criar rotina</string>
+    <string name="edit_routine_title">Editar rotina</string>
+    <string name="routine_name">Nome da rotina</string>
+    <string name="routine_description">Descrição</string>
+    <string name="search_exercises">Buscar exercício</string>
+    <string name="selected_exercises">%1$d selecionados</string>
+    <string name="save_routine">Salvar rotina</string>
+</resources>

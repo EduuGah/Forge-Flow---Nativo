@@ -1,0 +1,17 @@
+<resources>
+    <string name="history_loading">Carregando histórico</string>
+    <string name="history_eyebrow">Evolução</string>
+    <string name="history_title">Treinos finalizados</string>
+    <string name="history_description">Revise séries, cargas e volume de cada sessão.</string>
+    <string name="metric_workouts">Treinos</string>
+    <string name="metric_sets">Séries</string>
+    <string name="metric_volume">Volume</string>
+    <string name="metric_finished">finalizados</string>
+    <string name="metric_registered">registradas</string>
+    <string name="metric_total">peso × reps</string>
+    <string name="history_empty_title">Nenhum treino finalizado</string>
+    <string name="history_empty_message">Finalize uma sessão para ela aparecer aqui.</string>
+    <string name="exercise_count">%1$d exercícios</string>
+    <string name="duration_value">%1$s</string>
+    <string name="volume_value">%1$d kg</string>
+</resources>

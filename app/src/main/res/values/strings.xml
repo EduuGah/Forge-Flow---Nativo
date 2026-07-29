@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">ForgeFlow</string>
+    <string name="navigation_home">Início</string>
+    <string name="navigation_routines">Treino</string>
+    <string name="navigation_history">Histórico</string>
+    <string name="navigation_settings">Ajustes</string>
 </resources>

@@ -1,0 +1,5 @@
+<resources>
+    <string name="preview_action">Continuar</string>
+    <string name="preview_empty_title">Nada por aqui</string>
+    <string name="preview_empty_message">O conteúdo aparecerá quando estiver disponível.</string>
+</resources>

@@ -35,30 +35,45 @@ class AssetExerciseCatalogProvider @Inject constructor(
             .open(CATALOG_ASSET)
             .bufferedReader()
             .use { it.readText() }
-        return Json.decodeFromString<List<CatalogExercise>>(content).map { item ->
-            Exercise(
-                id = ExerciseId(item.id),
-                name = item.name,
-                primaryMuscleGroup = MuscleGroup.valueOf(item.primaryMuscleGroup),
-                secondaryMuscleGroups = item.secondaryMuscleGroups
-                    .mapTo(linkedSetOf(), MuscleGroup::valueOf),
-                equipment = Equipment.valueOf(item.equipment),
-                instructions = item.instructions,
-                media = item.mediaUri?.let { uri ->
-                    ExerciseMedia(
-                        uri = uri,
-                        type = ExerciseMediaType.ANIMATED_IMAGE,
-                    )
-                },
-                isCustom = false,
-                createdAt = timestamp,
-                updatedAt = timestamp,
-            )
-        }
+        return decodeExerciseCatalog(content, timestamp)
     }
 
     private companion object {
         private const val CATALOG_ASSET = "exercise_catalog.json"
+    }
+}
+
+internal fun decodeExerciseCatalog(
+    content: String,
+    timestamp: Instant,
+): List<Exercise> {
+    val items = Json.decodeFromString<List<CatalogExercise>>(content)
+    require(items.isNotEmpty()) { "Exercise catalog cannot be empty" }
+    require(items.map(CatalogExercise::id).distinct().size == items.size) {
+        "Exercise catalog contains duplicate identifiers"
+    }
+    require(items.map(CatalogExercise::name).distinct().size == items.size) {
+        "Exercise catalog contains duplicate names"
+    }
+    return items.map { item ->
+        Exercise(
+            id = ExerciseId(item.id),
+            name = item.name,
+            primaryMuscleGroup = MuscleGroup.valueOf(item.primaryMuscleGroup),
+            secondaryMuscleGroups = item.secondaryMuscleGroups
+                .mapTo(linkedSetOf(), MuscleGroup::valueOf),
+            equipment = Equipment.valueOf(item.equipment),
+            instructions = item.instructions,
+            media = item.mediaUri?.let { uri ->
+                ExerciseMedia(
+                    uri = uri,
+                    type = ExerciseMediaType.ANIMATED_IMAGE,
+                )
+            },
+            isCustom = false,
+            createdAt = timestamp,
+            updatedAt = timestamp,
+        )
     }
 }
 
@@ -76,7 +91,7 @@ abstract class ExerciseCatalogModule {
 }
 
 @Serializable
-private data class CatalogExercise(
+internal data class CatalogExercise(
     val id: String,
     val name: String,
     val primaryMuscleGroup: String,

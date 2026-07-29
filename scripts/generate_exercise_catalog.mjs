@@ -1,4 +1,5 @@
 import { access, mkdir, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { pathToFileURL } from 'node:url'
 import path from 'node:path'
 
@@ -94,6 +95,24 @@ function equipment(value) {
   return 'OTHER'
 }
 
+function catalogExerciseId(sourceId) {
+  const characters = createHash('sha256')
+    .update(`com.forgeflow.exercise:${sourceId}`)
+    .digest('hex')
+    .slice(0, 32)
+    .split('')
+  characters[12] = '5'
+  characters[16] = ((Number.parseInt(characters[16], 16) & 0x3) | 0x8).toString(16)
+  const value = characters.join('')
+  return [
+    value.slice(0, 8),
+    value.slice(8, 12),
+    value.slice(12, 16),
+    value.slice(16, 20),
+    value.slice(20),
+  ].join('-')
+}
+
 async function bundledMedia(mediaFolder, exerciseId) {
   for (const extension of ['gif', 'png']) {
     const sourcePath = path.join(
@@ -125,7 +144,7 @@ for (const [fileName, fallbackGroup, mediaFolder] of sources) {
     const mediaUri = await bundledMedia(mediaFolder, exercise.id)
     if (!mediaUri) missingMedia.push(`${mediaFolder}/${exercise.id}`)
     catalog.push({
-      id: `forgeflow-catalog-${exercise.id}`,
+      id: catalogExerciseId(exercise.id),
       name: exercise.name,
       primaryMuscleGroup: muscleGroup(
         exercise.targetMuscle || exercise.muscleGroup,

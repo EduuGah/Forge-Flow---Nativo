@@ -9,6 +9,7 @@ import com.forgeflow.core.model.WorkoutDetails
 import com.forgeflow.core.model.WorkoutLocation
 import com.forgeflow.core.model.WorkoutSessionId
 import com.forgeflow.core.model.WorkoutSetId
+import com.forgeflow.core.model.WorkoutSetType
 import kotlinx.coroutines.flow.Flow
 
 interface WorkoutRepository {
@@ -26,6 +27,10 @@ interface WorkoutRepository {
     ): DataResult<Unit>
 
     suspend fun addSet(sessionExerciseId: SessionExerciseId): DataResult<Unit>
+
+    suspend fun updateSetType(setId: WorkoutSetId, type: WorkoutSetType): DataResult<Unit>
+
+    suspend fun deleteSet(setId: WorkoutSetId): DataResult<Unit>
 
     suspend fun finishWorkout(
         sessionId: WorkoutSessionId,

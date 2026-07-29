@@ -6,10 +6,13 @@ import com.forgeflow.core.common.time.AppClock
 import com.forgeflow.core.database.routine.RoutineDao
 import com.forgeflow.core.database.routine.RoutineEntity
 import com.forgeflow.core.database.routine.RoutineExerciseEntity
+import com.forgeflow.core.database.routine.RoutineFolderEntity
 import com.forgeflow.core.database.routine.asExternalModel
 import com.forgeflow.core.model.RoutineDetails
 import com.forgeflow.core.model.RoutineDraft
 import com.forgeflow.core.model.RoutineExerciseId
+import com.forgeflow.core.model.RoutineFolder
+import com.forgeflow.core.model.RoutineFolderId
 import com.forgeflow.core.model.RoutineId
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +27,16 @@ class DefaultRoutineRepository @Inject constructor(
         routineDao.observeActive()
             .map { records ->
                 DataResult.Success(records.map { it.asExternalModel() }) as DataResult<List<RoutineDetails>>
+            }
+            .catch {
+                emit(DataResult.Failure(AppError.LocalDataUnavailable))
+            }
+
+    override fun observeFolders(): Flow<DataResult<List<RoutineFolder>>> =
+        routineDao.observeFolders()
+            .map { folders ->
+                DataResult.Success(folders.map { it.asExternalModel() }) as
+                    DataResult<List<RoutineFolder>>
             }
             .catch {
                 emit(DataResult.Failure(AppError.LocalDataUnavailable))
@@ -44,6 +57,7 @@ class DefaultRoutineRepository @Inject constructor(
         val now = clock.now().toEpochMilli()
         val routine = RoutineEntity(
             id = id.value,
+            folderId = draft.folderId?.value,
             name = draft.name.trim(),
             description = draft.description.trim(),
             createdAtEpochMillis = existing?.routine?.createdAtEpochMillis ?: now,
@@ -72,6 +86,37 @@ class DefaultRoutineRepository @Inject constructor(
 
     override suspend fun archiveRoutine(id: RoutineId): DataResult<Unit> = runCatching {
         routineDao.archive(id.value, clock.now().toEpochMilli())
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun saveFolder(
+        id: RoutineFolderId?,
+        name: String,
+    ): DataResult<RoutineFolderId> = runCatching {
+        require(name.isNotBlank())
+        val folderId = id ?: RoutineFolderId.create()
+        val existing = id?.let { routineDao.getFolderById(it.value) }
+        val now = clock.now().toEpochMilli()
+        val position = existing?.position ?: routineDao.getFolderCount()
+        routineDao.upsertFolder(
+            RoutineFolderEntity(
+                id = folderId.value,
+                name = name.trim(),
+                position = position,
+                createdAtEpochMillis = existing?.createdAtEpochMillis ?: now,
+                updatedAtEpochMillis = now,
+            ),
+        )
+        folderId
+    }.fold(
+        onSuccess = { DataResult.Success(it) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun deleteFolder(id: RoutineFolderId): DataResult<Unit> = runCatching {
+        routineDao.deleteFolder(id.value)
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },

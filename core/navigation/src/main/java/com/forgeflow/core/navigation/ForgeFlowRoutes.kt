@@ -18,4 +18,7 @@ data object HistoryRoute
 data object ExercisesRoute
 
 @Serializable
+data class ExerciseDetailsRoute(val exerciseId: String)
+
+@Serializable
 data object SettingsRoute

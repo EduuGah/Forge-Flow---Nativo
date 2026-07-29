@@ -14,6 +14,7 @@ import com.forgeflow.feature.routines.presentation.RoutinesViewModel
 fun NavGraphBuilder.routinesScreen(
     onOpenExercises: () -> Unit,
     onOpenActiveWorkout: () -> Unit,
+    onOpenExercise: (String) -> Unit,
 ) {
     composable<RoutinesRoute> {
         val viewModel: RoutinesViewModel = hiltViewModel()
@@ -27,6 +28,7 @@ fun NavGraphBuilder.routinesScreen(
             state = state,
             onAction = viewModel::onAction,
             onOpenExercises = onOpenExercises,
+            onOpenExercise = onOpenExercise,
         )
     }
 }

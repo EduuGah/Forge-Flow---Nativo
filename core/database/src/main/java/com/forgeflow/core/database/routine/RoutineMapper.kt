@@ -2,6 +2,8 @@ package com.forgeflow.core.database.routine
 
 import com.forgeflow.core.database.exercise.asExternalModel
 import com.forgeflow.core.model.RepetitionRange
+import com.forgeflow.core.model.RoutineFolder
+import com.forgeflow.core.model.RoutineFolderId
 import com.forgeflow.core.model.RoutineDetails
 import com.forgeflow.core.model.RoutineExercise
 import com.forgeflow.core.model.RoutineExerciseDetails
@@ -13,6 +15,7 @@ import java.time.Instant
 fun RoutineRecord.asExternalModel(): RoutineDetails = RoutineDetails(
     routine = WorkoutRoutine(
         id = RoutineId(routine.id),
+        folderId = routine.folderId?.let(::RoutineFolderId),
         name = routine.name,
         description = routine.description,
         createdAt = Instant.ofEpochMilli(routine.createdAtEpochMillis),
@@ -42,4 +45,12 @@ fun RoutineRecord.asExternalModel(): RoutineDetails = RoutineDetails(
                 exercise = record.exercise.asExternalModel(),
             )
         },
+)
+
+fun RoutineFolderEntity.asExternalModel(): RoutineFolder = RoutineFolder(
+    id = RoutineFolderId(id),
+    name = name,
+    position = position,
+    createdAt = Instant.ofEpochMilli(createdAtEpochMillis),
+    updatedAt = Instant.ofEpochMilli(updatedAtEpochMillis),
 )

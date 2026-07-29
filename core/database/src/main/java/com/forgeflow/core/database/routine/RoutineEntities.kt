@@ -9,11 +9,16 @@ import com.forgeflow.core.database.exercise.ExerciseEntity
 
 @Entity(
     tableName = "routines",
-    indices = [Index(value = ["name"])],
+    indices = [
+        Index(value = ["name"]),
+        Index(value = ["folder_id"]),
+    ],
 )
 data class RoutineEntity(
     @PrimaryKey
     val id: String,
+    @ColumnInfo(name = "folder_id")
+    val folderId: String? = null,
     val name: String,
     val description: String,
     @ColumnInfo(name = "created_at_epoch_millis")
@@ -22,6 +27,21 @@ data class RoutineEntity(
     val updatedAtEpochMillis: Long,
     @ColumnInfo(name = "archived_at_epoch_millis")
     val archivedAtEpochMillis: Long?,
+)
+
+@Entity(
+    tableName = "routine_folders",
+    indices = [Index(value = ["position"])],
+)
+data class RoutineFolderEntity(
+    @PrimaryKey
+    val id: String,
+    val name: String,
+    val position: Int,
+    @ColumnInfo(name = "created_at_epoch_millis")
+    val createdAtEpochMillis: Long,
+    @ColumnInfo(name = "updated_at_epoch_millis")
+    val updatedAtEpochMillis: Long,
 )
 
 @Entity(

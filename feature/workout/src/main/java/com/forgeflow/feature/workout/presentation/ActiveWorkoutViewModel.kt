@@ -10,9 +10,15 @@ import com.forgeflow.core.model.SessionExerciseId
 import com.forgeflow.core.model.Weight
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.WorkoutDetails
+import com.forgeflow.core.model.WorkoutSet
 import com.forgeflow.core.model.WorkoutSetId
+import com.forgeflow.core.model.WorkoutSetType
+import com.forgeflow.core.model.gramsIn
+import com.forgeflow.core.model.personalRecordsAgainst
 import com.forgeflow.core.platform.location.CurrentLocationProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
@@ -46,18 +52,22 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
-    val uiState = combine(
+    private val workouts = combine(
         repository.observeActiveWorkout(),
+        repository.observeHistory(),
+    ) { active, history -> active to history }
+
+    val uiState = combine(
+        workouts,
         drafts,
         ticker,
         settingsRepository.observeSettings(),
         operation,
-    ) { result, currentDrafts, now, settings, currentOperation ->
+    ) { (result, historyResult), currentDrafts, now, settings, currentOperation ->
         currentWeightUnit = settings.weightUnit
         when (result) {
             is DataResult.Failure -> ActiveWorkoutUiState(
                 isLoading = false,
-                includeLocation = currentOperation.includeLocation,
                 isCapturingLocation = currentOperation.isCapturingLocation,
                 error = true,
             )
@@ -65,12 +75,12 @@ class ActiveWorkoutViewModel @Inject constructor(
                 currentWorkout = result.value
                 ActiveWorkoutUiState(
                     isLoading = false,
-                    includeLocation = currentOperation.includeLocation,
                     isCapturingLocation = currentOperation.isCapturingLocation,
                     workout = result.value?.toUiModel(
                         currentDrafts = currentDrafts,
                         now = now,
                         weightUnit = settings.weightUnit,
+                        history = (historyResult as? DataResult.Success)?.value.orEmpty(),
                     ),
                 )
             }
@@ -94,10 +104,12 @@ class ActiveWorkoutViewModel @Inject constructor(
             }
             is ActiveWorkoutAction.CompletionChanged -> persistSet(action.setId, action.completed)
             is ActiveWorkoutAction.AddSet -> addSet(action.sessionExerciseId)
-            is ActiveWorkoutAction.IncludeLocationChanged -> operation.update {
-                it.copy(includeLocation = action.enabled)
-            }
-            ActiveWorkoutAction.Finish -> finishWorkout()
+            is ActiveWorkoutAction.SetTypeChanged -> updateSetType(action.setId, action.type)
+            is ActiveWorkoutAction.DeleteSet -> deleteSet(action.setId)
+            is ActiveWorkoutAction.Finish -> finishWorkout(
+                includeLocation = action.includeLocation,
+                locationLabel = action.locationLabel,
+            )
             ActiveWorkoutAction.Discard -> discardWorkout()
         }
     }
@@ -147,10 +159,23 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
-    private fun finishWorkout() {
+    private fun updateSetType(setId: String, type: WorkoutSetType) {
+        viewModelScope.launch {
+            repository.updateSetType(WorkoutSetId(setId), type)
+        }
+    }
+
+    private fun deleteSet(setId: String) {
+        drafts.update { it - setId }
+        viewModelScope.launch {
+            repository.deleteSet(WorkoutSetId(setId))
+        }
+    }
+
+    private fun finishWorkout(includeLocation: Boolean, locationLabel: String) {
         val workout = currentWorkout ?: return
         viewModelScope.launch {
-            operation.update { it.copy(isCapturingLocation = it.includeLocation) }
+            operation.update { it.copy(isCapturingLocation = includeLocation) }
             drafts.value.forEach { (setId, draft) ->
                 val original = workout.exercises.flatMap { it.sets }
                     .firstOrNull { it.id.value == setId }
@@ -162,8 +187,10 @@ class ActiveWorkoutViewModel @Inject constructor(
                     completed = original.isCompleted,
                 )
             }
-            val location = if (operation.value.includeLocation) {
-                currentLocationProvider.captureCurrentLocation()
+            val location = if (includeLocation) {
+                currentLocationProvider.captureCurrentLocation()?.copy(
+                    label = locationLabel.trim().ifBlank { null },
+                )
             } else {
                 null
             }
@@ -186,14 +213,48 @@ class ActiveWorkoutViewModel @Inject constructor(
         currentDrafts: Map<String, SetDraft>,
         now: Instant,
         weightUnit: WeightUnit,
-    ): ActiveWorkoutUiModel = ActiveWorkoutUiModel(
-        id = session.id.value,
-        name = session.name,
-        elapsedSeconds = Duration.between(session.startedAt, now).seconds.coerceAtLeast(0),
-        completedSets = completedSetCount,
-        totalSets = totalSetCount,
-        weightUnit = weightUnit,
-        exercises = exercises.map { details ->
+        history: List<WorkoutDetails>,
+    ): ActiveWorkoutUiModel {
+        val uiExercises = exercises.map { details ->
+            val exerciseId = details.sessionExercise.exerciseId
+            val historicalExerciseDetails = history.flatMap { historicalWorkout ->
+                historicalWorkout.exercises.filter { historicalExercise ->
+                    exerciseId != null &&
+                        historicalExercise.sessionExercise.exerciseId == exerciseId
+                }
+            }
+            val historicalSets = historicalExerciseDetails.flatMap { it.sets }
+            val latestSets = historicalExerciseDetails.firstOrNull()
+                ?.sets
+                ?.filter { it.isCompleted && it.repetitions.count > 0 }
+                .orEmpty()
+            val currentComparisonSets = historicalSets.toMutableList()
+            val uiSets = details.sets.mapIndexed { index, set ->
+                val draft = currentDrafts[set.id.value]
+                val displaySet = set.copy(
+                    weight = draft?.asWeight() ?: set.weight,
+                    repetitions = Repetitions(
+                        draft?.repetitions?.toIntOrNull() ?: set.repetitions.count,
+                    ),
+                )
+                val isPersonalRecord = displaySet
+                    .personalRecordsAgainst(currentComparisonSets)
+                    .isNotEmpty()
+                if (displaySet.isCompleted) {
+                    currentComparisonSets += displaySet
+                }
+                ActiveSetUiModel(
+                    id = set.id.value,
+                    number = index + 1,
+                    weight = draft?.asDisplayValue(weightUnit)
+                        ?: set.weight.asDisplayValue(weightUnit),
+                    repetitions = draft?.repetitions ?: set.repetitions.count.toString(),
+                    completed = set.isCompleted,
+                    type = set.setType,
+                    previous = latestSets.getOrNull(index)?.asCompactPerformance(weightUnit),
+                    isPersonalRecord = isPersonalRecord,
+                )
+            }
             ActiveExerciseUiModel(
                 id = details.sessionExercise.id.value,
                 name = details.sessionExercise.exerciseNameSnapshot,
@@ -204,23 +265,43 @@ class ActiveWorkoutViewModel @Inject constructor(
                     ?: details.exercise?.media?.type,
                 mediaThumbnailUri = details.sessionExercise.mediaThumbnailUriSnapshot
                     ?: details.exercise?.media?.thumbnailUri,
-                sets = details.sets.mapIndexed { index, set ->
-                    val draft = currentDrafts[set.id.value]
-                    ActiveSetUiModel(
-                        id = set.id.value,
-                        number = index + 1,
-                        weight = draft?.asDisplayValue(weightUnit)
-                            ?: set.weight.asDisplayValue(weightUnit),
-                        repetitions = draft?.repetitions ?: set.repetitions.count.toString(),
-                        completed = set.isCompleted,
-                    )
-                },
+                lastPerformance = latestSets
+                    .maxByOrNull { it.weight.grams }
+                    ?.asCompactPerformance(weightUnit),
+                sets = uiSets,
             )
-        },
-    )
+        }
+        val completedUiSets = uiExercises.flatMap(ActiveExerciseUiModel::sets)
+            .filter(ActiveSetUiModel::completed)
+        val volumeGrams = exercises.sumOf { details ->
+            details.sets.sumOf { set ->
+                val draft = currentDrafts[set.id.value]
+                if (set.isCompleted) {
+                    (draft?.asWeight()?.grams ?: set.weight.grams) *
+                        (draft?.repetitions?.toIntOrNull() ?: set.repetitions.count)
+                } else {
+                    0L
+                }
+            }
+        }
+        return ActiveWorkoutUiModel(
+            id = session.id.value,
+            name = session.name,
+            elapsedSeconds = Duration.between(session.startedAt, now).seconds.coerceAtLeast(0),
+            completedSets = completedUiSets.size,
+            totalSets = totalSetCount,
+            totalVolume = volumeGrams.gramsIn(weightUnit).toCleanString(),
+            personalRecordCount = completedUiSets.count(ActiveSetUiModel::isPersonalRecord),
+            weightUnit = weightUnit,
+            exercises = uiExercises,
+        )
+    }
 
     private fun Weight.asDisplayValue(unit: WeightUnit): String =
         if (grams == 0L) "" else valueIn(unit).toCleanString()
+
+    private fun WorkoutSet.asCompactPerformance(unit: WeightUnit): String =
+        "${weight.valueIn(unit).toCleanString()} × ${repetitions.count}"
 
     private fun SetDraft.asDisplayValue(unit: WeightUnit): String {
         if (weightUnit == unit) return weight
@@ -242,7 +323,10 @@ class ActiveWorkoutViewModel @Inject constructor(
     }
 
     private fun Double.toCleanString(): String =
-        if (this % 1.0 == 0.0) toLong().toString() else toString()
+        BigDecimal.valueOf(this)
+            .setScale(1, RoundingMode.HALF_UP)
+            .stripTrailingZeros()
+            .toPlainString()
 
     private data class SetDraft(
         val weight: String = "",
@@ -251,7 +335,6 @@ class ActiveWorkoutViewModel @Inject constructor(
     )
 
     private data class WorkoutOperationState(
-        val includeLocation: Boolean = false,
         val isCapturingLocation: Boolean = false,
     )
 }

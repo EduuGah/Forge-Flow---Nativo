@@ -14,6 +14,10 @@ import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
@@ -32,8 +36,11 @@ fun RoutinesScreen(
     state: RoutinesUiState,
     onAction: (RoutinesAction) -> Unit,
     onOpenExercises: () -> Unit,
+    onOpenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var pendingRoutineDeletion by remember { mutableStateOf<RoutineUiModel?>(null) }
+    var pendingFolderDeletion by remember { mutableStateOf<RoutineFolderUiModel?>(null) }
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         when {
             state.isLoading -> ForgeFlowLoadingState(
@@ -49,6 +56,8 @@ fun RoutinesScreen(
                 state = state,
                 onAction = onAction,
                 onOpenExercises = onOpenExercises,
+                onDeleteRoutine = { pendingRoutineDeletion = it },
+                onDeleteFolder = { pendingFolderDeletion = it },
                 contentPadding = innerPadding,
             )
         }
@@ -56,9 +65,34 @@ fun RoutinesScreen(
     state.editor?.let { editor ->
         RoutineEditorSheet(
             editor = editor,
+            folders = state.folders,
             exercises = state.exercises,
             isSaving = state.isSaving,
             onAction = onAction,
+            onOpenExercise = onOpenExercise,
+        )
+    }
+    state.folderEditor?.let { editor ->
+        RoutineFolderEditorDialog(editor = editor, onAction = onAction)
+    }
+    pendingRoutineDeletion?.let { routine ->
+        ConfirmRoutineDeletionDialog(
+            routineName = routine.name,
+            onConfirm = {
+                pendingRoutineDeletion = null
+                onAction(RoutinesAction.ArchiveRoutine(routine.id))
+            },
+            onDismiss = { pendingRoutineDeletion = null },
+        )
+    }
+    pendingFolderDeletion?.let { folder ->
+        ConfirmFolderDeletionDialog(
+            folderName = folder.name,
+            onConfirm = {
+                pendingFolderDeletion = null
+                onAction(RoutinesAction.DeleteFolder(folder.id))
+            },
+            onDismiss = { pendingFolderDeletion = null },
         )
     }
 }
@@ -68,6 +102,8 @@ private fun RoutinesContent(
     state: RoutinesUiState,
     onAction: (RoutinesAction) -> Unit,
     onOpenExercises: () -> Unit,
+    onDeleteRoutine: (RoutineUiModel) -> Unit,
+    onDeleteFolder: (RoutineFolderUiModel) -> Unit,
     contentPadding: PaddingValues,
 ) {
     LazyColumn(
@@ -88,29 +124,20 @@ private fun RoutinesContent(
             )
         }
         item {
-            ForgeFlowButton(
-                text = stringResource(R.string.new_routine),
-                onClick = { onAction(RoutinesAction.CreateRoutine) },
-                modifier = Modifier.fillMaxWidth(),
-                icon = Icons.Outlined.Add,
-                iconContentDescription = null,
-            )
-        }
-        item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
             ) {
-                ForgeFlowMetric(
-                    label = stringResource(R.string.metric_routines),
-                    value = state.routines.size.toString(),
-                    helper = stringResource(R.string.metric_saved),
+                ForgeFlowButton(
+                    text = stringResource(R.string.new_routine),
+                    onClick = { onAction(RoutinesAction.CreateRoutine) },
                     modifier = Modifier.weight(1f),
+                    icon = Icons.Outlined.Add,
+                    iconContentDescription = null,
                 )
-                ForgeFlowMetric(
-                    label = stringResource(R.string.metric_exercises),
-                    value = state.exercises.size.toString(),
-                    helper = stringResource(R.string.metric_library),
+                ForgeFlowOutlinedButton(
+                    text = stringResource(R.string.new_folder),
+                    onClick = { onAction(RoutinesAction.CreateFolder) },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -123,28 +150,26 @@ private fun RoutinesContent(
                 )
             }
         } else {
-            item {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(
-                        ForgeFlowDesign.spacing.extraSmall,
-                    ),
-                ) {
-                    Text(
-                        text = stringResource(R.string.saved_workouts_title),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                    Text(
-                        text = stringResource(
-                            R.string.saved_workouts_description,
-                            state.routines.size,
-                        ),
-                        color = ForgeFlowDesign.colors.textSecondary,
-                        style = MaterialTheme.typography.bodyMedium,
+            val unfiled = state.routines.filter { it.folderId == null }
+            if (unfiled.isNotEmpty()) {
+                item(key = "unfiled") {
+                    RoutineFolderSection(
+                        folder = null,
+                        routines = unfiled,
+                        onAction = onAction,
+                        onDeleteRoutine = onDeleteRoutine,
+                        onDeleteFolder = onDeleteFolder,
                     )
                 }
             }
-            items(state.routines, key = RoutineUiModel::id) { routine ->
-                RoutineCard(routine = routine, onAction = onAction)
+            items(state.folders, key = RoutineFolderUiModel::id) { folder ->
+                RoutineFolderSection(
+                    folder = folder,
+                    routines = state.routines.filter { it.folderId == folder.id },
+                    onAction = onAction,
+                    onDeleteRoutine = onDeleteRoutine,
+                    onDeleteFolder = onDeleteFolder,
+                )
             }
         }
         item {

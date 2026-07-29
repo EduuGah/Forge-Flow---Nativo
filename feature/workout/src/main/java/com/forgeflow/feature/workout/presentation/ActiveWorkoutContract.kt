@@ -4,12 +4,12 @@ import androidx.compose.runtime.Immutable
 import com.forgeflow.core.model.ExerciseMediaType
 import com.forgeflow.core.model.MuscleGroup
 import com.forgeflow.core.model.WeightUnit
+import com.forgeflow.core.model.WorkoutSetType
 
 @Immutable
 data class ActiveWorkoutUiState(
     val isLoading: Boolean = true,
     val workout: ActiveWorkoutUiModel? = null,
-    val includeLocation: Boolean = false,
     val isCapturingLocation: Boolean = false,
     val error: Boolean = false,
 )
@@ -21,6 +21,8 @@ data class ActiveWorkoutUiModel(
     val elapsedSeconds: Long,
     val completedSets: Int,
     val totalSets: Int,
+    val totalVolume: String,
+    val personalRecordCount: Int,
     val weightUnit: WeightUnit,
     val exercises: List<ActiveExerciseUiModel>,
 )
@@ -33,6 +35,7 @@ data class ActiveExerciseUiModel(
     val mediaUri: String? = null,
     val mediaType: ExerciseMediaType? = null,
     val mediaThumbnailUri: String? = null,
+    val lastPerformance: String? = null,
     val sets: List<ActiveSetUiModel>,
 )
 
@@ -43,6 +46,9 @@ data class ActiveSetUiModel(
     val weight: String,
     val repetitions: String,
     val completed: Boolean,
+    val type: WorkoutSetType,
+    val previous: String? = null,
+    val isPersonalRecord: Boolean = false,
 )
 
 sealed interface ActiveWorkoutAction {
@@ -50,8 +56,15 @@ sealed interface ActiveWorkoutAction {
     data class RepetitionsChanged(val setId: String, val value: String) : ActiveWorkoutAction
     data class CompletionChanged(val setId: String, val completed: Boolean) : ActiveWorkoutAction
     data class AddSet(val sessionExerciseId: String) : ActiveWorkoutAction
-    data class IncludeLocationChanged(val enabled: Boolean) : ActiveWorkoutAction
-    data object Finish : ActiveWorkoutAction
+    data class SetTypeChanged(
+        val setId: String,
+        val type: WorkoutSetType,
+    ) : ActiveWorkoutAction
+    data class DeleteSet(val setId: String) : ActiveWorkoutAction
+    data class Finish(
+        val includeLocation: Boolean,
+        val locationLabel: String,
+    ) : ActiveWorkoutAction
     data object Discard : ActiveWorkoutAction
 }
 

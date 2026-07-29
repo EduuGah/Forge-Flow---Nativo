@@ -9,10 +9,10 @@ import com.forgeflow.core.navigation.HistoryRoute
 import com.forgeflow.feature.history.presentation.HistoryScreen
 import com.forgeflow.feature.history.presentation.HistoryViewModel
 
-fun NavGraphBuilder.historyScreen() {
+fun NavGraphBuilder.historyScreen(onOpenExercise: (String) -> Unit) {
     composable<HistoryRoute> {
         val viewModel: HistoryViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsStateWithLifecycle()
-        HistoryScreen(state = state)
+        HistoryScreen(state = state, onOpenExercise = onOpenExercise)
     }
 }

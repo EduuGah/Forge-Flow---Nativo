@@ -1,0 +1,525 @@
+package com.forgeflow.feature.exercises.presentation
+
+import androidx.annotation.StringRes
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.forgeflow.core.designsystem.component.ForgeFlowCard
+import com.forgeflow.core.designsystem.component.ForgeFlowErrorState
+import com.forgeflow.core.designsystem.component.ForgeFlowExerciseMedia
+import com.forgeflow.core.designsystem.component.ForgeFlowLoadingState
+import com.forgeflow.core.designsystem.component.ForgeFlowMetric
+import com.forgeflow.core.designsystem.component.ForgeFlowPill
+import com.forgeflow.core.designsystem.component.ForgeFlowScaffold
+import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
+import com.forgeflow.core.model.Equipment
+import com.forgeflow.core.model.MuscleGroup
+import com.forgeflow.core.model.WeightUnit
+import com.forgeflow.core.model.WorkoutSetType
+import com.forgeflow.feature.exercises.R
+
+@Composable
+fun ExerciseDetailsScreen(
+    state: ExerciseDetailsUiState,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var selectedTab by remember { mutableIntStateOf(0) }
+    ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+        when {
+            state.isLoading -> ForgeFlowLoadingState(
+                contentDescription = stringResource(R.string.exercise_details_loading),
+            )
+            state.error || state.exercise == null -> ForgeFlowErrorState(
+                title = stringResource(R.string.exercise_details_error_title),
+                message = stringResource(R.string.exercise_details_error_message),
+                retryLabel = stringResource(R.string.navigate_back),
+                onRetry = onBack,
+            )
+            else -> {
+                val exercise = state.exercise
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        top = innerPadding.calculateTopPadding(),
+                        bottom = innerPadding.calculateBottomPadding() +
+                            ForgeFlowDesign.spacing.section,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
+                ) {
+                    item {
+                        ExerciseDetailsHeader(exercise = exercise, onBack = onBack)
+                    }
+                    item {
+                        ExerciseDetailsTabs(
+                            selectedTab = selectedTab,
+                            onSelected = { selectedTab = it },
+                        )
+                    }
+                    when (selectedTab) {
+                        0 -> exerciseSummary(exercise)
+                        1 -> exerciseHistory(exercise)
+                        else -> exerciseInstructions(exercise)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExerciseDetailsHeader(
+    exercise: ExerciseDetailsUiModel,
+    onBack: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = ForgeFlowDesign.spacing.screenHorizontal),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                    contentDescription = stringResource(R.string.navigate_back),
+                )
+            }
+            Text(
+                text = exercise.name,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+        ForgeFlowExerciseMedia(
+            mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
+            contentDescription = exercise.name,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1.65f),
+        )
+        Column(
+            modifier = Modifier.padding(
+                horizontal = ForgeFlowDesign.spacing.screenHorizontal,
+            ),
+            verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+        ) {
+            Text(exercise.name, style = MaterialTheme.typography.headlineSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ForgeFlowPill(
+                    text = stringResource(exercise.muscleGroup.detailsLabelResource()),
+                )
+                ForgeFlowPill(
+                    text = stringResource(exercise.equipment.detailsLabelResource()),
+                )
+            }
+            if (exercise.secondaryMuscles.isNotEmpty()) {
+                val context = LocalContext.current
+                Text(
+                    text = stringResource(
+                        R.string.secondary_muscles,
+                        exercise.secondaryMuscles.joinToString {
+                            context.getString(it.detailsLabelResource())
+                        },
+                    ),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExerciseDetailsTabs(
+    selectedTab: Int,
+    onSelected: (Int) -> Unit,
+) {
+    val labels = listOf(
+        stringResource(R.string.details_tab_summary),
+        stringResource(R.string.details_tab_history),
+        stringResource(R.string.details_tab_instructions),
+    )
+    TabRow(
+        selectedTabIndex = selectedTab,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        labels.forEachIndexed { index, label ->
+            Tab(
+                selected = selectedTab == index,
+                onClick = { onSelected(index) },
+                text = { Text(label, maxLines = 1) },
+            )
+        }
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.exerciseSummary(
+    exercise: ExerciseDetailsUiModel,
+) {
+    item {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = ForgeFlowDesign.spacing.screenHorizontal,
+            ),
+            verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+            ) {
+                ForgeFlowMetric(
+                    label = stringResource(R.string.details_sessions),
+                    value = exercise.sessionCount.toString(),
+                    helper = stringResource(R.string.details_registered),
+                    modifier = Modifier.weight(1f),
+                )
+                ForgeFlowMetric(
+                    label = stringResource(R.string.details_sets),
+                    value = exercise.completedSetCount.toString(),
+                    helper = stringResource(R.string.details_completed),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+            ) {
+                ForgeFlowMetric(
+                    label = stringResource(R.string.details_max_weight),
+                    value = "${exercise.maxWeight} ${exercise.weightUnit.shortLabel()}",
+                    helper = stringResource(R.string.details_best_load),
+                    modifier = Modifier.weight(1f),
+                )
+                ForgeFlowMetric(
+                    label = stringResource(R.string.details_estimated_one_rm),
+                    value = "${exercise.estimatedOneRepMax} ${exercise.weightUnit.shortLabel()}",
+                    helper = stringResource(R.string.details_estimate),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+    item {
+        ExerciseProgressChart(exercise)
+    }
+    item {
+        ForgeFlowCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = ForgeFlowDesign.spacing.screenHorizontal),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.EmojiEvents,
+                    contentDescription = null,
+                    tint = ForgeFlowDesign.colors.warning,
+                )
+                Text(
+                    text = stringResource(R.string.details_personal_records),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = exercise.personalRecordCount.toString(),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.titleLarge,
+                )
+            }
+            HorizontalDivider(color = ForgeFlowDesign.colors.divider)
+            DetailValueRow(
+                stringResource(R.string.details_best_set),
+                "${exercise.bestSet} ${exercise.weightUnit.shortLabel()}",
+            )
+            DetailValueRow(
+                stringResource(R.string.details_total_volume),
+                "${exercise.totalVolume} ${exercise.weightUnit.shortLabel()}",
+            )
+        }
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.exerciseHistory(
+    exercise: ExerciseDetailsUiModel,
+) {
+    if (exercise.sessions.isEmpty()) {
+        item {
+            Text(
+                text = stringResource(R.string.details_no_history),
+                modifier = Modifier.padding(ForgeFlowDesign.spacing.screenHorizontal),
+                color = ForgeFlowDesign.colors.textSecondary,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+    } else {
+        items(exercise.sessions, key = ExerciseSessionUiModel::id) { session ->
+            ExerciseSessionCard(
+                session = session,
+                weightUnit = exercise.weightUnit,
+            )
+        }
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.exerciseInstructions(
+    exercise: ExerciseDetailsUiModel,
+) {
+    item {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = ForgeFlowDesign.spacing.screenHorizontal,
+            ),
+            verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
+        ) {
+            Text(
+                text = stringResource(R.string.details_execution),
+                style = MaterialTheme.typography.titleLarge,
+            )
+            Text(
+                text = exercise.instructions.ifBlank {
+                    stringResource(R.string.details_no_instructions)
+                },
+                color = ForgeFlowDesign.colors.textSecondary,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExerciseProgressChart(exercise: ExerciseDetailsUiModel) {
+    ForgeFlowCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = ForgeFlowDesign.spacing.screenHorizontal),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Column {
+                Text(
+                    text = stringResource(R.string.details_progress),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = stringResource(
+                        R.string.details_max_weight_over_time,
+                        exercise.weightUnit.shortLabel(),
+                    ),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            exercise.chartPoints.lastOrNull()?.let {
+                Text(
+                    text = "${it.value.toDouble().toCleanString()} " +
+                        exercise.weightUnit.shortLabel(),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+        }
+        val lineColor = MaterialTheme.colorScheme.primary
+        val gridColor = ForgeFlowDesign.colors.divider
+        val points = exercise.chartPoints
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(170.dp),
+        ) {
+            repeat(4) { line ->
+                val y = size.height * line / 3f
+                drawLine(gridColor, Offset(0f, y), Offset(size.width, y))
+            }
+            if (points.isNotEmpty()) {
+                val min = points.minOf { it.value }
+                val max = points.maxOf { it.value }
+                val range = (max - min).coerceAtLeast(1f)
+                val path = Path()
+                points.forEachIndexed { index, point ->
+                    val x = if (points.size == 1) {
+                        size.width / 2f
+                    } else {
+                        size.width * index / (points.size - 1)
+                    }
+                    val y = size.height - ((point.value - min) / range * size.height * 0.8f) -
+                        size.height * 0.1f
+                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                    drawCircle(lineColor, radius = 5.dp.toPx(), center = Offset(x, y))
+                }
+                drawPath(
+                    path = path,
+                    color = lineColor,
+                    style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+                )
+            }
+        }
+        if (points.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = points.first().label,
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+                Text(
+                    text = points.last().label,
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExerciseSessionCard(
+    session: ExerciseSessionUiModel,
+    weightUnit: WeightUnit,
+) {
+    ForgeFlowCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = ForgeFlowDesign.spacing.screenHorizontal),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(session.workoutName, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = session.date,
+                color = ForgeFlowDesign.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        session.sets.forEach { set ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = set.type.shortLabel(set.number),
+                    modifier = Modifier.weight(0.3f),
+                    color = set.type.color(),
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "${set.performance} ${weightUnit.shortLabel()}",
+                    modifier = Modifier.weight(1f),
+                )
+                if (set.isPersonalRecord) {
+                    Icon(
+                        imageVector = Icons.Outlined.EmojiEvents,
+                        contentDescription = stringResource(R.string.personal_record),
+                        tint = ForgeFlowDesign.colors.warning,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailValueRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = label,
+            color = ForgeFlowDesign.colors.textSecondary,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(text = value, style = MaterialTheme.typography.titleSmall)
+    }
+}
+
+private fun WeightUnit.shortLabel(): String = if (this == WeightUnit.KILOGRAM) "kg" else "lb"
+
+private fun Double.toCleanString(): String =
+    if (this % 1.0 == 0.0) toLong().toString() else "%.1f".format(this)
+
+@Composable
+private fun WorkoutSetType.color() = when (this) {
+    WorkoutSetType.WARM_UP -> ForgeFlowDesign.colors.warning
+    WorkoutSetType.NORMAL -> MaterialTheme.colorScheme.onSurface
+    WorkoutSetType.DROP -> MaterialTheme.colorScheme.tertiary
+    WorkoutSetType.FAILURE -> MaterialTheme.colorScheme.error
+}
+
+private fun WorkoutSetType.shortLabel(number: Int): String = when (this) {
+    WorkoutSetType.WARM_UP -> "A"
+    WorkoutSetType.NORMAL -> number.toString()
+    WorkoutSetType.DROP -> "D"
+    WorkoutSetType.FAILURE -> "F"
+}
+
+@StringRes
+private fun MuscleGroup.detailsLabelResource(): Int = when (this) {
+    MuscleGroup.CHEST -> R.string.muscle_chest
+    MuscleGroup.BACK -> R.string.muscle_back
+    MuscleGroup.SHOULDERS -> R.string.muscle_shoulders
+    MuscleGroup.QUADRICEPS -> R.string.muscle_quadriceps
+    MuscleGroup.HAMSTRINGS -> R.string.muscle_hamstrings
+    MuscleGroup.GLUTES -> R.string.muscle_glutes
+    MuscleGroup.BICEPS -> R.string.muscle_biceps
+    MuscleGroup.TRICEPS -> R.string.muscle_triceps
+    MuscleGroup.CALVES -> R.string.muscle_calves
+    MuscleGroup.CORE -> R.string.muscle_core
+    MuscleGroup.FULL_BODY -> R.string.muscle_full_body
+}
+
+@StringRes
+private fun Equipment.detailsLabelResource(): Int = when (this) {
+    Equipment.BARBELL -> R.string.equipment_barbell
+    Equipment.DUMBBELL -> R.string.equipment_dumbbell
+    Equipment.MACHINE -> R.string.equipment_machine
+    Equipment.CABLE -> R.string.equipment_cable
+    Equipment.BODYWEIGHT -> R.string.equipment_bodyweight
+    Equipment.OTHER -> R.string.equipment_other
+}

@@ -25,6 +25,17 @@ value class RoutineId(val value: String) {
 }
 
 @JvmInline
+value class RoutineFolderId(val value: String) {
+    init {
+        requireUuid(value)
+    }
+
+    companion object {
+        fun create(): RoutineFolderId = RoutineFolderId(UUID.randomUUID().toString())
+    }
+}
+
+@JvmInline
 value class RoutineExerciseId(val value: String) {
     init {
         requireUuid(value)

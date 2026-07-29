@@ -24,7 +24,12 @@
     <string name="summary_duration">duração</string>
     <string name="summary_sets">séries</string>
     <string name="summary_exercises">exercícios</string>
+    <string name="summary_total_volume">volume total (%1$s)</string>
     <string name="exercise_sets_summary">%1$d séries concluídas</string>
+    <string name="exercise_volume_summary">%1$d séries • %2$s %3$s de volume</string>
     <string name="best_set_summary">%1$s %2$s × %3$d</string>
     <string name="location_registered">Local registrado</string>
+    <string name="history_set_performance">%1$s %2$s × %3$d reps</string>
+    <string name="personal_records">Recordes pessoais</string>
+    <string name="personal_record">Recorde pessoal</string>
 </resources>

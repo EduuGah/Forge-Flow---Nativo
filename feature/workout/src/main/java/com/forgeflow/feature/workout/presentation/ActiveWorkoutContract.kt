@@ -1,11 +1,16 @@
 package com.forgeflow.feature.workout.presentation
 
 import androidx.compose.runtime.Immutable
+import com.forgeflow.core.model.ExerciseMediaType
+import com.forgeflow.core.model.MuscleGroup
+import com.forgeflow.core.model.WeightUnit
 
 @Immutable
 data class ActiveWorkoutUiState(
     val isLoading: Boolean = true,
     val workout: ActiveWorkoutUiModel? = null,
+    val includeLocation: Boolean = false,
+    val isCapturingLocation: Boolean = false,
     val error: Boolean = false,
 )
 
@@ -16,6 +21,7 @@ data class ActiveWorkoutUiModel(
     val elapsedSeconds: Long,
     val completedSets: Int,
     val totalSets: Int,
+    val weightUnit: WeightUnit,
     val exercises: List<ActiveExerciseUiModel>,
 )
 
@@ -23,7 +29,10 @@ data class ActiveWorkoutUiModel(
 data class ActiveExerciseUiModel(
     val id: String,
     val name: String,
-    val muscleGroup: String,
+    val muscleGroup: MuscleGroup,
+    val mediaUri: String? = null,
+    val mediaType: ExerciseMediaType? = null,
+    val mediaThumbnailUri: String? = null,
     val sets: List<ActiveSetUiModel>,
 )
 
@@ -41,6 +50,7 @@ sealed interface ActiveWorkoutAction {
     data class RepetitionsChanged(val setId: String, val value: String) : ActiveWorkoutAction
     data class CompletionChanged(val setId: String, val completed: Boolean) : ActiveWorkoutAction
     data class AddSet(val sessionExerciseId: String) : ActiveWorkoutAction
+    data class IncludeLocationChanged(val enabled: Boolean) : ActiveWorkoutAction
     data object Finish : ActiveWorkoutAction
     data object Discard : ActiveWorkoutAction
 }

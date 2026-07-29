@@ -1,6 +1,7 @@
 package com.forgeflow.feature.routines.presentation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +11,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -70,12 +73,12 @@ private fun RoutinesContent(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = ForgeFlowDesign.spacing.medium,
-            top = contentPadding.calculateTopPadding() + ForgeFlowDesign.spacing.medium,
-            end = ForgeFlowDesign.spacing.medium,
-            bottom = contentPadding.calculateBottomPadding() + ForgeFlowDesign.spacing.medium,
+            start = ForgeFlowDesign.spacing.screenHorizontal,
+            top = contentPadding.calculateTopPadding() + ForgeFlowDesign.spacing.large,
+            end = ForgeFlowDesign.spacing.screenHorizontal,
+            bottom = contentPadding.calculateBottomPadding() + ForgeFlowDesign.spacing.extraLarge,
         ),
-        verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
+        verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.section),
     ) {
         item {
             ForgeFlowPageHeader(
@@ -120,6 +123,26 @@ private fun RoutinesContent(
                 )
             }
         } else {
+            item {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(
+                        ForgeFlowDesign.spacing.extraSmall,
+                    ),
+                ) {
+                    Text(
+                        text = stringResource(R.string.saved_workouts_title),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.saved_workouts_description,
+                            state.routines.size,
+                        ),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
             items(state.routines, key = RoutineUiModel::id) { routine ->
                 RoutineCard(routine = routine, onAction = onAction)
             }

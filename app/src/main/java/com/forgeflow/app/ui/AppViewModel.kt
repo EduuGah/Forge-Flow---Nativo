@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 data class AppUiState(
     val themePreference: ThemePreference = ThemePreference.DARK,
     val accentColor: AccentColor = AccentColor.BLUE,
+    val compactMode: Boolean = false,
 )
 
 @HiltViewModel
@@ -27,6 +28,7 @@ class AppViewModel @Inject constructor(
             AppUiState(
                 themePreference = settings.themePreference,
                 accentColor = settings.accentColor,
+                compactMode = settings.compactMode,
             )
         }
         .stateIn(

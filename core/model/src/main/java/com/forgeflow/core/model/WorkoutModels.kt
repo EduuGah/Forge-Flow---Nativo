@@ -62,6 +62,7 @@ data class WorkoutSession(
     val finishedAt: Instant?,
     val status: WorkoutSessionStatus,
     val notes: String,
+    val location: WorkoutLocation? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
 )
@@ -72,6 +73,9 @@ data class WorkoutSessionExercise(
     val exerciseId: ExerciseId?,
     val exerciseNameSnapshot: String,
     val muscleGroupSnapshot: MuscleGroup,
+    val mediaUriSnapshot: String? = null,
+    val mediaTypeSnapshot: ExerciseMediaType? = null,
+    val mediaThumbnailUriSnapshot: String? = null,
     val position: Int,
     val notes: String,
 )

@@ -25,6 +25,21 @@ enum class Equipment {
     OTHER,
 }
 
+enum class ExerciseMediaType {
+    IMAGE,
+    ANIMATED_IMAGE,
+}
+
+data class ExerciseMedia(
+    val uri: String,
+    val type: ExerciseMediaType,
+    val thumbnailUri: String? = null,
+) {
+    init {
+        require(uri.isNotBlank()) { "Exercise media URI cannot be blank" }
+    }
+}
+
 data class Exercise(
     val id: ExerciseId,
     val name: String,
@@ -32,6 +47,7 @@ data class Exercise(
     val secondaryMuscleGroups: Set<MuscleGroup>,
     val equipment: Equipment,
     val instructions: String,
+    val media: ExerciseMedia? = null,
     val isCustom: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant,

@@ -1,0 +1,12 @@
+<resources>
+    <string name="notification_channel_rest">Descanso</string>
+    <string name="notification_channel_rest_description">Alertas de término do descanso entre séries.</string>
+    <string name="notification_channel_active">Sessão ativa</string>
+    <string name="notification_channel_active_description">Informações sobre treinos que continuam em andamento.</string>
+    <string name="notification_channel_schedule">Treinos programados</string>
+    <string name="notification_channel_schedule_description">Lembretes de treinos e agenda.</string>
+    <string name="notification_channel_progress">Metas e progresso</string>
+    <string name="notification_channel_progress_description">Resumo de metas, consistência e recordes.</string>
+    <string name="notification_channel_updates">Atualizações do aplicativo</string>
+    <string name="notification_channel_updates_description">Avisos importantes sobre o ForgeFlow.</string>
+</resources>

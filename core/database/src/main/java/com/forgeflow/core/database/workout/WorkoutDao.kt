@@ -97,11 +97,24 @@ interface WorkoutDao {
         UPDATE workout_sessions
         SET status = 'COMPLETED',
             finished_at_epoch_millis = :timestamp,
+            location_latitude = :locationLatitude,
+            location_longitude = :locationLongitude,
+            location_accuracy_meters = :locationAccuracyMeters,
+            location_captured_at_epoch_millis = :locationCapturedAt,
+            location_label = :locationLabel,
             updated_at_epoch_millis = :timestamp
         WHERE id = :sessionId AND status = 'ACTIVE'
         """,
     )
-    suspend fun finish(sessionId: String, timestamp: Long): Int
+    suspend fun finish(
+        sessionId: String,
+        timestamp: Long,
+        locationLatitude: Double?,
+        locationLongitude: Double?,
+        locationAccuracyMeters: Float?,
+        locationCapturedAt: Long?,
+        locationLabel: String?,
+    ): Int
 
     @Transaction
     suspend fun replaceActive(

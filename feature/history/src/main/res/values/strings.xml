@@ -1,17 +1,30 @@
 <resources>
     <string name="history_loading">Carregando histórico</string>
     <string name="history_eyebrow">Evolução</string>
-    <string name="history_title">Treinos finalizados</string>
-    <string name="history_description">Revise séries, cargas e volume de cada sessão.</string>
+    <string name="history_title">Histórico</string>
+    <string name="history_description">Acompanhe a consistência e revise cada sessão concluída.</string>
     <string name="metric_workouts">Treinos</string>
     <string name="metric_sets">Séries</string>
     <string name="metric_volume">Volume</string>
     <string name="metric_finished">finalizados</string>
     <string name="metric_registered">registradas</string>
     <string name="metric_total">peso × reps</string>
+    <string name="metric_time">Tempo</string>
+    <string name="metric_training_time">em treino</string>
     <string name="history_empty_title">Nenhum treino finalizado</string>
     <string name="history_empty_message">Finalize uma sessão para ela aparecer aqui.</string>
     <string name="exercise_count">%1$d exercícios</string>
     <string name="duration_value">%1$s</string>
     <string name="volume_value">%1$d kg</string>
+    <string name="history_error_title">Histórico indisponível</string>
+    <string name="history_error_message">Não foi possível ler os treinos salvos neste momento.</string>
+    <string name="finished_at">Finalizado às %1$s</string>
+    <string name="expand_workout">Mostrar exercícios</string>
+    <string name="collapse_workout">Ocultar exercícios</string>
+    <string name="summary_duration">duração</string>
+    <string name="summary_sets">séries</string>
+    <string name="summary_exercises">exercícios</string>
+    <string name="exercise_sets_summary">%1$d séries concluídas</string>
+    <string name="best_set_summary">%1$s %2$s × %3$d</string>
+    <string name="location_registered">Local registrado</string>
 </resources>

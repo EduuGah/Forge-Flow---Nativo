@@ -32,6 +32,7 @@ dependencies {
     implementation(project(":core:database"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:navigation"))
+    implementation(project(":core:platform"))
     implementation(project(":feature:exercises"))
     implementation(project(":feature:history"))
     implementation(project(":feature:home"))

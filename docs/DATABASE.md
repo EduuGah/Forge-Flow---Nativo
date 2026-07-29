@@ -1,6 +1,6 @@
 # Banco de dados
 
-## Implementado na versão 1
+## Schema atual: versão 4
 
 Tabela `exercises`:
 
@@ -12,6 +12,9 @@ Tabela `exercises`:
 | `secondary_muscle_groups` | TEXT | nomes de enum separados |
 | `equipment` | TEXT | nome do enum |
 | `instructions` | TEXT | instrução do exercício |
+| `media_uri` | TEXT? | origem opcional de imagem ou GIF |
+| `media_type` | TEXT? | tipo da mídia |
+| `media_thumbnail_uri` | TEXT? | miniatura opcional |
 | `is_custom` | INTEGER | booleano |
 | `created_at_epoch_millis` | INTEGER | instante UTC |
 | `updated_at_epoch_millis` | INTEGER | instante UTC |
@@ -20,18 +23,19 @@ O schema do Room é exportado para `core/database/schemas`. O seed usa UUIDs fix
 índice único por nome e `OnConflictStrategy.IGNORE`; abrir o aplicativo repetidamente
 não duplica os cinco exercícios iniciais.
 
-## Entidades planejadas
+Também estão implementadas:
 
-- `workout_routines`
+- `routines`
 - `routine_exercises`
 - `workout_sessions`
 - `workout_session_exercises`
 - `workout_sets`
 
-Os modelos de domínio correspondentes já existem em `:core:model`, mas suas tabelas e
-DAOs serão adicionados apenas quando houver uma fatia vertical que os utilize.
+Sessões guardam status, horários, notas e uma localização opcional capturada na
+finalização. Exercícios da sessão preservam snapshots de nome, grupo muscular e mídia.
+Séries persistem tipo, peso em gramas, repetições, RPE e estado de conclusão.
 
-## Relações planejadas
+## Relações
 
 - `routine_exercises.routine_id -> workout_routines.id`: `CASCADE`.
 - `routine_exercises.exercise_id -> exercises.id`: `RESTRICT` enquanto estiver em uso.
@@ -48,12 +52,19 @@ exercícios e séries serão transacionais.
 
 - IDs são UUIDs armazenados de forma consistente como TEXT.
 - Datas são `Instant` no domínio e epoch milliseconds UTC no Room.
-- Peso é `Weight` no domínio e será persistido em gramas como INTEGER.
-- Formatação em quilogramas pertence à apresentação, não ao banco.
+- Peso é `Weight` no domínio e é persistido em gramas como INTEGER.
+- Formatação em quilogramas ou libras pertence à apresentação, não ao banco.
+- Localização usa latitude/longitude, precisão, horário da captura e rótulo opcional.
 
 ## Migrations
 
-A versão inicial é 1. Toda mudança de schema deve:
+A versão inicial é 1. As migrações existentes são:
+
+- `1 -> 2`: rotinas, sessões, exercícios da sessão e séries.
+- `2 -> 3`: mídia opcional dos exercícios e seus snapshots.
+- `3 -> 4`: localização opcional da sessão.
+
+Toda mudança de schema deve:
 
 1. aumentar a versão;
 2. adicionar uma `Migration` explícita ao `MigrationRegistry`;
@@ -64,13 +75,12 @@ Produção não usa `fallbackToDestructiveMigration`.
 
 ## Treino ativo
 
-A implementação futura persistirá a sessão antes de abrir a tela e cada série logo após
-uma alteração. Uma restrição transacional, apoiada por índice parcial quando necessário,
-garantirá no máximo uma sessão comum `ACTIVE`. Sessões `TUTORIAL` não participarão dessa
-restrição.
+A sessão é persistida antes da abertura da tela. Séries adicionadas, concluídas ou
+editadas são gravadas no Room, e a Home observa a sessão ativa por Flow. Assim, rotação,
+encerramento do app e morte do processo não perdem o treino.
 
-A Home observará uma consulta de sessão ativa por Flow. Assim, rotação, encerramento do
-app e morte do processo não perderão o treino.
+Ao finalizar, a localização só é capturada quando o usuário ativou essa opção e concedeu
+a permissão. A falta de posição válida não impede a conclusão do treino.
 
 ## Dados de tutorial
 

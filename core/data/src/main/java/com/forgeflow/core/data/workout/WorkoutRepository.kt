@@ -6,6 +6,7 @@ import com.forgeflow.core.model.RoutineId
 import com.forgeflow.core.model.SessionExerciseId
 import com.forgeflow.core.model.Weight
 import com.forgeflow.core.model.WorkoutDetails
+import com.forgeflow.core.model.WorkoutLocation
 import com.forgeflow.core.model.WorkoutSessionId
 import com.forgeflow.core.model.WorkoutSetId
 import kotlinx.coroutines.flow.Flow
@@ -26,7 +27,10 @@ interface WorkoutRepository {
 
     suspend fun addSet(sessionExerciseId: SessionExerciseId): DataResult<Unit>
 
-    suspend fun finishWorkout(sessionId: WorkoutSessionId): DataResult<Unit>
+    suspend fun finishWorkout(
+        sessionId: WorkoutSessionId,
+        location: WorkoutLocation? = null,
+    ): DataResult<Unit>
 
     suspend fun discardActiveWorkout(): DataResult<Unit>
 }

@@ -1,9 +1,12 @@
 package com.forgeflow.feature.exercises.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -12,6 +15,8 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.GifBox
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -21,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -28,6 +34,7 @@ import com.forgeflow.core.designsystem.component.ForgeFlowCard
 import com.forgeflow.core.designsystem.component.ForgeFlowPill
 import com.forgeflow.core.designsystem.component.ForgeFlowTextField
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
+import com.forgeflow.core.model.ExerciseMediaType
 import com.forgeflow.core.model.MuscleGroup
 import com.forgeflow.feature.exercises.R
 
@@ -90,11 +97,7 @@ internal fun ExerciseListItem(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.FitnessCenter,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
+            ExerciseMediaThumbnail(exercise)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = exercise.name,
@@ -125,5 +128,27 @@ internal fun ExerciseListItem(
             ForgeFlowPill(text = stringResource(exercise.equipment.labelResource()))
             if (exercise.isCustom) ForgeFlowPill(text = stringResource(R.string.custom))
         }
+    }
+}
+
+@Composable
+private fun ExerciseMediaThumbnail(exercise: ExerciseUiModel) {
+    val icon = when {
+        exercise.mediaType == ExerciseMediaType.ANIMATED_IMAGE -> Icons.Outlined.GifBox
+        exercise.mediaUri != null -> Icons.Outlined.Image
+        else -> Icons.Outlined.FitnessCenter
+    }
+    Box(
+        modifier = Modifier
+            .size(56.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
     }
 }

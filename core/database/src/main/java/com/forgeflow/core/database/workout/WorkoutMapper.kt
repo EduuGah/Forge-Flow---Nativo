@@ -2,6 +2,7 @@ package com.forgeflow.core.database.workout
 
 import com.forgeflow.core.database.exercise.asExternalModel
 import com.forgeflow.core.model.ExerciseId
+import com.forgeflow.core.model.ExerciseMediaType
 import com.forgeflow.core.model.MuscleGroup
 import com.forgeflow.core.model.Repetitions
 import com.forgeflow.core.model.RoutineId
@@ -10,6 +11,7 @@ import com.forgeflow.core.model.SessionExerciseId
 import com.forgeflow.core.model.Weight
 import com.forgeflow.core.model.WorkoutDetails
 import com.forgeflow.core.model.WorkoutExerciseDetails
+import com.forgeflow.core.model.WorkoutLocation
 import com.forgeflow.core.model.WorkoutSession
 import com.forgeflow.core.model.WorkoutSessionExercise
 import com.forgeflow.core.model.WorkoutSessionId
@@ -31,6 +33,11 @@ fun WorkoutRecord.asExternalModel(): WorkoutDetails = WorkoutDetails(
                     exerciseId = record.item.exerciseId?.let(::ExerciseId),
                     exerciseNameSnapshot = record.item.exerciseNameSnapshot,
                     muscleGroupSnapshot = MuscleGroup.valueOf(record.item.muscleGroupSnapshot),
+                    mediaUriSnapshot = record.item.mediaUriSnapshot,
+                    mediaTypeSnapshot = record.item.mediaTypeSnapshot?.let(
+                        ExerciseMediaType::valueOf,
+                    ),
+                    mediaThumbnailUriSnapshot = record.item.mediaThumbnailUriSnapshot,
                     position = record.item.position,
                     notes = record.item.notes,
                 ),
@@ -48,6 +55,21 @@ private fun WorkoutSessionEntity.asExternalModel(): WorkoutSession = WorkoutSess
     finishedAt = finishedAtEpochMillis?.let(Instant::ofEpochMilli),
     status = WorkoutSessionStatus.valueOf(status),
     notes = notes,
+    location = if (
+        locationLatitude != null &&
+        locationLongitude != null &&
+        locationCapturedAtEpochMillis != null
+    ) {
+        WorkoutLocation(
+            latitude = locationLatitude,
+            longitude = locationLongitude,
+            accuracyMeters = locationAccuracyMeters,
+            capturedAt = Instant.ofEpochMilli(locationCapturedAtEpochMillis),
+            label = locationLabel,
+        )
+    } else {
+        null
+    },
     createdAt = Instant.ofEpochMilli(createdAtEpochMillis),
     updatedAt = Instant.ofEpochMilli(updatedAtEpochMillis),
 )

@@ -14,6 +14,7 @@ import com.forgeflow.core.model.RoutineId
 import com.forgeflow.core.model.SessionExerciseId
 import com.forgeflow.core.model.Weight
 import com.forgeflow.core.model.WorkoutDetails
+import com.forgeflow.core.model.WorkoutLocation
 import com.forgeflow.core.model.WorkoutSessionId
 import com.forgeflow.core.model.WorkoutSessionStatus
 import com.forgeflow.core.model.WorkoutSetId
@@ -76,6 +77,9 @@ class DefaultWorkoutRepository @Inject constructor(
                     exerciseId = routineExercise.exercise.id,
                     exerciseNameSnapshot = routineExercise.exercise.name,
                     muscleGroupSnapshot = routineExercise.exercise.primaryMuscleGroup,
+                    mediaUriSnapshot = routineExercise.exercise.mediaUri,
+                    mediaTypeSnapshot = routineExercise.exercise.mediaType,
+                    mediaThumbnailUriSnapshot = routineExercise.exercise.mediaThumbnailUri,
                     position = position,
                     notes = routineExercise.item.notes,
                 )
@@ -150,8 +154,19 @@ class DefaultWorkoutRepository @Inject constructor(
 
     override suspend fun finishWorkout(
         sessionId: WorkoutSessionId,
+        location: WorkoutLocation?,
     ): DataResult<Unit> = runCatching {
-        check(workoutDao.finish(sessionId.value, clock.now().toEpochMilli()) > 0)
+        check(
+            workoutDao.finish(
+                sessionId = sessionId.value,
+                timestamp = clock.now().toEpochMilli(),
+                locationLatitude = location?.latitude,
+                locationLongitude = location?.longitude,
+                locationAccuracyMeters = location?.accuracyMeters,
+                locationCapturedAt = location?.capturedAt?.toEpochMilli(),
+                locationLabel = location?.label,
+            ) > 0,
+        )
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },

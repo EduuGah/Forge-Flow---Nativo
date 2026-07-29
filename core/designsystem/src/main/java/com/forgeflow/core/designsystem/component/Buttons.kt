@@ -28,6 +28,7 @@ fun ForgeFlowButton(
         modifier = modifier.heightIn(min = 48.dp),
         onClick = onClick,
         enabled = enabled,
+        shape = androidx.compose.material3.MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(
             containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
             contentColor = androidx.compose.ui.graphics.Color.White,
@@ -50,6 +51,7 @@ fun ForgeFlowOutlinedButton(
         modifier = modifier.heightIn(min = 48.dp),
         onClick = onClick,
         enabled = enabled,
+        shape = androidx.compose.material3.MaterialTheme.shapes.medium,
     ) {
         ButtonContent(text, icon, iconContentDescription)
     }

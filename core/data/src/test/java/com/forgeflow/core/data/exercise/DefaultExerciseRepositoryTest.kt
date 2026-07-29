@@ -34,12 +34,25 @@ class DefaultExerciseRepositoryTest {
     }
 
     private class FakeExerciseLocalDataSource(
-        private val entities: List<ExerciseEntity>,
+        entities: List<ExerciseEntity>,
     ) : ExerciseLocalDataSource {
-        override fun observeExercises(): Flow<List<ExerciseEntity>> = flowOf(entities)
+        private val storedEntities = entities.toMutableList()
+
+        override fun observeExercises(): Flow<List<ExerciseEntity>> = flowOf(storedEntities)
 
         override suspend fun insertExercises(exercises: List<ExerciseEntity>): Int =
             exercises.size
+
+        override suspend fun getExercise(id: String): ExerciseEntity? =
+            storedEntities.firstOrNull { it.id == id }
+
+        override suspend fun upsertExercise(exercise: ExerciseEntity) {
+            storedEntities.removeAll { it.id == exercise.id }
+            storedEntities += exercise
+        }
+
+        override suspend fun deleteCustomExercise(id: String): Boolean =
+            storedEntities.removeAll { it.id == id && it.isCustom }
     }
 
     private object FixedClock : AppClock {

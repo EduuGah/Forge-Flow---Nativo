@@ -36,6 +36,16 @@ data class WorkoutSessionEntity(
     val finishedAtEpochMillis: Long?,
     val status: String,
     val notes: String,
+    @ColumnInfo(name = "location_latitude")
+    val locationLatitude: Double? = null,
+    @ColumnInfo(name = "location_longitude")
+    val locationLongitude: Double? = null,
+    @ColumnInfo(name = "location_accuracy_meters")
+    val locationAccuracyMeters: Float? = null,
+    @ColumnInfo(name = "location_captured_at_epoch_millis")
+    val locationCapturedAtEpochMillis: Long? = null,
+    @ColumnInfo(name = "location_label")
+    val locationLabel: String? = null,
     @ColumnInfo(name = "created_at_epoch_millis")
     val createdAtEpochMillis: Long,
     @ColumnInfo(name = "updated_at_epoch_millis")
@@ -75,6 +85,12 @@ data class WorkoutSessionExerciseEntity(
     val exerciseNameSnapshot: String,
     @ColumnInfo(name = "muscle_group_snapshot")
     val muscleGroupSnapshot: String,
+    @ColumnInfo(name = "media_uri_snapshot")
+    val mediaUriSnapshot: String? = null,
+    @ColumnInfo(name = "media_type_snapshot")
+    val mediaTypeSnapshot: String? = null,
+    @ColumnInfo(name = "media_thumbnail_uri_snapshot")
+    val mediaThumbnailUriSnapshot: String? = null,
     val position: Int,
     val notes: String,
 )

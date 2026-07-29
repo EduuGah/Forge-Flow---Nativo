@@ -21,7 +21,7 @@ import com.forgeflow.core.database.workout.WorkoutSetEntity
         WorkoutSessionExerciseEntity::class,
         WorkoutSetEntity::class,
     ],
-    version = 2,
+    version = 4,
     exportSchema = true,
 )
 abstract class ForgeFlowDatabase : RoomDatabase() {

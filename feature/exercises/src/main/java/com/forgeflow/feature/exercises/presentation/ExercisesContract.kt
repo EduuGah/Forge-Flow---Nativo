@@ -2,6 +2,7 @@ package com.forgeflow.feature.exercises.presentation
 
 import androidx.compose.runtime.Immutable
 import com.forgeflow.core.model.Equipment
+import com.forgeflow.core.model.ExerciseMediaType
 import com.forgeflow.core.model.MuscleGroup
 
 @Immutable
@@ -24,6 +25,9 @@ data class ExerciseUiModel(
     val primaryMuscleGroup: MuscleGroup,
     val equipment: Equipment,
     val instructions: String = "",
+    val mediaUri: String? = null,
+    val mediaType: ExerciseMediaType? = null,
+    val mediaThumbnailUri: String? = null,
     val isCustom: Boolean = false,
 )
 

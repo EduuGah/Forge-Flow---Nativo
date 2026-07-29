@@ -237,9 +237,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                         draft?.repetitions?.toIntOrNull() ?: set.repetitions.count,
                     ),
                 )
-                val isPersonalRecord = displaySet
-                    .personalRecordsAgainst(currentComparisonSets)
-                    .isNotEmpty()
+                val personalRecordTypes = displaySet.personalRecordsAgainst(currentComparisonSets)
                 if (displaySet.isCompleted) {
                     currentComparisonSets += displaySet
                 }
@@ -252,7 +250,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                     completed = set.isCompleted,
                     type = set.setType,
                     previous = latestSets.getOrNull(index)?.asCompactPerformance(weightUnit),
-                    isPersonalRecord = isPersonalRecord,
+                    personalRecordTypes = personalRecordTypes,
                 )
             }
             ActiveExerciseUiModel(
@@ -291,7 +289,7 @@ class ActiveWorkoutViewModel @Inject constructor(
             completedSets = completedUiSets.size,
             totalSets = totalSetCount,
             totalVolume = volumeGrams.gramsIn(weightUnit).toCleanString(),
-            personalRecordCount = completedUiSets.count(ActiveSetUiModel::isPersonalRecord),
+            personalRecordCount = completedUiSets.sumOf { it.personalRecordTypes.size },
             weightUnit = weightUnit,
             exercises = uiExercises,
         )

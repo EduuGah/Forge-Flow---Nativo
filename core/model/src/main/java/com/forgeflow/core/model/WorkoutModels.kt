@@ -59,8 +59,6 @@ data class RoutineDraft(
 
 enum class PersonalRecordType {
     WEIGHT,
-    REPETITIONS_AT_WEIGHT,
-    ESTIMATED_ONE_REP_MAX,
     SET_VOLUME,
 }
 
@@ -87,16 +85,6 @@ fun WorkoutSet.personalRecordsAgainst(previous: List<WorkoutSet>): Set<PersonalR
     val records = mutableSetOf<PersonalRecordType>()
     if (comparable.none { it.weight.grams >= weight.grams }) {
         records += PersonalRecordType.WEIGHT
-    }
-    if (
-        comparable
-            .filter { it.weight.grams == weight.grams }
-            .none { it.repetitions.count >= repetitions.count }
-    ) {
-        records += PersonalRecordType.REPETITIONS_AT_WEIGHT
-    }
-    if (comparable.none { it.estimatedOneRepMaxGrams() >= estimatedOneRepMaxGrams() }) {
-        records += PersonalRecordType.ESTIMATED_ONE_REP_MAX
     }
     val volume = weight.grams * repetitions.count
     if (comparable.none { it.weight.grams * it.repetitions.count >= volume }) {
@@ -141,8 +129,6 @@ data class WorkoutSessionExercise(
 enum class WorkoutSetType {
     WARM_UP,
     NORMAL,
-    DROP,
-    FAILURE,
 }
 
 data class WorkoutSet(

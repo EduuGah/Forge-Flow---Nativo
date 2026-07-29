@@ -11,7 +11,7 @@ class RoomExerciseLocalDataSource @Inject constructor(
     override fun observeExercises(): Flow<List<ExerciseEntity>> = exerciseDao.observeAll()
 
     override suspend fun insertExercises(exercises: List<ExerciseEntity>): Int =
-        exerciseDao.insertAll(exercises).count { rowId -> rowId != INSERT_IGNORED }
+        exerciseDao.seedBuiltIns(exercises).count { rowId -> rowId != INSERT_IGNORED }
 
     override suspend fun getExercise(id: String): ExerciseEntity? = exerciseDao.getById(id)
 

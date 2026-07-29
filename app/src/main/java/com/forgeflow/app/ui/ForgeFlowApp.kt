@@ -2,23 +2,32 @@ package com.forgeflow.app.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -46,7 +55,10 @@ import com.forgeflow.feature.workout.navigation.activeWorkoutScreen
 import com.forgeflow.feature.workout.navigation.navigateToActiveWorkout
 
 @Composable
-fun ForgeFlowApp(modifier: Modifier = Modifier) {
+fun ForgeFlowApp(
+    state: AppUiState,
+    modifier: Modifier = Modifier,
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
@@ -57,10 +69,18 @@ fun ForgeFlowApp(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize(),
         bottomBar = {
             if (showBottomBar) {
-                ForgeFlowBottomBar(
-                    currentDestination = currentDestination,
-                    onDestinationSelected = navController::navigateToTopLevel,
-                )
+                Column {
+                    state.activeWorkout?.let { active ->
+                        ActiveWorkoutMiniBar(
+                            active = active,
+                            onClick = navController::navigateToActiveWorkout,
+                        )
+                    }
+                    ForgeFlowBottomBar(
+                        currentDestination = currentDestination,
+                        onDestinationSelected = navController::navigateToTopLevel,
+                    )
+                }
             }
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -88,6 +108,67 @@ fun ForgeFlowApp(modifier: Modifier = Modifier) {
             )
             exerciseDetailsScreen(onBack = navController::popBackStack)
             activeWorkoutScreen(onBack = navController::popBackStack)
+        }
+    }
+}
+
+@Composable
+private fun ActiveWorkoutMiniBar(
+    active: AppActiveWorkoutUiModel,
+    onClick: () -> Unit,
+) {
+    val progress = if (active.totalSets == 0) {
+        0f
+    } else {
+        active.completedSets.toFloat() / active.totalSets
+    }
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        tonalElevation = 0.dp,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.PlayArrow,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.active_workout_bar_label).uppercase(),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                    Text(
+                        text = active.name,
+                        maxLines = 1,
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
+                Text(
+                    text = stringResource(
+                        R.string.active_workout_bar_progress,
+                        active.completedSets,
+                        active.totalSets,
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

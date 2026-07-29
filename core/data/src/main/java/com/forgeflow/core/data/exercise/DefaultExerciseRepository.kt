@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.map
 class DefaultExerciseRepository @Inject constructor(
     private val localDataSource: ExerciseLocalDataSource,
     private val clock: AppClock,
+    private val catalogProvider: ExerciseCatalogProvider = ExerciseCatalogProvider.empty(),
 ) : ExerciseRepository {
     override fun observeExercises(): Flow<DataResult<List<Exercise>>> =
         localDataSource.observeExercises()
@@ -30,7 +31,11 @@ class DefaultExerciseRepository @Inject constructor(
             }
 
     override suspend fun seedDefaults(): DataResult<Int> = runCatching {
-        ExerciseSeedData.create(clock.now())
+        val timestamp = clock.now()
+        (
+            ExerciseSeedData.create(timestamp) +
+                runCatching { catalogProvider.create(timestamp) }.getOrDefault(emptyList())
+            )
             .map { it.asEntity() }
             .let { localDataSource.insertExercises(it) }
     }.fold(

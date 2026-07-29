@@ -69,4 +69,9 @@
     <string name="details_progress">Evolução</string>
     <string name="details_max_weight_over_time">Maior peso por treino (%1$s)</string>
     <string name="personal_record">Recorde pessoal</string>
+    <string name="details_recent_records">PRs RECENTES</string>
+    <string name="record_current">ATUAL • %1$s • %2$s</string>
+    <string name="record_previous">ANTERIOR • %1$s • %2$s</string>
+    <string name="record_weight">Recorde de peso</string>
+    <string name="record_set_volume">Recorde de volume</string>
 </resources>

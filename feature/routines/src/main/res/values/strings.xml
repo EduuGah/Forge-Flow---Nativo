@@ -45,6 +45,7 @@
     <string name="compact_exercise_count">%1$d exercícios</string>
     <string name="compact_set_count">%1$d séries</string>
     <string name="selected_folder">Pasta: %1$s</string>
+    <string name="create_new_folder">Criar nova pasta</string>
     <string name="open_exercise_details">Abrir detalhes do exercício</string>
     <string name="create_folder">Criar pasta</string>
     <string name="folder_name">Nome da pasta</string>
@@ -56,6 +57,8 @@
     <string name="delete_folder_title">Excluir pasta?</string>
     <string name="delete_folder_message">As rotinas de “%1$s” serão movidas para Sem pasta.</string>
     <string name="exercise_picker_metadata">%1$s • %2$s</string>
+    <string name="filter_all_muscles">Todos</string>
+    <string name="exercise_results">%1$d resultados</string>
     <string name="muscle_chest">Peitoral</string>
     <string name="muscle_back">Costas</string>
     <string name="muscle_shoulders">Ombros</string>

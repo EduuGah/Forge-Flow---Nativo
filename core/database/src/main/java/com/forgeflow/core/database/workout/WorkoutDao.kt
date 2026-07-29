@@ -87,6 +87,9 @@ interface WorkoutDao {
     @Query("DELETE FROM workout_sets WHERE id = :setId")
     suspend fun deleteSet(setId: String)
 
+    @Query("DELETE FROM workout_sessions WHERE id = :sessionId AND status = 'COMPLETED'")
+    suspend fun deleteCompletedWorkout(sessionId: String): Int
+
     @Query(
         """
         UPDATE workout_sessions

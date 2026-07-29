@@ -13,6 +13,10 @@ fun NavGraphBuilder.historyScreen(onOpenExercise: (String) -> Unit) {
     composable<HistoryRoute> {
         val viewModel: HistoryViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsStateWithLifecycle()
-        HistoryScreen(state = state, onOpenExercise = onOpenExercise)
+        HistoryScreen(
+            state = state,
+            onOpenExercise = onOpenExercise,
+            onAction = viewModel::onAction,
+        )
     }
 }

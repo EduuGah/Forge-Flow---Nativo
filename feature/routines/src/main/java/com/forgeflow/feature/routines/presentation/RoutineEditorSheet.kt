@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,9 +14,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CreateNewFolder
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Search
@@ -23,6 +27,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,7 +66,9 @@ internal fun RoutineEditorSheet(
     onOpenExercise: (String) -> Unit,
 ) {
     val visibleExercises = exercises.filter {
-        editor.query.isBlank() || it.name.contains(editor.query, ignoreCase = true)
+        (editor.query.isBlank() || it.name.contains(editor.query, ignoreCase = true)) &&
+            (editor.selectedMuscleGroup == null ||
+                it.muscleGroup == editor.selectedMuscleGroup)
     }
     ModalBottomSheet(onDismissRequest = { onAction(RoutinesAction.CloseEditor) }) {
         Column(
@@ -97,6 +106,7 @@ internal fun RoutineEditorSheet(
                 selectedFolderId = editor.folderId,
                 folders = folders,
                 onFolderSelected = { onAction(RoutinesAction.FolderChanged(it)) },
+                onCreateFolder = { onAction(RoutinesAction.CreateFolderInEditor) },
             )
             ForgeFlowTextField(
                 value = editor.query,
@@ -105,15 +115,56 @@ internal fun RoutineEditorSheet(
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
             )
-            Text(
-                text = stringResource(
-                    R.string.selected_exercises,
-                    editor.selectedExerciseIds.size,
-                ),
-                style = MaterialTheme.typography.labelLarge,
-            )
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                item {
+                    FilterChip(
+                        selected = editor.selectedMuscleGroup == null,
+                        onClick = {
+                            onAction(RoutinesAction.MuscleGroupChanged(null))
+                        },
+                        label = { Text(stringResource(R.string.filter_all_muscles)) },
+                    )
+                }
+                items(MuscleGroup.entries) { group ->
+                    FilterChip(
+                        selected = editor.selectedMuscleGroup == group,
+                        onClick = {
+                            onAction(RoutinesAction.MuscleGroupChanged(group))
+                        },
+                        label = { Text(stringResource(group.labelResource())) },
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(
+                        R.string.selected_exercises,
+                        editor.selectedExerciseIds.size,
+                    ),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Text(
+                    text = stringResource(
+                        R.string.exercise_results,
+                        visibleExercises.size,
+                    ),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
             LazyColumn(
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(
+                    bottom = ForgeFlowDesign.spacing.extraSmall,
+                ),
                 verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraSmall),
             ) {
                 items(visibleExercises, key = RoutineExercisePickerModel::id) { exercise ->
@@ -144,6 +195,7 @@ private fun FolderSelector(
     selectedFolderId: String?,
     folders: List<RoutineFolderUiModel>,
     onFolderSelected: (String?) -> Unit,
+    onCreateFolder: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val label = folders.firstOrNull { it.id == selectedFolderId }?.name
@@ -176,6 +228,16 @@ private fun FolderSelector(
                     },
                 )
             }
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.create_new_folder)) },
+                leadingIcon = {
+                    Icon(Icons.Outlined.CreateNewFolder, contentDescription = null)
+                },
+                onClick = {
+                    expanded = false
+                    onCreateFolder()
+                },
+            )
         }
     }
 }
@@ -206,9 +268,10 @@ private fun ExercisePickerRow(
         ForgeFlowExerciseMedia(
             mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
             contentDescription = exercise.name,
-            modifier = Modifier
-                .size(52.dp)
-                .clip(MaterialTheme.shapes.small),
+            modifier = Modifier.size(52.dp),
+            contentScale = ContentScale.Fit,
+            shape = CircleShape,
+            containerColor = Color.White,
         )
         Column(
             modifier = Modifier.weight(1f),

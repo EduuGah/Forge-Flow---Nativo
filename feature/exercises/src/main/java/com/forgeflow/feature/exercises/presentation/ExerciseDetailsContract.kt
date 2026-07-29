@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import com.forgeflow.core.model.Equipment
 import com.forgeflow.core.model.ExerciseMediaType
 import com.forgeflow.core.model.MuscleGroup
+import com.forgeflow.core.model.PersonalRecordType
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.WorkoutSetType
 
@@ -33,6 +34,7 @@ data class ExerciseDetailsUiModel(
     val estimatedOneRepMax: String,
     val bestSet: String,
     val personalRecordCount: Int,
+    val personalRecords: List<ExercisePersonalRecordUiModel>,
     val chartPoints: List<ExerciseChartPointUiModel>,
     val sessions: List<ExerciseSessionUiModel>,
 )
@@ -56,5 +58,16 @@ data class ExerciseSessionSetUiModel(
     val number: Int,
     val performance: String,
     val type: WorkoutSetType,
-    val isPersonalRecord: Boolean,
+    val personalRecordTypes: Set<PersonalRecordType>,
+)
+
+val ExerciseSessionSetUiModel.isPersonalRecord: Boolean
+    get() = personalRecordTypes.isNotEmpty()
+
+@Immutable
+data class ExercisePersonalRecordUiModel(
+    val types: Set<PersonalRecordType>,
+    val workoutName: String,
+    val date: String,
+    val performance: String,
 )

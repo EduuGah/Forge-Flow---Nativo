@@ -19,4 +19,6 @@ interface SettingsRepository {
     suspend fun setCompactMode(enabled: Boolean): DataResult<Unit>
 
     suspend fun setOnboardingCompleted(completed: Boolean): DataResult<Unit>
+
+    suspend fun setNotificationPermissionRequested(requested: Boolean): DataResult<Unit>
 }

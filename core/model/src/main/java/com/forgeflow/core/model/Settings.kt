@@ -32,4 +32,5 @@ data class UserSettings(
     val weightUnit: WeightUnit = WeightUnit.KILOGRAM,
     val compactMode: Boolean = false,
     val hasCompletedOnboarding: Boolean = false,
+    val hasRequestedNotificationPermission: Boolean = false,
 )

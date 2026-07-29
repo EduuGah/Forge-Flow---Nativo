@@ -3,6 +3,7 @@ package com.forgeflow.feature.workout.presentation
 import androidx.compose.runtime.Immutable
 import com.forgeflow.core.model.ExerciseMediaType
 import com.forgeflow.core.model.MuscleGroup
+import com.forgeflow.core.model.PersonalRecordType
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.WorkoutSetType
 
@@ -48,8 +49,11 @@ data class ActiveSetUiModel(
     val completed: Boolean,
     val type: WorkoutSetType,
     val previous: String? = null,
-    val isPersonalRecord: Boolean = false,
+    val personalRecordTypes: Set<PersonalRecordType> = emptySet(),
 )
+
+val ActiveSetUiModel.isPersonalRecord: Boolean
+    get() = personalRecordTypes.isNotEmpty()
 
 sealed interface ActiveWorkoutAction {
     data class WeightChanged(val setId: String, val value: String) : ActiveWorkoutAction

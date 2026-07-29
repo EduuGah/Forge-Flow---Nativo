@@ -11,7 +11,10 @@ class PersonalRecordDetectionTest {
         val records = workoutSet(weightKg = 60.0, repetitions = 8)
             .personalRecordsAgainst(emptyList())
 
-        assertEquals(PersonalRecordType.entries.toSet(), records)
+        assertEquals(
+            setOf(PersonalRecordType.WEIGHT, PersonalRecordType.SET_VOLUME),
+            records,
+        )
     }
 
     @Test
@@ -39,8 +42,6 @@ class PersonalRecordDetectionTest {
         val records = current.personalRecordsAgainst(listOf(previous))
 
         assertTrue(PersonalRecordType.WEIGHT !in records)
-        assertTrue(PersonalRecordType.REPETITIONS_AT_WEIGHT in records)
-        assertTrue(PersonalRecordType.ESTIMATED_ONE_REP_MAX in records)
         assertTrue(PersonalRecordType.SET_VOLUME in records)
     }
 

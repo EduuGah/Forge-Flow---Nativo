@@ -4,4 +4,6 @@
     <string name="navigation_routines">Treino</string>
     <string name="navigation_history">Histórico</string>
     <string name="navigation_settings">Ajustes</string>
+    <string name="active_workout_bar_label">Treino ativo</string>
+    <string name="active_workout_bar_progress">%1$d/%2$d séries</string>
 </resources>

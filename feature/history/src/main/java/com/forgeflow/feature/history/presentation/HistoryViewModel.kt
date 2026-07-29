@@ -5,58 +5,146 @@ import androidx.lifecycle.viewModelScope
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.data.settings.SettingsRepository
 import com.forgeflow.core.data.workout.WorkoutRepository
+import com.forgeflow.core.model.PersonalRecordType
 import com.forgeflow.core.model.UserSettings
 import com.forgeflow.core.model.WorkoutDetails
+import com.forgeflow.core.model.WorkoutSessionId
 import com.forgeflow.core.model.WorkoutSet
 import com.forgeflow.core.model.gramsIn
 import com.forgeflow.core.model.personalRecordsAgainst
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Duration
+import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
-    repository: WorkoutRepository,
+    private val repository: WorkoutRepository,
     settingsRepository: SettingsRepository,
 ) : ViewModel() {
-    val uiState = kotlinx.coroutines.flow.combine(
+    private val filters = MutableStateFlow(HistoryFilters())
+    private val pendingDeleteId = MutableStateFlow<String?>(null)
+    private val isDeleting = MutableStateFlow(false)
+
+    val uiState = combine(
         repository.observeHistory(),
         settingsRepository.observeSettings(),
-    ) { result, settings ->
-            when (result) {
-                is DataResult.Failure -> HistoryUiState(isLoading = false, error = true)
-                is DataResult.Success -> result.value.toUiState(settings)
-            }
+        filters,
+        combine(pendingDeleteId, isDeleting) { pendingId, deleting ->
+            pendingId to deleting
+        },
+    ) { result, settings, currentFilters, (pendingId, deleting) ->
+        when (result) {
+            is DataResult.Failure -> HistoryUiState(
+                isLoading = false,
+                searchQuery = currentFilters.searchQuery,
+                dateFilter = currentFilters.dateFilter,
+                onlyWithLocation = currentFilters.onlyWithLocation,
+                error = true,
+            )
+            is DataResult.Success -> result.value.toUiState(
+                settings = settings,
+                filters = currentFilters,
+                pendingDeleteId = pendingId,
+                deleting = deleting,
+            )
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = HistoryUiState(),
-        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = HistoryUiState(),
+    )
 
-    private fun List<WorkoutDetails>.toUiState(settings: UserSettings): HistoryUiState {
-        val personalRecordIds = calculatePersonalRecordIds()
-        val items = map { workout -> workout.toUiModel(settings, personalRecordIds) }
+    fun onAction(action: HistoryAction) {
+        when (action) {
+            is HistoryAction.SearchChanged -> filters.update {
+                it.copy(searchQuery = action.query)
+            }
+            is HistoryAction.DateFilterChanged -> filters.update {
+                it.copy(dateFilter = action.filter)
+            }
+            is HistoryAction.OnlyWithLocationChanged -> filters.update {
+                it.copy(onlyWithLocation = action.enabled)
+            }
+            is HistoryAction.DeleteRequested -> pendingDeleteId.value = action.workoutId
+            HistoryAction.DeleteDismissed -> pendingDeleteId.value = null
+            HistoryAction.DeleteConfirmed -> deletePendingWorkout()
+        }
+    }
+
+    private fun deletePendingWorkout() {
+        val workoutId = pendingDeleteId.value ?: return
+        viewModelScope.launch {
+            isDeleting.value = true
+            if (
+                repository.deleteCompletedWorkout(WorkoutSessionId(workoutId))
+                    is DataResult.Success
+            ) {
+                pendingDeleteId.value = null
+            }
+            isDeleting.value = false
+        }
+    }
+
+    private fun List<WorkoutDetails>.toUiState(
+        settings: UserSettings,
+        filters: HistoryFilters,
+        pendingDeleteId: String?,
+        deleting: Boolean,
+    ): HistoryUiState {
+        val personalRecords = calculatePersonalRecords()
+        val allItems = map { workout -> workout.toUiModel(settings, personalRecords) }
+        val cutoff = filters.dateFilter.cutoff()
+        val normalizedQuery = filters.searchQuery.trim().lowercase()
+        val items = allItems.filter { item ->
+            val matchesDate = cutoff == null ||
+                item.startedAtEpochMillis >= cutoff.toEpochMilli()
+            val matchesLocation = !filters.onlyWithLocation || item.hasLocation
+            val matchesQuery = normalizedQuery.isBlank() ||
+                item.name.lowercase().contains(normalizedQuery) ||
+                item.searchableDate.lowercase().contains(normalizedQuery) ||
+                item.locationLabel.orEmpty().lowercase().contains(normalizedQuery) ||
+                item.exercises.any { it.name.lowercase().contains(normalizedQuery) }
+            matchesDate && matchesLocation && matchesQuery
+        }
         return HistoryUiState(
             isLoading = false,
             workouts = items,
             totalSets = items.sumOf(HistoryWorkoutUiModel::completedSets),
-            totalVolume = sumOf(WorkoutDetails::totalVolumeGrams)
-                .gramsIn(settings.weightUnit),
-            totalDurationMinutes = sumOf { workout -> workout.duration().toMinutes() },
+            totalVolume = items.sumOf(HistoryWorkoutUiModel::volume),
+            totalDurationMinutes = items.sumOf(HistoryWorkoutUiModel::durationMinutes),
             weightUnit = settings.weightUnit,
+            searchQuery = filters.searchQuery,
+            dateFilter = filters.dateFilter,
+            onlyWithLocation = filters.onlyWithLocation,
+            mapPoints = items.mapNotNull { item ->
+                val latitude = item.latitude ?: return@mapNotNull null
+                val longitude = item.longitude ?: return@mapNotNull null
+                HistoryMapPointUiModel(
+                    latitude = latitude,
+                    longitude = longitude,
+                    label = item.locationLabel ?: item.name,
+                )
+            },
+            pendingDeleteWorkout = allItems.firstOrNull { it.id == pendingDeleteId },
+            isDeleting = deleting,
         )
     }
 
-    private fun List<WorkoutDetails>.calculatePersonalRecordIds(): Set<String> {
+    private fun List<WorkoutDetails>.calculatePersonalRecords():
+        Map<String, Set<PersonalRecordType>> {
         val previousByExercise = mutableMapOf<String, MutableList<WorkoutSet>>()
-        val recordIds = mutableSetOf<String>()
+        val recordsBySet = mutableMapOf<String, Set<PersonalRecordType>>()
         asReversed().forEach { workout ->
             workout.exercises.forEach { exercise ->
                 val exerciseKey = exercise.sessionExercise.exerciseId?.value
@@ -66,19 +154,20 @@ class HistoryViewModel @Inject constructor(
                     .filter(WorkoutSet::isCompleted)
                     .sortedBy(WorkoutSet::position)
                     .forEach { set ->
-                        if (set.personalRecordsAgainst(previous).isNotEmpty()) {
-                            recordIds += set.id.value
+                        val records = set.personalRecordsAgainst(previous)
+                        if (records.isNotEmpty()) {
+                            recordsBySet[set.id.value] = records
                         }
                         previous += set
                     }
             }
         }
-        return recordIds
+        return recordsBySet
     }
 
     private fun WorkoutDetails.toUiModel(
         settings: UserSettings,
-        personalRecordIds: Set<String>,
+        personalRecords: Map<String, Set<PersonalRecordType>>,
     ): HistoryWorkoutUiModel {
         val date = session.startedAt.atZone(ZoneId.systemDefault())
         return HistoryWorkoutUiModel(
@@ -88,6 +177,7 @@ class HistoryViewModel @Inject constructor(
             month = MONTH_FORMATTER.format(date).uppercase(),
             time = TIME_FORMATTER.format(date),
             monthGroup = MONTH_GROUP_FORMATTER.format(date),
+            startedAtEpochMillis = session.startedAt.toEpochMilli(),
             durationMinutes = duration().toMinutes(),
             volume = totalVolumeGrams.gramsIn(settings.weightUnit),
             exerciseCount = exercises.size,
@@ -98,6 +188,9 @@ class HistoryViewModel @Inject constructor(
             },
             hasLocation = session.location != null,
             locationLabel = session.location?.label,
+            latitude = session.location?.latitude,
+            longitude = session.location?.longitude,
+            searchableDate = SEARCH_DATE_FORMATTER.format(date),
             exercises = exercises.map { exercise ->
                 val completed = exercise.sets.filter {
                     it.isCompleted && it.repetitions.count > 0
@@ -118,8 +211,8 @@ class HistoryViewModel @Inject constructor(
                     }.gramsIn(settings.weightUnit),
                     bestWeight = best?.weight?.valueIn(settings.weightUnit),
                     bestRepetitions = best?.repetitions?.count,
-                    personalRecordCount = completed.count {
-                        it.id.value in personalRecordIds
+                    personalRecordCount = completed.sumOf {
+                        personalRecords[it.id.value].orEmpty().size
                     },
                     sets = completed.mapIndexed { index, set ->
                         HistorySetUiModel(
@@ -128,7 +221,7 @@ class HistoryViewModel @Inject constructor(
                             type = set.setType,
                             weight = set.weight.valueIn(settings.weightUnit),
                             repetitions = set.repetitions.count,
-                            isPersonalRecord = set.id.value in personalRecordIds,
+                            personalRecordTypes = personalRecords[set.id.value].orEmpty(),
                         )
                     },
                 )
@@ -140,6 +233,19 @@ class HistoryViewModel @Inject constructor(
         session.finishedAt?.let { Duration.between(session.startedAt, it) }
             ?: Duration.ZERO
 
+    private fun HistoryDateFilter.cutoff(): Instant? = when (this) {
+        HistoryDateFilter.ALL -> null
+        HistoryDateFilter.LAST_7_DAYS -> Instant.now().minus(7, ChronoUnit.DAYS)
+        HistoryDateFilter.LAST_30_DAYS -> Instant.now().minus(30, ChronoUnit.DAYS)
+        HistoryDateFilter.LAST_90_DAYS -> Instant.now().minus(90, ChronoUnit.DAYS)
+    }
+
+    private data class HistoryFilters(
+        val searchQuery: String = "",
+        val dateFilter: HistoryDateFilter = HistoryDateFilter.ALL,
+        val onlyWithLocation: Boolean = false,
+    )
+
     private companion object {
         val DAY_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd")
         val MONTH_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern(
@@ -149,6 +255,10 @@ class HistoryViewModel @Inject constructor(
         val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
         val MONTH_GROUP_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern(
             "MMMM 'de' yyyy",
+            Locale.forLanguageTag("pt-BR"),
+        )
+        val SEARCH_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern(
+            "dd/MM/yyyy",
             Locale.forLanguageTag("pt-BR"),
         )
     }

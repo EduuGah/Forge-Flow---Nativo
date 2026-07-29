@@ -37,5 +37,7 @@ interface WorkoutRepository {
         location: WorkoutLocation? = null,
     ): DataResult<Unit>
 
+    suspend fun deleteCompletedWorkout(sessionId: WorkoutSessionId): DataResult<Unit>
+
     suspend fun discardActiveWorkout(): DataResult<Unit>
 }

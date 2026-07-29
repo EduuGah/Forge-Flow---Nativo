@@ -213,8 +213,6 @@ private fun SetTypeMenu(
     val typeColor = when (set.type) {
         WorkoutSetType.WARM_UP -> ForgeFlowDesign.colors.warning
         WorkoutSetType.NORMAL -> MaterialTheme.colorScheme.onSurface
-        WorkoutSetType.DROP -> MaterialTheme.colorScheme.tertiary
-        WorkoutSetType.FAILURE -> MaterialTheme.colorScheme.error
     }
     Box(
         modifier = Modifier.width(36.dp),
@@ -308,13 +306,9 @@ private fun SetInput(
 private fun WorkoutSetType.shortLabel(number: Int): String = when (this) {
     WorkoutSetType.WARM_UP -> "A"
     WorkoutSetType.NORMAL -> number.toString()
-    WorkoutSetType.DROP -> "D"
-    WorkoutSetType.FAILURE -> "F"
 }
 
 private fun WorkoutSetType.labelResource(): Int = when (this) {
     WorkoutSetType.WARM_UP -> R.string.set_type_warm_up
     WorkoutSetType.NORMAL -> R.string.set_type_normal
-    WorkoutSetType.DROP -> R.string.set_type_drop
-    WorkoutSetType.FAILURE -> R.string.set_type_failure
 }

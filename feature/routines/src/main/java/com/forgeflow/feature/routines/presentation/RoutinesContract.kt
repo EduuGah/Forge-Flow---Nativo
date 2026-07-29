@@ -52,6 +52,7 @@ data class RoutineEditorUiState(
     val description: String = "",
     val folderId: String? = null,
     val query: String = "",
+    val selectedMuscleGroup: MuscleGroup? = null,
     val selectedExerciseIds: List<String> = emptyList(),
 )
 
@@ -59,6 +60,7 @@ data class RoutineEditorUiState(
 data class RoutineFolderEditorUiState(
     val id: String? = null,
     val name: String = "",
+    val selectAfterSave: Boolean = false,
 )
 
 enum class RoutinesError {
@@ -70,6 +72,7 @@ enum class RoutinesError {
 sealed interface RoutinesAction {
     data object CreateRoutine : RoutinesAction
     data object CreateFolder : RoutinesAction
+    data object CreateFolderInEditor : RoutinesAction
     data class EditRoutine(val id: String) : RoutinesAction
     data class EditFolder(val id: String) : RoutinesAction
     data object CloseEditor : RoutinesAction
@@ -77,6 +80,7 @@ sealed interface RoutinesAction {
     data class NameChanged(val value: String) : RoutinesAction
     data class DescriptionChanged(val value: String) : RoutinesAction
     data class SearchChanged(val value: String) : RoutinesAction
+    data class MuscleGroupChanged(val value: MuscleGroup?) : RoutinesAction
     data class FolderChanged(val id: String?) : RoutinesAction
     data class FolderNameChanged(val value: String) : RoutinesAction
     data class ExerciseToggled(val id: String) : RoutinesAction

@@ -12,14 +12,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +37,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
+import com.forgeflow.core.designsystem.component.ForgeFlowLocationMap
+import com.forgeflow.core.designsystem.component.ForgeFlowMapPoint
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.feature.history.R
@@ -45,6 +50,7 @@ internal fun HistoryWorkoutCard(
     weightUnit: WeightUnit,
     expandedByDefault: Boolean,
     onOpenExercise: (String) -> Unit,
+    onDelete: () -> Unit,
 ) {
     var expanded by rememberSaveable(workout.id) { mutableStateOf(expandedByDefault) }
     ForgeFlowCard(
@@ -106,6 +112,13 @@ internal fun HistoryWorkoutCard(
                 ),
                 tint = ForgeFlowDesign.colors.textSecondary,
             )
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Outlined.DeleteOutline,
+                    contentDescription = stringResource(R.string.delete_history_action),
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
         }
         SessionSummary(workout = workout, weightUnit = weightUnit)
         AnimatedVisibility(
@@ -115,6 +128,24 @@ internal fun HistoryWorkoutCard(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium)) {
                 HorizontalDivider(color = ForgeFlowDesign.colors.divider)
+                if (workout.latitude != null && workout.longitude != null) {
+                    Text(
+                        text = stringResource(R.string.workout_location_map),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    ForgeFlowLocationMap(
+                        points = listOf(
+                            ForgeFlowMapPoint(
+                                latitude = workout.latitude,
+                                longitude = workout.longitude,
+                                label = workout.locationLabel ?: workout.name,
+                            ),
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp),
+                    )
+                }
                 workout.exercises.forEach { exercise ->
                     HistoryExerciseRow(
                         exercise = exercise,

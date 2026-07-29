@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
             ForgeFlowTheme(
                 darkTheme = useDarkTheme,
                 accentColor = appState.accentColor,
+                compactMode = appState.compactMode,
             ) {
                 ForgeFlowApp()
             }

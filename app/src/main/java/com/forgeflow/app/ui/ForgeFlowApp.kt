@@ -4,7 +4,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
@@ -79,7 +78,7 @@ fun ForgeFlowApp(modifier: Modifier = Modifier) {
                 onOpenActiveWorkout = navController::navigateToActiveWorkout,
             )
             historyScreen()
-            settingsScreen(onOpenExercises = navController::navigateToExercises)
+            settingsScreen()
             exercisesScreen(onBack = navController::popBackStack)
             activeWorkoutScreen(onBack = navController::popBackStack)
         }

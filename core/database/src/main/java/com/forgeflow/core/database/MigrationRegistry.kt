@@ -5,13 +5,58 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 object MigrationRegistry {
     private val migration1To2 = object : Migration(1, 2) {
-        override fun migrate(database: SupportSQLiteDatabase) {
-            createRoutineTables(database)
-            createWorkoutTables(database)
+        override fun migrate(db: SupportSQLiteDatabase) {
+            createRoutineTables(db)
+            createWorkoutTables(db)
         }
     }
 
-    val all: Array<Migration> = arrayOf(migration1To2)
+    private val migration2To3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `exercises` ADD COLUMN `media_uri` TEXT")
+            db.execSQL("ALTER TABLE `exercises` ADD COLUMN `media_type` TEXT")
+            db.execSQL("ALTER TABLE `exercises` ADD COLUMN `media_thumbnail_uri` TEXT")
+            db.execSQL(
+                "ALTER TABLE `workout_session_exercises` " +
+                    "ADD COLUMN `media_uri_snapshot` TEXT",
+            )
+            db.execSQL(
+                "ALTER TABLE `workout_session_exercises` " +
+                    "ADD COLUMN `media_type_snapshot` TEXT",
+            )
+            db.execSQL(
+                "ALTER TABLE `workout_session_exercises` " +
+                    "ADD COLUMN `media_thumbnail_uri_snapshot` TEXT",
+            )
+        }
+    }
+
+    private val migration3To4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE `workout_sessions` ADD COLUMN `location_latitude` REAL",
+            )
+            db.execSQL(
+                "ALTER TABLE `workout_sessions` ADD COLUMN `location_longitude` REAL",
+            )
+            db.execSQL(
+                "ALTER TABLE `workout_sessions` ADD COLUMN `location_accuracy_meters` REAL",
+            )
+            db.execSQL(
+                "ALTER TABLE `workout_sessions` " +
+                    "ADD COLUMN `location_captured_at_epoch_millis` INTEGER",
+            )
+            db.execSQL(
+                "ALTER TABLE `workout_sessions` ADD COLUMN `location_label` TEXT",
+            )
+        }
+    }
+
+    val all: Array<Migration> = arrayOf(
+        migration1To2,
+        migration2To3,
+        migration3To4,
+    )
 
     private fun createRoutineTables(database: SupportSQLiteDatabase) {
         database.execSQL(

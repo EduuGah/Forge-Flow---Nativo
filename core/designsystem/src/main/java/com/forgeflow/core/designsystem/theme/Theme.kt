@@ -87,6 +87,7 @@ object ForgeFlowDesign {
 fun ForgeFlowTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     accentColor: AccentColor = AccentColor.BLUE,
+    compactMode: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val accent = accentColor.palette()
@@ -107,7 +108,7 @@ fun ForgeFlowTheme(
     )
 
     androidx.compose.runtime.CompositionLocalProvider(
-        LocalForgeFlowSpacing provides ForgeFlowSpacing(),
+        LocalForgeFlowSpacing provides forgeFlowSpacing(compactMode),
         LocalSemanticColors provides semanticColors,
     ) {
         MaterialTheme(

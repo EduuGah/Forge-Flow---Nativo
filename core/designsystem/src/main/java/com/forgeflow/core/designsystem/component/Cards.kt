@@ -1,5 +1,6 @@
 package com.forgeflow.core.designsystem.component
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,7 +16,7 @@ import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 @Composable
 fun ForgeFlowCard(
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(ForgeFlowDesign.spacing.medium),
+    contentPadding: PaddingValues = PaddingValues(ForgeFlowDesign.spacing.card),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
@@ -30,6 +31,7 @@ fun ForgeFlowCard(
     ) {
         Column(
             modifier = Modifier.padding(contentPadding),
+            verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
             content = content,
         )
     }

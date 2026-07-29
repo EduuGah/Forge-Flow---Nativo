@@ -104,7 +104,7 @@ class ExercisesViewModel @Inject constructor(
                     .filter { exercise ->
                         muscleGroup == null || exercise.primaryMuscleGroup == muscleGroup
                     }
-                    .map(Exercise::toUiModel)
+                    .map { exercise -> exercise.toUiModel() }
                     .toList(),
                 totalCount = value.size,
                 customCount = value.count(Exercise::isCustom),
@@ -165,6 +165,9 @@ class ExercisesViewModel @Inject constructor(
         primaryMuscleGroup = primaryMuscleGroup,
         equipment = equipment,
         instructions = instructions,
+        mediaUri = media?.uri,
+        mediaType = media?.type,
+        mediaThumbnailUri = media?.thumbnailUri,
         isCustom = isCustom,
     )
 

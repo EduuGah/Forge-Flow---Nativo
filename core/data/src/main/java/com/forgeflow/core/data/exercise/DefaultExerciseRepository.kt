@@ -56,6 +56,7 @@ class DefaultExerciseRepository @Inject constructor(
             secondaryMuscleGroups = emptySet(),
             equipment = equipment,
             instructions = instructions.trim(),
+            media = existing?.asExternalModel()?.media,
             isCustom = true,
             createdAt = existing?.createdAtEpochMillis?.let(java.time.Instant::ofEpochMilli) ?: now,
             updatedAt = now,

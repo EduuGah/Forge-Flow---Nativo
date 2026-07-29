@@ -9,14 +9,13 @@ import com.forgeflow.core.navigation.SettingsRoute
 import com.forgeflow.feature.settings.presentation.SettingsScreen
 import com.forgeflow.feature.settings.presentation.SettingsViewModel
 
-fun NavGraphBuilder.settingsScreen(onOpenExercises: () -> Unit) {
+fun NavGraphBuilder.settingsScreen() {
     composable<SettingsRoute> {
         val viewModel: SettingsViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsStateWithLifecycle()
         SettingsScreen(
             state = state,
             onAction = viewModel::onAction,
-            onOpenExercises = onOpenExercises,
         )
     }
 }

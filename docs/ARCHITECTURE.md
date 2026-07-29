@@ -30,6 +30,8 @@ de tela são imutáveis e as ações da interface são explícitas.
 - `:core:database`: Room, entidades, DAOs, mappers e migrations.
 - `:core:data`: repositories, fontes locais, seed e DataStore.
 - `:core:navigation`: destinos serializáveis compartilhados.
+- `:core:platform`: integrações Android isoladas, como canais de notificação e
+  captura contextual da localização atual.
 - `:core:testing`: fakes, builders e regras de corrotinas.
 - `:feature:*`: navegação e apresentação de cada funcionalidade.
 
@@ -63,12 +65,28 @@ manual nem Service Locator.
 
 ## Offline-first
 
-Room é a fonte de verdade para exercícios e será a fonte de verdade para rotinas,
-sessões e histórico. A futura fonte remota será combinada dentro dos repositories; as
-telas e ViewModels não precisarão mudar de origem de dados.
+Room é a fonte de verdade para exercícios, rotinas, sessões e histórico. A futura fonte
+remota será combinada dentro dos repositories; as telas e ViewModels não precisarão
+mudar de origem de dados.
 
 Escritas relacionais são `suspend`. Observações são `Flow`. Sincronização e WorkManager
 estão fora da Fase 0; apenas a dependência está catalogada.
+
+## Recursos nativos e permissões
+
+Integrações com o sistema ficam em `:core:platform`, atrás de contratos pequenos. O
+domínio recebe somente modelos próprios, sem depender de `Context`, `Location` ou APIs
+de notificação.
+
+Os canais de notificação são criados na inicialização e separados por finalidade:
+descanso, sessão ativa, treino programado, progresso e atualizações. A permissão de
+notificação só deve ser solicitada quando o usuário ativar uma função que realmente
+envie alertas, como o cronômetro de descanso.
+
+A localização é opcional e solicitada ao ativar "Salvar local no histórico" no treino
+ativo. O aplicativo captura apenas uma posição ao finalizar a sessão; não acompanha o
+usuário em segundo plano. Coordenadas, precisão e horário ficam no Room para permitir
+um mapa futuro sem alterar sessões antigas.
 
 ## Tutorial futuro
 

@@ -9,8 +9,23 @@ value class Weight private constructor(val grams: Long) {
             require(grams >= 0) { "Weight cannot be negative" }
             return Weight(grams)
         }
+
+        fun from(value: Double, unit: WeightUnit): Weight {
+            val grams = value.coerceAtLeast(0.0) * unit.gramsPerUnit
+            return Weight(grams.toLong())
+        }
     }
+
+    fun valueIn(unit: WeightUnit): Double = grams / unit.gramsPerUnit
 }
+
+fun Long.gramsIn(unit: WeightUnit): Double = this / unit.gramsPerUnit
+
+private val WeightUnit.gramsPerUnit: Double
+    get() = when (this) {
+        WeightUnit.KILOGRAM -> 1_000.0
+        WeightUnit.POUND -> 453.59237
+    }
 
 @JvmInline
 value class Repetitions(val count: Int) {

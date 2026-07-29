@@ -22,6 +22,12 @@ data class ExerciseEntity(
     val secondaryMuscleGroups: String,
     val equipment: String,
     val instructions: String,
+    @ColumnInfo(name = "media_uri")
+    val mediaUri: String? = null,
+    @ColumnInfo(name = "media_type")
+    val mediaType: String? = null,
+    @ColumnInfo(name = "media_thumbnail_uri")
+    val mediaThumbnailUri: String? = null,
     @ColumnInfo(name = "is_custom")
     val isCustom: Boolean,
     @ColumnInfo(name = "created_at_epoch_millis")

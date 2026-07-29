@@ -69,4 +69,42 @@
     <string name="muscle_calves">Panturrilhas</string>
     <string name="muscle_core">Core</string>
     <string name="muscle_full_body">Corpo inteiro</string>
+    <string name="planner_loading">Carregando planejamento</string>
+    <string name="planner_back">Voltar</string>
+    <string name="planner_eyebrow">Planejamento</string>
+    <string name="planner_title">Calendário de treinos</string>
+    <string name="planner_description">Organize sua semana e acompanhe a consistência sem perder o histórico real.</string>
+    <string name="planner_history_error">Não foi possível carregar os treinos concluídos. Seu planejamento continua disponível.</string>
+    <string name="planner_weekly_goal">Meta semanal</string>
+    <string name="planner_goal_progress">%1$d de %2$d treinos</string>
+    <string name="planner_decrease_goal">Diminuir meta semanal</string>
+    <string name="planner_increase_goal">Aumentar meta semanal</string>
+    <string name="planner_current_streak">Sequência atual</string>
+    <string name="planner_best_streak">Melhor sequência</string>
+    <plurals name="planner_days_value">
+        <item quantity="one">%1$d dia</item>
+        <item quantity="other">%1$d dias</item>
+    </plurals>
+    <string name="planner_previous_month">Mês anterior</string>
+    <string name="planner_next_month">Próximo mês</string>
+    <string name="planner_completed">Concluído</string>
+    <string name="planner_scheduled">Programado</string>
+    <string name="planner_schedule">Horários</string>
+    <string name="planner_schedule_title">Dias preferidos</string>
+    <string name="planner_preferred_time">Horário preferido</string>
+    <string name="planner_change_time">Alterar horário preferido</string>
+    <string name="planner_next_scheduled">Próximo treino: %1$s</string>
+    <string name="planner_no_schedule">Selecione os dias em que pretende treinar.</string>
+    <string name="planner_selected_day">Dia selecionado</string>
+    <string name="planner_planned_at">Treino planejado para %1$s</string>
+    <string name="planner_no_workout_on_day">Nenhum treino foi concluído neste dia.</string>
+    <plurals name="planner_workout_metadata">
+        <item quantity="one">%1$s • %2$d série concluída</item>
+        <item quantity="other">%1$s • %2$d séries concluídas</item>
+    </plurals>
+    <string name="planner_dashboard_eyebrow">Sua semana</string>
+    <string name="planner_dashboard_progress">%1$d de %2$d treinos</string>
+    <string name="planner_dashboard_next">Próximo: %1$s</string>
+    <string name="planner_dashboard_no_schedule">Defina seus dias e horário de treino.</string>
+    <string name="planner_dashboard_open">Abrir calendário</string>
 </resources>

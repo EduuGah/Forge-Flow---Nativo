@@ -3,6 +3,7 @@ package com.forgeflow.core.data.settings
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.model.AccentColor
 import com.forgeflow.core.model.ThemePreference
+import com.forgeflow.core.model.TrainingDay
 import com.forgeflow.core.model.UserSettings
 import com.forgeflow.core.model.WeightUnit
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +18,12 @@ interface SettingsRepository {
     suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit>
 
     suspend fun setCompactMode(enabled: Boolean): DataResult<Unit>
+
+    suspend fun setWeeklyWorkoutGoal(goal: Int): DataResult<Unit>
+
+    suspend fun setTrainingDays(days: Set<TrainingDay>): DataResult<Unit>
+
+    suspend fun setPreferredWorkoutTime(minutesFromMidnight: Int): DataResult<Unit>
 
     suspend fun setOnboardingCompleted(completed: Boolean): DataResult<Unit>
 

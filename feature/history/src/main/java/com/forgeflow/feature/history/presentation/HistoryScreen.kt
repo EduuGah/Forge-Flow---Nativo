@@ -168,7 +168,6 @@ private fun HistoryContent(
                     HistoryWorkoutCard(
                         workout = workout,
                         weightUnit = state.weightUnit,
-                        expandedByDefault = index == 0,
                         onOpenExercise = onOpenExercise,
                         onDelete = {
                             onAction(HistoryAction.DeleteRequested(workout.id))

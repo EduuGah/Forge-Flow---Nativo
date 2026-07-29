@@ -15,6 +15,7 @@ private fun HomeScreenPreview() {
             onOpenExercises = {},
             onOpenRoutines = {},
             onOpenActiveWorkout = {},
+            onOpenPlanner = {},
         )
     }
 }

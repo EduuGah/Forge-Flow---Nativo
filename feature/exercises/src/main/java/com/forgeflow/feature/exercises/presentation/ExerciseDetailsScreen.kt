@@ -32,9 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +51,7 @@ import com.forgeflow.core.designsystem.component.ForgeFlowScaffold
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.core.model.Equipment
 import com.forgeflow.core.model.MuscleGroup
+import com.forgeflow.core.model.PersonalRecordType
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.WorkoutSetType
 import com.forgeflow.feature.exercises.R
@@ -132,6 +135,8 @@ private fun ExerciseDetailsHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1.65f),
+            contentScale = ContentScale.Fit,
+            containerColor = Color.White,
         )
         Column(
             modifier = Modifier.padding(
@@ -274,6 +279,17 @@ private fun androidx.compose.foundation.lazy.LazyListScope.exerciseSummary(
                 stringResource(R.string.details_total_volume),
                 "${exercise.totalVolume} ${exercise.weightUnit.shortLabel()}",
             )
+            if (exercise.personalRecords.isNotEmpty()) {
+                HorizontalDivider(color = ForgeFlowDesign.colors.divider)
+                Text(
+                    text = stringResource(R.string.details_recent_records),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+                exercise.personalRecords.take(6).forEach { record ->
+                    PersonalRecordRow(record = record)
+                }
+            }
         }
     }
 }
@@ -453,14 +469,53 @@ private fun ExerciseSessionCard(
                     modifier = Modifier.weight(1f),
                 )
                 if (set.isPersonalRecord) {
-                    Icon(
-                        imageVector = Icons.Outlined.EmojiEvents,
-                        contentDescription = stringResource(R.string.personal_record),
-                        tint = ForgeFlowDesign.colors.warning,
-                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        Icon(
+                            imageVector = Icons.Outlined.EmojiEvents,
+                            contentDescription = stringResource(R.string.personal_record),
+                            tint = ForgeFlowDesign.colors.warning,
+                        )
+                        Text(
+                            text = set.personalRecordTypes
+                                .joinToString(" + ") { it.shortLabel() },
+                            color = ForgeFlowDesign.colors.warning,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PersonalRecordRow(record: ExercisePersonalRecordUiModel) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.EmojiEvents,
+            contentDescription = null,
+            tint = ForgeFlowDesign.colors.warning,
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(record.type.labelResource()),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                text = "${record.workoutName} • ${record.date}",
+                color = ForgeFlowDesign.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Text(
+            text = record.performance,
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.labelLarge,
+        )
     }
 }
 
@@ -488,15 +543,21 @@ private fun Double.toCleanString(): String =
 private fun WorkoutSetType.color() = when (this) {
     WorkoutSetType.WARM_UP -> ForgeFlowDesign.colors.warning
     WorkoutSetType.NORMAL -> MaterialTheme.colorScheme.onSurface
-    WorkoutSetType.DROP -> MaterialTheme.colorScheme.tertiary
-    WorkoutSetType.FAILURE -> MaterialTheme.colorScheme.error
 }
 
 private fun WorkoutSetType.shortLabel(number: Int): String = when (this) {
     WorkoutSetType.WARM_UP -> "A"
     WorkoutSetType.NORMAL -> number.toString()
-    WorkoutSetType.DROP -> "D"
-    WorkoutSetType.FAILURE -> "F"
+}
+
+private fun PersonalRecordType.shortLabel(): String = when (this) {
+    PersonalRecordType.WEIGHT -> "PESO"
+    PersonalRecordType.SET_VOLUME -> "VOLUME"
+}
+
+private fun PersonalRecordType.labelResource(): Int = when (this) {
+    PersonalRecordType.WEIGHT -> R.string.record_weight
+    PersonalRecordType.SET_VOLUME -> R.string.record_set_volume
 }
 
 @StringRes

@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,6 +68,70 @@ internal fun LatestWorkoutPanel(
                 value = workout.volume.asWeightLabel(weightUnit),
                 label = weightUnit.symbol,
             )
+        }
+    }
+}
+
+@Composable
+internal fun RecentWorkoutsPanel(
+    workouts: List<HomeWorkoutSummaryUiModel>,
+    weightUnit: WeightUnit,
+) {
+    ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DashboardIcon {
+                Icon(Icons.Outlined.History, contentDescription = null)
+            }
+            Column {
+                ForgeFlowEyebrow(text = stringResource(R.string.recent_activity))
+                Text(
+                    text = stringResource(R.string.recent_workouts_title),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+            }
+        }
+        workouts.forEachIndexed { index, workout ->
+            if (index > 0) {
+                HorizontalDivider(color = ForgeFlowDesign.colors.divider)
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = workout.name,
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        text = workout.date,
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${workout.volume.asWeightLabel(weightUnit)} " +
+                            weightUnit.symbol,
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.recent_workout_metadata,
+                            workout.completedSets,
+                            workout.durationMinutes,
+                        ),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
         }
     }
 }

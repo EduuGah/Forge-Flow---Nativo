@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
@@ -11,8 +12,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowEmptyState
 import com.forgeflow.core.designsystem.component.ForgeFlowLoadingState
+import com.forgeflow.core.designsystem.component.ForgeFlowLocationMap
+import com.forgeflow.core.designsystem.component.ForgeFlowMapPoint
 import com.forgeflow.core.designsystem.component.ForgeFlowPageHeader
 import com.forgeflow.core.designsystem.component.ForgeFlowScaffold
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
@@ -22,6 +26,7 @@ import com.forgeflow.feature.history.R
 fun HistoryScreen(
     state: HistoryUiState,
     onOpenExercise: (String) -> Unit,
+    onAction: (HistoryAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -34,8 +39,17 @@ fun HistoryScreen(
                 state = state,
                 contentPadding = innerPadding,
                 onOpenExercise = onOpenExercise,
+                onAction = onAction,
             )
         }
+    }
+    state.pendingDeleteWorkout?.let { workout ->
+        DeleteHistoryDialog(
+            workout = workout,
+            isDeleting = state.isDeleting,
+            onConfirm = { onAction(HistoryAction.DeleteConfirmed) },
+            onDismiss = { onAction(HistoryAction.DeleteDismissed) },
+        )
     }
 }
 
@@ -44,6 +58,7 @@ private fun HistoryContent(
     state: HistoryUiState,
     contentPadding: PaddingValues,
     onOpenExercise: (String) -> Unit,
+    onAction: (HistoryAction) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -65,18 +80,71 @@ private fun HistoryContent(
         item {
             HistoryMetricGrid(state = state)
         }
+        item {
+            HistoryFilters(state = state, onAction = onAction)
+        }
+        if (state.mapPoints.isNotEmpty()) {
+            item {
+                androidx.compose.foundation.layout.Column(
+                    verticalArrangement = Arrangement.spacedBy(
+                        ForgeFlowDesign.spacing.small,
+                    ),
+                ) {
+                    Text(
+                        text = stringResource(R.string.training_map_title),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.training_map_description,
+                            state.mapPoints.size,
+                        ),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    ForgeFlowLocationMap(
+                        points = state.mapPoints.map {
+                            ForgeFlowMapPoint(
+                                latitude = it.latitude,
+                                longitude = it.longitude,
+                                label = it.label,
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(210.dp),
+                    )
+                }
+            }
+        }
         if (state.workouts.isEmpty()) {
             item {
                 ForgeFlowEmptyState(
                     title = if (state.error) {
                         stringResource(R.string.history_error_title)
                     } else {
-                        stringResource(R.string.history_empty_title)
+                        if (
+                            state.searchQuery.isNotBlank() ||
+                            state.dateFilter != HistoryDateFilter.ALL ||
+                            state.onlyWithLocation
+                        ) {
+                            stringResource(R.string.history_filter_empty_title)
+                        } else {
+                            stringResource(R.string.history_empty_title)
+                        }
                     },
                     message = if (state.error) {
                         stringResource(R.string.history_error_message)
                     } else {
-                        stringResource(R.string.history_empty_message)
+                        if (
+                            state.searchQuery.isNotBlank() ||
+                            state.dateFilter != HistoryDateFilter.ALL ||
+                            state.onlyWithLocation
+                        ) {
+                            stringResource(R.string.history_filter_empty_message)
+                        } else {
+                            stringResource(R.string.history_empty_message)
+                        }
                     },
                 )
             }
@@ -102,6 +170,9 @@ private fun HistoryContent(
                         weightUnit = state.weightUnit,
                         expandedByDefault = index == 0,
                         onOpenExercise = onOpenExercise,
+                        onDelete = {
+                            onAction(HistoryAction.DeleteRequested(workout.id))
+                        },
                     )
                 }
             }

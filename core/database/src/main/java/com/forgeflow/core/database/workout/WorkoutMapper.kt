@@ -78,7 +78,11 @@ private fun WorkoutSetEntity.asExternalModel(): WorkoutSet = WorkoutSet(
     id = WorkoutSetId(id),
     sessionExerciseId = SessionExerciseId(sessionExerciseId),
     position = position,
-    setType = WorkoutSetType.valueOf(setType),
+    setType = if (setType == WorkoutSetType.WARM_UP.name) {
+        WorkoutSetType.WARM_UP
+    } else {
+        WorkoutSetType.NORMAL
+    },
     weight = Weight.fromGrams(weightGrams),
     repetitions = Repetitions(repetitions),
     rpe = rpe?.let(::Rpe),

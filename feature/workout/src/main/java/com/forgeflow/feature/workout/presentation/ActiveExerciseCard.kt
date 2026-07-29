@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.HorizontalDivider
@@ -13,6 +15,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
@@ -39,7 +43,16 @@ internal fun ActiveExerciseCard(
             ForgeFlowExerciseMedia(
                 mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
                 contentDescription = exercise.name,
-                modifier = Modifier.size(64.dp),
+                modifier = Modifier
+                    .size(60.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f),
+                        shape = CircleShape,
+                    ),
+                contentScale = ContentScale.Fit,
+                shape = CircleShape,
+                containerColor = Color.White,
             )
             Column(
                 modifier = Modifier.weight(1f),

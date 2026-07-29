@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material3.HorizontalDivider
@@ -15,12 +16,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowExerciseMedia
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
+import com.forgeflow.core.model.PersonalRecordType
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.WorkoutSetType
 import com.forgeflow.feature.history.R
@@ -48,6 +52,9 @@ internal fun HistoryExerciseRow(
                 mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
                 contentDescription = exercise.name,
                 modifier = Modifier.size(52.dp),
+                contentScale = ContentScale.Fit,
+                shape = CircleShape,
+                containerColor = Color.White,
             )
             Column(
                 modifier = Modifier.weight(1f),
@@ -130,6 +137,13 @@ private fun HistorySetRow(
                 tint = ForgeFlowDesign.colors.warning,
                 modifier = Modifier.size(18.dp),
             )
+            Text(
+                text = set.personalRecordTypes
+                    .joinToString(" + ") { it.shortLabel() },
+                color = ForgeFlowDesign.colors.warning,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelSmall,
+            )
         }
     }
 }
@@ -138,13 +152,14 @@ private fun HistorySetRow(
 private fun WorkoutSetType.typeColor() = when (this) {
     WorkoutSetType.WARM_UP -> ForgeFlowDesign.colors.warning
     WorkoutSetType.NORMAL -> MaterialTheme.colorScheme.onSurface
-    WorkoutSetType.DROP -> MaterialTheme.colorScheme.tertiary
-    WorkoutSetType.FAILURE -> MaterialTheme.colorScheme.error
 }
 
 private fun WorkoutSetType.shortLabel(number: Int): String = when (this) {
     WorkoutSetType.WARM_UP -> "A"
     WorkoutSetType.NORMAL -> number.toString()
-    WorkoutSetType.DROP -> "D"
-    WorkoutSetType.FAILURE -> "F"
+}
+
+private fun PersonalRecordType.shortLabel(): String = when (this) {
+    PersonalRecordType.WEIGHT -> "PESO"
+    PersonalRecordType.SET_VOLUME -> "VOLUME"
 }

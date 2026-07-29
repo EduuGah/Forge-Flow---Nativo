@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -36,6 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -206,9 +209,10 @@ private fun ExercisePickerRow(
         ForgeFlowExerciseMedia(
             mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
             contentDescription = exercise.name,
-            modifier = Modifier
-                .size(52.dp)
-                .clip(MaterialTheme.shapes.small),
+            modifier = Modifier.size(52.dp),
+            contentScale = ContentScale.Fit,
+            shape = CircleShape,
+            containerColor = Color.White,
         )
         Column(
             modifier = Modifier.weight(1f),

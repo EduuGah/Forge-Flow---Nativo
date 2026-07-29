@@ -32,4 +32,23 @@
     <string name="history_set_performance">%1$s %2$s × %3$d reps</string>
     <string name="personal_records">Recordes pessoais</string>
     <string name="personal_record">Recorde pessoal</string>
+    <string name="history_search_label">Pesquisar histórico</string>
+    <string name="history_search_placeholder">Treino, exercício, local ou data</string>
+    <string name="clear_search">Limpar pesquisa</string>
+    <string name="filter_all_dates">Todas</string>
+    <string name="filter_last_7_days">7 dias</string>
+    <string name="filter_last_30_days">30 dias</string>
+    <string name="filter_last_90_days">90 dias</string>
+    <string name="filter_with_location">Com local</string>
+    <string name="history_filter_empty_title">Nenhum resultado</string>
+    <string name="history_filter_empty_message">Ajuste a pesquisa ou os filtros para encontrar outros treinos.</string>
+    <string name="training_map_title">Mapa de treinos</string>
+    <string name="training_map_description">%1$d locais visíveis nos filtros atuais.</string>
+    <string name="workout_location_map">LOCAL DO TREINO</string>
+    <string name="delete_history_action">Excluir do histórico</string>
+    <string name="delete_history_title">Excluir este treino?</string>
+    <string name="delete_history_message">“%1$s” e todas as suas séries serão removidos definitivamente.</string>
+    <string name="delete_history_confirm">Excluir</string>
+    <string name="deleting_history">Excluindo…</string>
+    <string name="delete_history_cancel">Cancelar</string>
 </resources>

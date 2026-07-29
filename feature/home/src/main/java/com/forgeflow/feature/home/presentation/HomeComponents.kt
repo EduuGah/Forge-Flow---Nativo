@@ -76,9 +76,9 @@ internal fun DashboardMetricGrid(state: HomeUiState) {
                 modifier = Modifier.weight(1f),
             )
             ForgeFlowMetric(
-                label = stringResource(R.string.metric_total_workouts),
-                value = state.totalWorkoutCount.toString(),
-                helper = stringResource(R.string.metric_finished),
+                label = stringResource(R.string.metric_streak),
+                value = state.currentStreak.toString(),
+                helper = stringResource(R.string.metric_streak_days),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -87,15 +87,36 @@ internal fun DashboardMetricGrid(state: HomeUiState) {
             horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
         ) {
             ForgeFlowMetric(
-                label = stringResource(R.string.metric_sets),
-                value = state.totalCompletedSets.toString(),
-                helper = stringResource(R.string.metric_completed),
+                label = stringResource(R.string.metric_total_workouts),
+                value = state.totalWorkoutCount.toString(),
+                helper = stringResource(R.string.metric_finished),
                 modifier = Modifier.weight(1f),
             )
+            ForgeFlowMetric(
+                label = stringResource(R.string.metric_time),
+                value = state.totalDurationMinutes.asDashboardDuration(),
+                helper = stringResource(R.string.metric_training),
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+        ) {
             ForgeFlowMetric(
                 label = stringResource(R.string.metric_volume),
                 value = state.totalVolume.asWeightLabel(state.weightUnit),
                 helper = stringResource(R.string.metric_in_unit, state.weightUnit.symbol),
+                modifier = Modifier.weight(1f),
+            )
+            ForgeFlowMetric(
+                label = stringResource(R.string.metric_personal_records),
+                value = state.personalRecordCount.toString(),
+                helper = stringResource(
+                    R.string.metric_pr_breakdown,
+                    state.weightRecordCount,
+                    state.volumeRecordCount,
+                ),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -215,3 +236,6 @@ internal fun Double.asWeightLabel(unit: WeightUnit): String {
     }
     return formatter.format(this)
 }
+
+internal fun Long.asDashboardDuration(): String =
+    if (this >= 60) "${this / 60}h ${this % 60}min" else "${this}min"

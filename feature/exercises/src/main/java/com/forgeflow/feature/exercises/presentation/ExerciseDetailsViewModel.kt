@@ -77,15 +77,16 @@ class ExerciseDetailsViewModel @Inject constructor(
                 .firstOrNull { it.sessionExercise.exerciseId == id }
                 ?.let { workout to it }
         }
-        val personalRecordIds = mutableSetOf<String>()
+        val personalRecordsBySet = mutableMapOf<String, Set<com.forgeflow.core.model.PersonalRecordType>>()
         val previousSets = mutableListOf<WorkoutSet>()
         matchingSessions.asReversed().forEach { (_, exerciseDetails) ->
             exerciseDetails.sets
                 .filter(WorkoutSet::isCompleted)
                 .sortedBy(WorkoutSet::position)
                 .forEach { set ->
-                    if (set.personalRecordsAgainst(previousSets).isNotEmpty()) {
-                        personalRecordIds += set.id.value
+                    val records = set.personalRecordsAgainst(previousSets)
+                    if (records.isNotEmpty()) {
+                        personalRecordsBySet[set.id.value] = records
                     }
                     previousSets += set
                 }
@@ -143,7 +144,27 @@ class ExerciseDetailsViewModel @Inject constructor(
                 "${it.weight.valueIn(settings.weightUnit).toCleanString()} × " +
                     it.repetitions.count
             } ?: "—",
-            personalRecordCount = personalRecordIds.size,
+            personalRecordCount = personalRecordsBySet.values.sumOf { it.size },
+            personalRecords = matchingSessions.flatMap { (workout, details) ->
+                details.sets
+                    .filter { it.isCompleted && it.repetitions.count > 0 }
+                    .flatMap { set ->
+                        personalRecordsBySet[set.id.value].orEmpty().map { type ->
+                            ExercisePersonalRecordUiModel(
+                                type = type,
+                                workoutName = workout.session.name,
+                                date = DATE_FORMATTER.format(
+                                    workout.session.startedAt.atZone(
+                                        ZoneId.systemDefault(),
+                                    ),
+                                ),
+                                performance = "${
+                                    set.weight.valueIn(settings.weightUnit).toCleanString()
+                                } × ${set.repetitions.count} ${settings.weightUnit.shortLabel()}",
+                            )
+                        }
+                    }
+            },
             chartPoints = chart,
             sessions = matchingSessions.map { (workout, details) ->
                 ExerciseSessionUiModel(
@@ -161,7 +182,8 @@ class ExerciseDetailsViewModel @Inject constructor(
                                     set.weight.valueIn(settings.weightUnit).toCleanString()
                                 } × ${set.repetitions.count}",
                                 type = set.setType,
-                                isPersonalRecord = set.id.value in personalRecordIds,
+                                personalRecordTypes =
+                                    personalRecordsBySet[set.id.value].orEmpty(),
                             )
                         },
                 )
@@ -171,6 +193,9 @@ class ExerciseDetailsViewModel @Inject constructor(
 
     private fun Double.toCleanString(): String =
         if (this % 1.0 == 0.0) toLong().toString() else "%.1f".format(this)
+
+    private fun com.forgeflow.core.model.WeightUnit.shortLabel(): String =
+        if (this == com.forgeflow.core.model.WeightUnit.KILOGRAM) "kg" else "lb"
 
     private companion object {
         val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern(

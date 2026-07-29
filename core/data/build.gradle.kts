@@ -2,6 +2,7 @@ plugins {
     id("forgeflow.android.library")
     id("forgeflow.android.hilt")
     id("forgeflow.android.testing")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -15,6 +16,7 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.coroutines.core)
+    implementation(libs.kotlin.serialization.json)
 
     androidTestImplementation(libs.androidx.room.testing)
 }

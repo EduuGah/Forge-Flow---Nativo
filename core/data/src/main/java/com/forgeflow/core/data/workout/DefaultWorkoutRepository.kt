@@ -195,6 +195,15 @@ class DefaultWorkoutRepository @Inject constructor(
         onFailure = { DataResult.Failure(AppError.WriteFailed) },
     )
 
+    override suspend fun deleteCompletedWorkout(
+        sessionId: WorkoutSessionId,
+    ): DataResult<Unit> = runCatching {
+        check(workoutDao.deleteCompletedWorkout(sessionId.value) > 0)
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
     override suspend fun discardActiveWorkout(): DataResult<Unit> = runCatching {
         workoutDao.discardActive(clock.now().toEpochMilli())
     }.fold(

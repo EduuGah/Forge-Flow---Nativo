@@ -13,6 +13,7 @@ private fun HistoryScreenPreview() {
         HistoryScreen(
             state = HistoryUiState(isLoading = false),
             onOpenExercise = {},
+            onAction = {},
         )
     }
 }

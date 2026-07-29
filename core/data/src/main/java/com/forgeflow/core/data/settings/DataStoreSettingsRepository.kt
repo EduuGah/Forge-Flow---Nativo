@@ -48,6 +48,8 @@ class DataStoreSettingsRepository @Inject constructor(
                     ?: WeightUnit.KILOGRAM,
                 compactMode = preferences[COMPACT_MODE] ?: false,
                 hasCompletedOnboarding = preferences[ONBOARDING_COMPLETED] ?: false,
+                hasRequestedNotificationPermission =
+                    preferences[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
             )
         }
 
@@ -81,6 +83,12 @@ class DataStoreSettingsRepository @Inject constructor(
         preferences[ONBOARDING_COMPLETED] = completed
     }
 
+    override suspend fun setNotificationPermissionRequested(
+        requested: Boolean,
+    ): DataResult<Unit> = updatePreferences { preferences ->
+        preferences[NOTIFICATION_PERMISSION_REQUESTED] = requested
+    }
+
     private suspend fun updatePreferences(
         transform: suspend (MutablePreferences) -> Unit,
     ): DataResult<Unit> = runCatching {
@@ -96,5 +104,7 @@ class DataStoreSettingsRepository @Inject constructor(
         val WEIGHT_UNIT = stringPreferencesKey("weight_unit")
         val COMPACT_MODE = booleanPreferencesKey("compact_mode")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        val NOTIFICATION_PERMISSION_REQUESTED =
+            booleanPreferencesKey("notification_permission_requested")
     }
 }

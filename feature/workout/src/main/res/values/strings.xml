@@ -49,8 +49,6 @@
     <string name="delete_set">Excluir série</string>
     <string name="set_type_warm_up">Aquecimento</string>
     <string name="set_type_normal">Série normal</string>
-    <string name="set_type_drop">Drop set</string>
-    <string name="set_type_failure">Até a falha</string>
     <string name="last_performance">Último: %1$s %2$s</string>
     <string name="no_previous_performance">Primeiro registro deste exercício</string>
     <string name="total_volume_metric">Volume (%1$s)</string>

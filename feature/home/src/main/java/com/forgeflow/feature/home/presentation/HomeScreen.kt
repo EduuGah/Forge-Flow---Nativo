@@ -65,10 +65,11 @@ private fun HomeContent(
             )
         }
         item { DashboardMetricGrid(state = state) }
-        state.latestWorkout?.let { workout ->
+        item { DashboardEvolutionPanels(state = state) }
+        if (state.recentWorkouts.isNotEmpty()) {
             item {
-                LatestWorkoutPanel(
-                    workout = workout,
+                RecentWorkoutsPanel(
+                    workouts = state.recentWorkouts,
                     weightUnit = state.weightUnit,
                 )
             }

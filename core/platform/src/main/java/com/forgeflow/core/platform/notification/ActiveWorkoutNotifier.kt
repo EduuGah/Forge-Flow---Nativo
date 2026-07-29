@@ -21,6 +21,8 @@ class ActiveWorkoutNotifier @Inject constructor(
         workoutName: String,
         completedSets: Int,
         totalSets: Int,
+        exerciseCount: Int,
+        totalVolumeLabel: String,
         startedAtEpochMillis: Long,
     ) {
         if (!canPostNotifications()) return
@@ -39,28 +41,49 @@ class ActiveWorkoutNotifier @Inject constructor(
             )
         }
         val safeTotal = totalSets.coerceAtLeast(1)
-        val notification = NotificationCompat.Builder(
+        val progressText = context.getString(
+            R.string.active_workout_notification_progress,
+            completedSets,
+            totalSets,
+        )
+        val exerciseText = context.resources.getQuantityString(
+            R.plurals.active_workout_notification_exercises,
+            exerciseCount,
+            exerciseCount,
+        )
+        val detailText = context.getString(
+            R.string.active_workout_notification_details,
+            progressText,
+            exerciseText,
+            totalVolumeLabel,
+        )
+        val builder = NotificationCompat.Builder(
             context,
             ForgeFlowNotificationChannels.ACTIVE_WORKOUT,
         )
             .setSmallIcon(R.drawable.ic_stat_forgeflow)
             .setContentTitle(workoutName)
-            .setContentText(
-                context.getString(
-                    R.string.active_workout_notification_progress,
-                    completedSets,
-                    totalSets,
-                ),
-            )
+            .setContentText(detailText)
+            .setSubText(context.getString(R.string.active_workout_notification_running))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(detailText))
+            .setContentInfo("$completedSets/$totalSets")
             .setCategory(NotificationCompat.CATEGORY_WORKOUT)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setWhen(startedAtEpochMillis)
+            .setShowWhen(true)
             .setUsesChronometer(true)
             .setProgress(safeTotal, completedSets.coerceIn(0, safeTotal), false)
             .setContentIntent(contentIntent)
-            .build()
+        contentIntent?.let { intent ->
+            builder.addAction(
+                R.drawable.ic_stat_forgeflow,
+                context.getString(R.string.active_workout_notification_open),
+                intent,
+            )
+        }
+        val notification = builder.build()
 
         NotificationManagerCompat.from(context).notify(
             ACTIVE_WORKOUT_NOTIFICATION_ID,

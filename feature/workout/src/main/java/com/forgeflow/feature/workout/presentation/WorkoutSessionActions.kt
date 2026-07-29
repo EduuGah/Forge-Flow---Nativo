@@ -33,7 +33,7 @@ import com.forgeflow.feature.workout.R
 
 @Composable
 internal fun WorkoutBottomActions(
-    canFinish: Boolean,
+    finishEnabled: Boolean,
     onFinish: () -> Unit,
     onDiscard: () -> Unit,
 ) {
@@ -61,11 +61,25 @@ internal fun WorkoutBottomActions(
                     text = stringResource(R.string.finish_workout),
                     onClick = onFinish,
                     modifier = Modifier.weight(1f),
-                    enabled = canFinish,
+                    enabled = finishEnabled,
                 )
             }
         }
     }
+}
+
+@Composable
+internal fun InvalidWorkoutDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.invalid_workout_title)) },
+        text = { Text(stringResource(R.string.invalid_workout_message)) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.invalid_workout_confirm))
+            }
+        },
+    )
 }
 
 @Composable

@@ -9,8 +9,11 @@ import com.forgeflow.core.data.settings.SettingsRepository
 import com.forgeflow.core.data.workout.WorkoutRepository
 import com.forgeflow.core.model.AccentColor
 import com.forgeflow.core.model.ThemePreference
+import com.forgeflow.core.model.WeightUnit
+import com.forgeflow.core.model.gramsIn
 import com.forgeflow.core.platform.notification.ActiveWorkoutNotifier
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.text.NumberFormat
 import javax.inject.Inject
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -34,6 +37,8 @@ data class AppActiveWorkoutUiModel(
     val name: String,
     val completedSets: Int,
     val totalSets: Int,
+    val exerciseCount: Int,
+    val totalVolumeLabel: String,
     val startedAtEpochMillis: Long,
 )
 
@@ -56,6 +61,12 @@ class AppViewModel @Inject constructor(
                         name = workout.session.name,
                         completedSets = workout.completedSetCount,
                         totalSets = workout.totalSetCount,
+                        exerciseCount = workout.exercises.size,
+                        totalVolumeLabel = "${
+                            workout.totalVolumeGrams
+                                .gramsIn(settings.weightUnit)
+                                .asNotificationValue()
+                        } ${settings.weightUnit.shortLabel()}",
                         startedAtEpochMillis = workout.session.startedAt.toEpochMilli(),
                     )
                 }
@@ -79,7 +90,7 @@ class AppViewModel @Inject constructor(
             settingsRepository.observeSettings()
                 .map { it.accentColor }
                 .distinctUntilChanged()
-                .collect(launcherIconManager::sync)
+                .collect(launcherIconManager::scheduleUpdate)
         }
         viewModelScope.launch {
             uiState.collect { state ->
@@ -105,8 +116,20 @@ class AppViewModel @Inject constructor(
             workoutName = workout.name,
             completedSets = workout.completedSets,
             totalSets = workout.totalSets,
+            exerciseCount = workout.exerciseCount,
+            totalVolumeLabel = workout.totalVolumeLabel,
             startedAtEpochMillis = workout.startedAtEpochMillis,
         )
+    }
+
+    private fun Double.asNotificationValue(): String =
+        NumberFormat.getNumberInstance().apply {
+            maximumFractionDigits = 1
+        }.format(this)
+
+    private fun WeightUnit.shortLabel(): String = when (this) {
+        WeightUnit.KILOGRAM -> "kg"
+        WeightUnit.POUND -> "lb"
     }
 
     private companion object {

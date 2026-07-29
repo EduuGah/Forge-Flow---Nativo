@@ -60,4 +60,7 @@
     <string name="location_name_placeholder">Ex.: Academia do Centro</string>
     <string name="location_name_support">O nome e a posição ficam somente neste histórico.</string>
     <string name="save_workout">Salvar no histórico</string>
+    <string name="invalid_workout_title">Treino sem séries válidas</string>
+    <string name="invalid_workout_message">Conclua pelo menos uma série com uma ou mais repetições antes de finalizar.</string>
+    <string name="invalid_workout_confirm">Continuar treino</string>
 </resources>

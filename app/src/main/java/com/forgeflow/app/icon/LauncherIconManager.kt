@@ -9,6 +9,7 @@ import com.forgeflow.core.model.AccentColor
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.util.concurrent.atomic.AtomicReference
 
 @Singleton
 class LauncherIconManager @Inject constructor(
@@ -21,15 +22,27 @@ class LauncherIconManager @Inject constructor(
         if (color == AccentColor.BLUE) defaultAlias else component(color.aliasSuffix())
     }
     private val allAliases = (accentAliases.values + defaultAlias + legacyBlueAlias).distinct()
+    private val updateQueue = LauncherIconUpdateQueue()
 
-    fun sync(accentColor: AccentColor) {
+    fun scheduleUpdate(accentColor: AccentColor) {
+        updateQueue.schedule(accentColor)
+    }
+
+    fun applyScheduledUpdate() {
+        val accentColor = updateQueue.take() ?: return
+        if (!applyUpdate(accentColor)) {
+            updateQueue.retry(accentColor)
+        }
+    }
+
+    private fun applyUpdate(accentColor: AccentColor): Boolean {
         val selectedAlias = accentAliases.getValue(accentColor)
-        runCatching {
+        return runCatching {
             if (allAliases.all { component ->
                     component.isEffectivelyEnabled() == (component == selectedAlias)
                 }
             ) {
-                return
+                return@runCatching true
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 packageManager.setComponentEnabledSettings(
@@ -47,9 +60,10 @@ class LauncherIconManager @Inject constructor(
                     .filterNot { it == selectedAlias }
                     .forEach { setEnabled(it, enabled = false) }
             }
+            true
         }.onFailure { error ->
             Log.e(TAG, "Unable to update launcher icon", error)
-        }
+        }.getOrDefault(false)
     }
 
     private fun ComponentName.isEffectivelyEnabled(): Boolean =
@@ -90,7 +104,21 @@ class LauncherIconManager @Inject constructor(
     }
 }
 
-private fun AccentColor.aliasSuffix(): String = when (this) {
+internal class LauncherIconUpdateQueue {
+    private val pendingColor = AtomicReference<AccentColor?>()
+
+    fun schedule(color: AccentColor) {
+        pendingColor.set(color)
+    }
+
+    fun take(): AccentColor? = pendingColor.getAndSet(null)
+
+    fun retry(color: AccentColor) {
+        pendingColor.compareAndSet(null, color)
+    }
+}
+
+internal fun AccentColor.aliasSuffix(): String = when (this) {
     AccentColor.BLUE -> "Blue"
     AccentColor.CYAN -> "Cyan"
     AccentColor.TEAL -> "Teal"

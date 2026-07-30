@@ -49,3 +49,34 @@ Antes da implementação, escolher o backend e documentar:
 - resolução de conflitos;
 - cotas para fotos, vídeos e GIFs;
 - consentimento separado para histórico de localização.
+
+## Critérios para escolher o backend
+
+- suporte oficial ou estável para autenticação Google no Android;
+- login por e-mail, recuperação e verificação de endereço;
+- banco transacional com exclusões lógicas e controle de versão;
+- armazenamento privado de fotos com cotas por usuário;
+- tarefas em segundo plano e sincronização incremental;
+- exportação e exclusão completa dos dados;
+- ambiente separado para desenvolvimento e produção;
+- custos previsíveis para tráfego, banco e mídia.
+
+## Contrato mínimo da primeira entrega
+
+- conta continua opcional;
+- criar conta nunca substitui dados locais sem confirmação;
+- login em outro aparelho restaura somente dados sincronizados;
+- treino ativo permanece local até ser finalizado;
+- falha de rede não bloqueia nenhuma ação de treino;
+- logout preserva os dados locais por padrão;
+- exclusão remota informa claramente o que permanece no aparelho;
+- localização e fotos podem ser excluídas da sincronização separadamente.
+
+## Ordem de implementação
+
+1. Escolher backend e escrever uma decisão arquitetural.
+2. Criar contratos `AuthRepository`, `AccountSession` e `SyncRepository`.
+3. Adicionar login Google e e-mail com ambiente de desenvolvimento.
+4. Sincronizar primeiro perfil, exercícios personalizados e rotinas.
+5. Adicionar histórico de treinos e marcadores de exclusão.
+6. Liberar fotos e localização somente após consentimento e limites definidos.

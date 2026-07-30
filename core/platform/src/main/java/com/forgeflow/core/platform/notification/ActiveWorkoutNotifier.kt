@@ -1,6 +1,7 @@
 package com.forgeflow.core.platform.notification
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.pm.PackageManager
@@ -17,6 +18,7 @@ import javax.inject.Singleton
 class ActiveWorkoutNotifier @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
+    @SuppressLint("MissingPermission")
     fun show(
         workoutName: String,
         completedSets: Int,
@@ -25,7 +27,15 @@ class ActiveWorkoutNotifier @Inject constructor(
         totalVolumeLabel: String,
         startedAtEpochMillis: Long,
     ) {
-        if (!canPostNotifications()) return
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
         val launchIntent = context.packageManager
             .getLaunchIntentForPackage(context.packageName)
             ?.apply {
@@ -41,8 +51,9 @@ class ActiveWorkoutNotifier @Inject constructor(
             )
         }
         val safeTotal = totalSets.coerceAtLeast(1)
-        val progressText = context.getString(
-            R.string.active_workout_notification_progress,
+        val progressText = context.resources.getQuantityString(
+            R.plurals.active_workout_notification_progress,
+            completedSets,
             completedSets,
             totalSets,
         )
@@ -94,13 +105,6 @@ class ActiveWorkoutNotifier @Inject constructor(
     fun cancel() {
         NotificationManagerCompat.from(context).cancel(ACTIVE_WORKOUT_NOTIFICATION_ID)
     }
-
-    private fun canPostNotifications(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS,
-            ) == PackageManager.PERMISSION_GRANTED
 
     private companion object {
         const val ACTIVE_WORKOUT_NOTIFICATION_ID = 4101

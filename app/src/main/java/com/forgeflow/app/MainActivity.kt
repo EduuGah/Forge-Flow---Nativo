@@ -2,6 +2,7 @@ package com.forgeflow.app
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,20 +13,28 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.forgeflow.app.ui.AppViewModel
 import com.forgeflow.app.ui.ForgeFlowApp
+import com.forgeflow.app.navigation.AppLaunchRequest
+import com.forgeflow.app.navigation.toAppLaunchRequest
 import com.forgeflow.core.designsystem.theme.ForgeFlowTheme
 import com.forgeflow.core.model.ThemePreference
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private var launchRequest by mutableStateOf<AppLaunchRequest?>(null)
+    private var launchRequestId = 0L
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        launchRequest = intent.toAppLaunchRequest(++launchRequestId)
         enableEdgeToEdge()
         setContent {
             val viewModel: AppViewModel = hiltViewModel()
@@ -65,8 +74,17 @@ class MainActivity : ComponentActivity() {
                 accentColor = appState.accentColor,
                 compactMode = appState.compactMode,
             ) {
-                ForgeFlowApp(state = appState)
+                ForgeFlowApp(
+                    state = appState,
+                    launchRequest = launchRequest,
+                )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        launchRequest = intent.toAppLaunchRequest(++launchRequestId)
     }
 }

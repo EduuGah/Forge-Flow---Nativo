@@ -3,9 +3,9 @@ package com.forgeflow.core.platform.health
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import androidx.activity.result.contract.ActivityResultContract
+import androidx.core.net.toUri
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
@@ -109,7 +109,7 @@ class AndroidHealthConnectManager @Inject constructor(
     override fun openInstallOrUpdate() {
         val marketIntent = Intent(
             Intent.ACTION_VIEW,
-            Uri.parse("market://details?id=$HEALTH_CONNECT_PACKAGE"),
+            "market://details?id=$HEALTH_CONNECT_PACKAGE".toUri(),
         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try {
             context.startActivity(marketIntent)
@@ -117,9 +117,7 @@ class AndroidHealthConnectManager @Inject constructor(
             context.startActivity(
                 Intent(
                     Intent.ACTION_VIEW,
-                    Uri.parse(
-                        "https://play.google.com/store/apps/details?id=$HEALTH_CONNECT_PACKAGE",
-                    ),
+                    "https://play.google.com/store/apps/details?id=$HEALTH_CONNECT_PACKAGE".toUri(),
                 ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
         }

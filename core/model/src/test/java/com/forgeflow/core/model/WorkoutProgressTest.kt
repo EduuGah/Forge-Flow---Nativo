@@ -1,11 +1,10 @@
-package com.forgeflow.feature.home.presentation
+package com.forgeflow.core.model
 
-import com.forgeflow.core.model.TrainingDay
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class PlannerMetricsTest {
+class WorkoutProgressTest {
     @Test
     fun streaksAndCurrentWeekUseUniqueWorkoutDays() {
         val today = LocalDate.of(2026, 7, 29)

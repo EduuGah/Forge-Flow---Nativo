@@ -9,7 +9,9 @@ import com.forgeflow.core.data.workout.WorkoutRepository
 import com.forgeflow.core.model.UserSettings
 import com.forgeflow.core.model.WorkoutDetails
 import com.forgeflow.core.model.WorkoutSet
+import com.forgeflow.core.model.calculateWorkoutStreakStats
 import com.forgeflow.core.model.gramsIn
+import com.forgeflow.core.model.nextScheduledWorkoutDate
 import com.forgeflow.core.model.personalRecordsAgainst
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Duration

@@ -1,17 +1,16 @@
-package com.forgeflow.feature.home.presentation
+package com.forgeflow.core.model
 
-import com.forgeflow.core.model.TrainingDay
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
-internal data class WorkoutStreakStats(
+data class WorkoutStreakStats(
     val current: Int,
     val best: Int,
     val currentWeekCount: Int,
 )
 
-internal fun calculateWorkoutStreakStats(
+fun calculateWorkoutStreakStats(
     workoutDates: Collection<LocalDate>,
     today: LocalDate = LocalDate.now(),
 ): WorkoutStreakStats {
@@ -52,7 +51,7 @@ internal fun calculateWorkoutStreakStats(
     )
 }
 
-internal fun nextScheduledWorkoutDate(
+fun nextScheduledWorkoutDate(
     today: LocalDate,
     trainingDays: Set<TrainingDay>,
     completedDates: Set<LocalDate> = emptySet(),
@@ -66,7 +65,7 @@ internal fun nextScheduledWorkoutDate(
         }
 }
 
-internal fun DayOfWeek.toTrainingDay(): TrainingDay = when (this) {
+fun DayOfWeek.toTrainingDay(): TrainingDay = when (this) {
     DayOfWeek.MONDAY -> TrainingDay.MONDAY
     DayOfWeek.TUESDAY -> TrainingDay.TUESDAY
     DayOfWeek.WEDNESDAY -> TrainingDay.WEDNESDAY

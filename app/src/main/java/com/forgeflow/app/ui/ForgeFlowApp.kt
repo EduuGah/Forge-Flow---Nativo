@@ -41,6 +41,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.forgeflow.app.R
+import com.forgeflow.app.navigation.AppLaunchDestination
+import com.forgeflow.app.navigation.AppLaunchRequest
 import com.forgeflow.core.designsystem.component.ForgeFlowScaffold
 import com.forgeflow.core.designsystem.testing.ForgeFlowTestTags
 import com.forgeflow.core.navigation.HistoryRoute
@@ -68,6 +70,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun ForgeFlowApp(
     state: AppUiState,
+    launchRequest: AppLaunchRequest? = null,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
@@ -75,6 +78,15 @@ fun ForgeFlowApp(
     val currentDestination = backStackEntry?.destination
     val showBottomBar = currentDestination == null ||
         MainDestination.entries.any(currentDestination::matches)
+    LaunchedEffect(launchRequest) {
+        when (launchRequest?.destination) {
+            AppLaunchDestination.HOME -> navController.navigateTopLevelRoute(HomeRoute)
+            AppLaunchDestination.ROUTINES -> navController.navigateTopLevelRoute(RoutinesRoute)
+            AppLaunchDestination.HISTORY -> navController.navigateTopLevelRoute(HistoryRoute)
+            AppLaunchDestination.ACTIVE_WORKOUT -> navController.navigateToActiveWorkout()
+            null -> Unit
+        }
+    }
 
     ForgeFlowScaffold(
         modifier = modifier.fillMaxSize(),

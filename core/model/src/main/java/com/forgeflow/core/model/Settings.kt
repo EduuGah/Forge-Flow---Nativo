@@ -44,6 +44,7 @@ data class UserSettings(
     val weeklyWorkoutGoal: Int = 3,
     val trainingDays: Set<TrainingDay> = emptySet(),
     val preferredWorkoutTimeMinutes: Int = 18 * 60,
+    val healthConnectSyncEnabled: Boolean = false,
     val hasCompletedOnboarding: Boolean = false,
     val hasRequestedNotificationPermission: Boolean = false,
 )

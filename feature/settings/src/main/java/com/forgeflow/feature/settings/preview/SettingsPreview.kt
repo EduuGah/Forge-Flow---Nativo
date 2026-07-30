@@ -13,6 +13,7 @@ private fun SettingsScreenPreview() {
         SettingsScreen(
             state = SettingsUiState(),
             onAction = {},
+            onRequestHealthPermissions = {},
         )
     }
 }

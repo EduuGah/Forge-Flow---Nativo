@@ -60,6 +60,8 @@ class DataStoreSettingsRepository @Inject constructor(
                 preferredWorkoutTimeMinutes =
                     (preferences[PREFERRED_WORKOUT_TIME_MINUTES] ?: DEFAULT_WORKOUT_TIME_MINUTES)
                         .coerceIn(MIN_TIME_MINUTES, MAX_TIME_MINUTES),
+                healthConnectSyncEnabled =
+                    preferences[HEALTH_CONNECT_SYNC_ENABLED] ?: false,
                 hasCompletedOnboarding = preferences[ONBOARDING_COMPLETED] ?: false,
                 hasRequestedNotificationPermission =
                     preferences[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
@@ -109,6 +111,12 @@ class DataStoreSettingsRepository @Inject constructor(
             minutesFromMidnight.coerceIn(MIN_TIME_MINUTES, MAX_TIME_MINUTES)
     }
 
+    override suspend fun setHealthConnectSyncEnabled(
+        enabled: Boolean,
+    ): DataResult<Unit> = updatePreferences { preferences ->
+        preferences[HEALTH_CONNECT_SYNC_ENABLED] = enabled
+    }
+
     override suspend fun setOnboardingCompleted(
         completed: Boolean,
     ): DataResult<Unit> = updatePreferences { preferences ->
@@ -139,6 +147,8 @@ class DataStoreSettingsRepository @Inject constructor(
         val TRAINING_DAYS = stringSetPreferencesKey("training_days")
         val PREFERRED_WORKOUT_TIME_MINUTES =
             intPreferencesKey("preferred_workout_time_minutes")
+        val HEALTH_CONNECT_SYNC_ENABLED =
+            booleanPreferencesKey("health_connect_sync_enabled")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val NOTIFICATION_PERMISSION_REQUESTED =
             booleanPreferencesKey("notification_permission_requested")

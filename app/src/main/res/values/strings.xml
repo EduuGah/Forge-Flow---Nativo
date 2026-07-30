@@ -6,4 +6,15 @@
     <string name="navigation_settings">Ajustes</string>
     <string name="active_workout_bar_label">Treino ativo</string>
     <string name="active_workout_bar_details">%1$d/%2$d séries • %3$s</string>
+    <string name="health_privacy_top_bar">Privacidade</string>
+    <string name="health_privacy_close">Voltar</string>
+    <string name="health_privacy_eyebrow">Health Connect</string>
+    <string name="health_privacy_title">Seus dados de treino, sob seu controle.</string>
+    <string name="health_privacy_description">O ForgeFlow usa o Health Connect somente quando você ativa a sincronização.</string>
+    <string name="health_privacy_write_title">Somente treinos concluídos</string>
+    <string name="health_privacy_write_description">O aplicativo grava nome, horário, duração, exercícios, séries e um resumo do volume. Nesta etapa, ele não lê dados de outros aplicativos.</string>
+    <string name="health_privacy_control_title">Permissão revogável</string>
+    <string name="health_privacy_control_description">Você pode desativar a sincronização no ForgeFlow ou remover o acesso pelas configurações do Health Connect a qualquer momento.</string>
+    <string name="health_privacy_security_title">Sem venda de dados de saúde</string>
+    <string name="health_privacy_security_description">Os dados são enviados diretamente ao armazenamento protegido do Health Connect e não são vendidos nem usados para publicidade.</string>
 </resources>

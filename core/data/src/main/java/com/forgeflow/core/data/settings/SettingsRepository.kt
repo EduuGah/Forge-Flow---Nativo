@@ -25,6 +25,8 @@ interface SettingsRepository {
 
     suspend fun setPreferredWorkoutTime(minutesFromMidnight: Int): DataResult<Unit>
 
+    suspend fun setHealthConnectSyncEnabled(enabled: Boolean): DataResult<Unit>
+
     suspend fun setOnboardingCompleted(completed: Boolean): DataResult<Unit>
 
     suspend fun setNotificationPermissionRequested(requested: Boolean): DataResult<Unit>

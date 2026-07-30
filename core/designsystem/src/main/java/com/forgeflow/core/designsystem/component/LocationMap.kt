@@ -1,6 +1,7 @@
 package com.forgeflow.core.designsystem.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
@@ -40,12 +41,15 @@ data class ForgeFlowMapPoint(
     val latitude: Double,
     val longitude: Double,
     val label: String? = null,
+    val id: String? = null,
 )
 
 @Composable
 fun ForgeFlowLocationMap(
     points: List<ForgeFlowMapPoint>,
     modifier: Modifier = Modifier,
+    selectedPointId: String? = null,
+    onPointClick: ((ForgeFlowMapPoint) -> Unit)? = null,
 ) {
     if (points.isEmpty()) return
     val context = LocalContext.current
@@ -103,20 +107,37 @@ fun ForgeFlowLocationMap(
         points.forEach { point ->
             val tileX = longitudeToTileX(point.longitude, viewport.zoom)
             val tileY = latitudeToTileY(point.latitude, viewport.zoom)
-            val pinX = mapOffsetX +
-                tileSize * (tileX - centerTileX + 1).toFloat() -
-                14.dp
-            val pinY = mapOffsetY +
-                tileSize * (tileY - centerTileY + 1).toFloat() -
-                28.dp
-            Icon(
-                imageVector = Icons.Filled.LocationOn,
-                contentDescription = point.label,
+            val pinX = mapOffsetX + tileSize * (tileX - centerTileX + 1).toFloat()
+            val pinY = mapOffsetY + tileSize * (tileY - centerTileY + 1).toFloat()
+            val selected = point.id != null && point.id == selectedPointId
+            Box(
                 modifier = Modifier
-                    .offset(pinX, pinY)
-                    .size(32.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
+                    .offset(pinX - 24.dp, pinY - 48.dp)
+                    .size(48.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(
+                        if (selected) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            Color.Transparent
+                        },
+                    )
+                    .then(
+                        if (onPointClick != null) {
+                            Modifier.clickable { onPointClick(point) }
+                        } else {
+                            Modifier
+                        },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.LocationOn,
+                    contentDescription = point.label,
+                    modifier = Modifier.size(if (selected) 40.dp else 34.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
         Surface(
             modifier = Modifier.align(Alignment.BottomEnd),

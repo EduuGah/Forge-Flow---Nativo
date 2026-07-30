@@ -12,6 +12,7 @@ import com.forgeflow.core.model.WorkoutSessionId
 import com.forgeflow.core.model.WorkoutSet
 import com.forgeflow.core.model.gramsIn
 import com.forgeflow.core.model.personalRecordsAgainst
+import com.forgeflow.core.platform.health.HealthConnectManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Duration
 import java.time.Instant
@@ -31,6 +32,7 @@ import kotlinx.coroutines.launch
 class HistoryViewModel @Inject constructor(
     private val repository: WorkoutRepository,
     settingsRepository: SettingsRepository,
+    private val healthConnectManager: HealthConnectManager,
 ) : ViewModel() {
     private val filters = MutableStateFlow(HistoryFilters())
     private val pendingDeleteId = MutableStateFlow<String?>(null)
@@ -90,6 +92,7 @@ class HistoryViewModel @Inject constructor(
                 repository.deleteCompletedWorkout(WorkoutSessionId(workoutId))
                     is DataResult.Success
             ) {
+                healthConnectManager.deleteWorkout(workoutId)
                 pendingDeleteId.value = null
             }
             isDeleting.value = false

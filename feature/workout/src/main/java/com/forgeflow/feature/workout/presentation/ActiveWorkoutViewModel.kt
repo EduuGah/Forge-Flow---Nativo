@@ -10,11 +10,13 @@ import com.forgeflow.core.model.SessionExerciseId
 import com.forgeflow.core.model.Weight
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.WorkoutDetails
+import com.forgeflow.core.model.WorkoutSessionStatus
 import com.forgeflow.core.model.WorkoutSet
 import com.forgeflow.core.model.WorkoutSetId
 import com.forgeflow.core.model.WorkoutSetType
 import com.forgeflow.core.model.gramsIn
 import com.forgeflow.core.model.personalRecordsAgainst
+import com.forgeflow.core.platform.health.HealthConnectManager
 import com.forgeflow.core.platform.location.CurrentLocationProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.math.BigDecimal
@@ -31,17 +33,20 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 @HiltViewModel
 class ActiveWorkoutViewModel @Inject constructor(
     private val repository: WorkoutRepository,
     settingsRepository: SettingsRepository,
     private val currentLocationProvider: CurrentLocationProvider,
+    private val healthConnectManager: HealthConnectManager,
 ) : ViewModel() {
     private val drafts = MutableStateFlow<Map<String, SetDraft>>(emptyMap())
     private val operation = MutableStateFlow(WorkoutOperationState())
     private var currentWorkout: WorkoutDetails? = null
     private var currentWeightUnit = WeightUnit.KILOGRAM
+    private var healthConnectSyncEnabled = false
 
     val events = MutableSharedFlow<ActiveWorkoutEvent>()
 
@@ -65,6 +70,7 @@ class ActiveWorkoutViewModel @Inject constructor(
         operation,
     ) { (result, historyResult), currentDrafts, now, settings, currentOperation ->
         currentWeightUnit = settings.weightUnit
+        healthConnectSyncEnabled = settings.healthConnectSyncEnabled
         when (result) {
             is DataResult.Failure -> ActiveWorkoutUiState(
                 isLoading = false,
@@ -195,6 +201,19 @@ class ActiveWorkoutViewModel @Inject constructor(
                 null
             }
             if (repository.finishWorkout(workout.session.id, location) is DataResult.Success) {
+                if (healthConnectSyncEnabled) {
+                    val completedAt = Instant.now()
+                    withTimeoutOrNull(HEALTH_CONNECT_SYNC_TIMEOUT_MILLIS) {
+                        healthConnectManager.syncWorkout(
+                            workout = workout.asCompletedSnapshot(
+                                completedAt = completedAt,
+                                currentDrafts = drafts.value,
+                                location = location,
+                            ),
+                            weightUnit = currentWeightUnit,
+                        )
+                    }
+                }
                 events.emit(ActiveWorkoutEvent.Close)
             }
             operation.update { it.copy(isCapturingLocation = false) }
@@ -297,6 +316,35 @@ class ActiveWorkoutViewModel @Inject constructor(
         )
     }
 
+    private fun WorkoutDetails.asCompletedSnapshot(
+        completedAt: Instant,
+        currentDrafts: Map<String, SetDraft>,
+        location: com.forgeflow.core.model.WorkoutLocation?,
+    ): WorkoutDetails = copy(
+        session = session.copy(
+            finishedAt = completedAt,
+            status = WorkoutSessionStatus.COMPLETED,
+            location = location,
+            updatedAt = completedAt,
+        ),
+        exercises = exercises.map { details ->
+            details.copy(
+                sets = details.sets.map { set ->
+                    val draft = currentDrafts[set.id.value]
+                    if (draft == null) {
+                        set
+                    } else {
+                        set.copy(
+                            weight = draft.asWeight(),
+                            repetitions = Repetitions(draft.repetitionCount()),
+                            updatedAt = completedAt,
+                        )
+                    }
+                },
+            )
+        },
+    )
+
     private fun Weight.asDisplayValue(unit: WeightUnit): String =
         if (grams == 0L) "" else valueIn(unit).toCleanString()
 
@@ -339,6 +387,10 @@ class ActiveWorkoutViewModel @Inject constructor(
     private data class WorkoutOperationState(
         val isCapturingLocation: Boolean = false,
     )
+
+    private companion object {
+        const val HEALTH_CONNECT_SYNC_TIMEOUT_MILLIS = 8_000L
+    }
 }
 
 internal fun Repetitions.asInputValue(): String =

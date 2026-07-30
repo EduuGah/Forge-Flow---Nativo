@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +20,7 @@ import com.forgeflow.core.designsystem.component.ForgeFlowLoadingState
 import com.forgeflow.core.designsystem.component.ForgeFlowLocationMap
 import com.forgeflow.core.designsystem.component.ForgeFlowMapPoint
 import com.forgeflow.core.designsystem.component.ForgeFlowPageHeader
+import com.forgeflow.core.designsystem.component.ForgeFlowOutlinedButton
 import com.forgeflow.core.designsystem.component.ForgeFlowScaffold
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.feature.history.R
@@ -26,6 +29,7 @@ import com.forgeflow.feature.history.R
 fun HistoryScreen(
     state: HistoryUiState,
     onOpenExercise: (String) -> Unit,
+    onOpenTrainingMap: () -> Unit,
     onAction: (HistoryAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -39,6 +43,7 @@ fun HistoryScreen(
                 state = state,
                 contentPadding = innerPadding,
                 onOpenExercise = onOpenExercise,
+                onOpenTrainingMap = onOpenTrainingMap,
                 onAction = onAction,
             )
         }
@@ -58,6 +63,7 @@ private fun HistoryContent(
     state: HistoryUiState,
     contentPadding: PaddingValues,
     onOpenExercise: (String) -> Unit,
+    onOpenTrainingMap: () -> Unit,
     onAction: (HistoryAction) -> Unit,
 ) {
     LazyColumn(
@@ -113,6 +119,13 @@ private fun HistoryContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(210.dp),
+                    )
+                    ForgeFlowOutlinedButton(
+                        text = stringResource(R.string.open_training_map),
+                        onClick = onOpenTrainingMap,
+                        modifier = Modifier.fillMaxWidth(),
+                        icon = Icons.Outlined.Map,
+                        iconContentDescription = null,
                     )
                 }
             }

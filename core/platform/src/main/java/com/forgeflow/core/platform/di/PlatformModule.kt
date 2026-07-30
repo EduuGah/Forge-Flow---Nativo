@@ -1,5 +1,7 @@
 package com.forgeflow.core.platform.di
 
+import com.forgeflow.core.platform.health.AndroidHealthConnectManager
+import com.forgeflow.core.platform.health.HealthConnectManager
 import com.forgeflow.core.platform.location.AndroidCurrentLocationProvider
 import com.forgeflow.core.platform.location.CurrentLocationProvider
 import dagger.Binds
@@ -11,6 +13,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class PlatformModule {
+    @Binds
+    @Singleton
+    abstract fun bindHealthConnectManager(
+        implementation: AndroidHealthConnectManager,
+    ): HealthConnectManager
+
     @Binds
     @Singleton
     abstract fun bindCurrentLocationProvider(

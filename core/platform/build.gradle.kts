@@ -10,5 +10,6 @@ android {
 dependencies {
     implementation(project(":core:model"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.health.connect.client)
     implementation(libs.coroutines.android)
 }

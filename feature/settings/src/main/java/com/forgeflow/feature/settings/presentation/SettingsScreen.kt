@@ -16,6 +16,7 @@ import com.forgeflow.feature.settings.R
 fun SettingsScreen(
     state: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
+    onRequestHealthPermissions: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -44,6 +45,13 @@ fun SettingsScreen(
             }
             item {
                 TrainingSection(state = state, onAction = onAction)
+            }
+            item {
+                HealthConnectSection(
+                    state = state,
+                    onAction = onAction,
+                    onRequestPermissions = onRequestHealthPermissions,
+                )
             }
         }
     }

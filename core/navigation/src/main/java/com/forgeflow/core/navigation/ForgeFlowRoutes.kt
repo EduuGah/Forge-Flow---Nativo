@@ -21,6 +21,9 @@ data object ActiveWorkoutRoute
 data object HistoryRoute
 
 @Serializable
+data object TrainingMapRoute
+
+@Serializable
 data object ExercisesRoute
 
 @Serializable

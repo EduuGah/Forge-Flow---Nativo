@@ -11,6 +11,13 @@
         android:name="android.hardware.location"
         android:required="false" />
 
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+    </queries>
+
     <application
         android:name=".ForgeFlowApplication"
         android:allowBackup="true"

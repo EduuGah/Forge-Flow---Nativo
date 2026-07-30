@@ -52,7 +52,9 @@ import com.forgeflow.feature.exercises.navigation.exercisesScreen
 import com.forgeflow.feature.exercises.navigation.navigateToExerciseDetails
 import com.forgeflow.feature.exercises.navigation.navigateToExercises
 import com.forgeflow.feature.history.navigation.historyScreen
+import com.forgeflow.feature.home.navigation.evolutionScreen
 import com.forgeflow.feature.home.navigation.homeScreen
+import com.forgeflow.feature.home.navigation.navigateToEvolution
 import com.forgeflow.feature.home.navigation.navigateToPlanner
 import com.forgeflow.feature.home.navigation.plannerScreen
 import com.forgeflow.feature.routines.navigation.routinesScreen
@@ -102,8 +104,13 @@ fun ForgeFlowApp(
                 onOpenRoutines = { navController.navigateTopLevelRoute(RoutinesRoute) },
                 onOpenActiveWorkout = navController::navigateToActiveWorkout,
                 onOpenPlanner = navController::navigateToPlanner,
+                onOpenEvolution = navController::navigateToEvolution,
             )
             plannerScreen(onBack = navController::popBackStack)
+            evolutionScreen(
+                onBack = navController::popBackStack,
+                onOpenExercise = navController::navigateToExerciseDetails,
+            )
             routinesScreen(
                 onOpenExercises = navController::navigateToExercises,
                 onOpenActiveWorkout = navController::navigateToActiveWorkout,

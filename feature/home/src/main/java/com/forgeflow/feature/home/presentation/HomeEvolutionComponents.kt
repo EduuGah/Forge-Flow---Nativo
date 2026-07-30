@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -22,18 +23,25 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
 import com.forgeflow.core.designsystem.component.ForgeFlowEyebrow
+import com.forgeflow.core.designsystem.component.ForgeFlowOutlinedButton
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.core.model.MuscleGroup
 import com.forgeflow.core.model.PersonalRecordType
 import com.forgeflow.feature.home.R
 
 @Composable
-internal fun DashboardEvolutionPanels(state: HomeUiState) {
+internal fun DashboardEvolutionPanels(
+    state: HomeUiState,
+    onOpenEvolution: () -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
     ) {
-        VolumeEvolutionCard(state)
+        VolumeEvolutionCard(
+            state = state,
+            onOpenEvolution = onOpenEvolution,
+        )
         if (state.muscleDistribution.isNotEmpty()) {
             MuscleDistributionCard(state.muscleDistribution)
         }
@@ -44,7 +52,10 @@ internal fun DashboardEvolutionPanels(state: HomeUiState) {
 }
 
 @Composable
-private fun VolumeEvolutionCard(state: HomeUiState) {
+private fun VolumeEvolutionCard(
+    state: HomeUiState,
+    onOpenEvolution: () -> Unit,
+) {
     ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -123,6 +134,13 @@ private fun VolumeEvolutionCard(state: HomeUiState) {
                 )
             }
         }
+        ForgeFlowOutlinedButton(
+            text = stringResource(R.string.open_evolution),
+            onClick = onOpenEvolution,
+            modifier = Modifier.fillMaxWidth(),
+            icon = Icons.Outlined.Insights,
+            iconContentDescription = null,
+        )
     }
 }
 

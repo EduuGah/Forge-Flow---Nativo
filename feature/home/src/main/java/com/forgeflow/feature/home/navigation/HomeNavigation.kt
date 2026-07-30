@@ -6,8 +6,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import com.forgeflow.core.navigation.EvolutionRoute
 import com.forgeflow.core.navigation.HomeRoute
 import com.forgeflow.core.navigation.PlannerRoute
+import com.forgeflow.feature.home.presentation.EvolutionScreen
+import com.forgeflow.feature.home.presentation.EvolutionViewModel
 import com.forgeflow.feature.home.presentation.HomeScreen
 import com.forgeflow.feature.home.presentation.HomeViewModel
 import com.forgeflow.feature.home.presentation.PlannerScreen
@@ -18,6 +21,7 @@ fun NavGraphBuilder.homeScreen(
     onOpenRoutines: () -> Unit,
     onOpenActiveWorkout: () -> Unit,
     onOpenPlanner: () -> Unit,
+    onOpenEvolution: () -> Unit,
 ) {
     composable<HomeRoute> {
         val viewModel: HomeViewModel = hiltViewModel()
@@ -28,12 +32,17 @@ fun NavGraphBuilder.homeScreen(
             onOpenRoutines = onOpenRoutines,
             onOpenActiveWorkout = onOpenActiveWorkout,
             onOpenPlanner = onOpenPlanner,
+            onOpenEvolution = onOpenEvolution,
         )
     }
 }
 
 fun NavController.navigateToPlanner() {
     navigate(PlannerRoute)
+}
+
+fun NavController.navigateToEvolution() {
+    navigate(EvolutionRoute)
 }
 
 fun NavGraphBuilder.plannerScreen(onBack: () -> Unit) {
@@ -44,6 +53,22 @@ fun NavGraphBuilder.plannerScreen(onBack: () -> Unit) {
             state = state,
             onAction = viewModel::onAction,
             onBack = onBack,
+        )
+    }
+}
+
+fun NavGraphBuilder.evolutionScreen(
+    onBack: () -> Unit,
+    onOpenExercise: (String) -> Unit,
+) {
+    composable<EvolutionRoute> {
+        val viewModel: EvolutionViewModel = hiltViewModel()
+        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        EvolutionScreen(
+            state = state,
+            onAction = viewModel::onAction,
+            onBack = onBack,
+            onOpenExercise = onOpenExercise,
         )
     }
 }

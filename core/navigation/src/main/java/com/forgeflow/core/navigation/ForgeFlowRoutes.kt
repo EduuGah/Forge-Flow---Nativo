@@ -9,6 +9,9 @@ data object HomeRoute
 data object PlannerRoute
 
 @Serializable
+data object EvolutionRoute
+
+@Serializable
 data object RoutinesRoute
 
 @Serializable

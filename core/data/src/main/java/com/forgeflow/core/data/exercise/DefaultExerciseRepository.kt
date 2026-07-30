@@ -34,7 +34,7 @@ class DefaultExerciseRepository @Inject constructor(
         val timestamp = clock.now()
         (
             ExerciseSeedData.create(timestamp) +
-                runCatching { catalogProvider.create(timestamp) }.getOrDefault(emptyList())
+                catalogProvider.create(timestamp)
             )
             .map { it.asEntity() }
             .let { localDataSource.insertExercises(it) }

@@ -25,6 +25,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Alignment
@@ -48,11 +52,16 @@ import com.forgeflow.feature.exercises.navigation.exercisesScreen
 import com.forgeflow.feature.exercises.navigation.navigateToExerciseDetails
 import com.forgeflow.feature.exercises.navigation.navigateToExercises
 import com.forgeflow.feature.history.navigation.historyScreen
+import com.forgeflow.feature.home.navigation.evolutionScreen
 import com.forgeflow.feature.home.navigation.homeScreen
+import com.forgeflow.feature.home.navigation.navigateToEvolution
+import com.forgeflow.feature.home.navigation.navigateToPlanner
+import com.forgeflow.feature.home.navigation.plannerScreen
 import com.forgeflow.feature.routines.navigation.routinesScreen
 import com.forgeflow.feature.settings.navigation.settingsScreen
 import com.forgeflow.feature.workout.navigation.activeWorkoutScreen
 import com.forgeflow.feature.workout.navigation.navigateToActiveWorkout
+import kotlinx.coroutines.delay
 
 @Composable
 fun ForgeFlowApp(
@@ -94,6 +103,13 @@ fun ForgeFlowApp(
                 onOpenExercises = navController::navigateToExercises,
                 onOpenRoutines = { navController.navigateTopLevelRoute(RoutinesRoute) },
                 onOpenActiveWorkout = navController::navigateToActiveWorkout,
+                onOpenPlanner = navController::navigateToPlanner,
+                onOpenEvolution = navController::navigateToEvolution,
+            )
+            plannerScreen(onBack = navController::popBackStack)
+            evolutionScreen(
+                onBack = navController::popBackStack,
+                onOpenExercise = navController::navigateToExerciseDetails,
             )
             routinesScreen(
                 onOpenExercises = navController::navigateToExercises,
@@ -117,6 +133,18 @@ private fun ActiveWorkoutMiniBar(
     active: AppActiveWorkoutUiModel,
     onClick: () -> Unit,
 ) {
+    var nowEpochMillis by remember(active.startedAtEpochMillis) {
+        mutableLongStateOf(System.currentTimeMillis())
+    }
+    LaunchedEffect(active.startedAtEpochMillis) {
+        while (true) {
+            nowEpochMillis = System.currentTimeMillis()
+            delay(1_000)
+        }
+    }
+    val elapsedSeconds = (
+        (nowEpochMillis - active.startedAtEpochMillis) / 1_000
+        ).coerceAtLeast(0)
     val progress = if (active.totalSets == 0) {
         0f
     } else {
@@ -157,9 +185,10 @@ private fun ActiveWorkoutMiniBar(
                 }
                 Text(
                     text = stringResource(
-                        R.string.active_workout_bar_progress,
+                        R.string.active_workout_bar_details,
                         active.completedSets,
                         active.totalSets,
+                        elapsedSeconds.asClock(),
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium,
@@ -170,6 +199,17 @@ private fun ActiveWorkoutMiniBar(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+private fun Long.asClock(): String {
+    val hours = this / 3_600
+    val minutes = (this % 3_600) / 60
+    val seconds = this % 60
+    return if (hours > 0) {
+        "%d:%02d:%02d".format(hours, minutes, seconds)
+    } else {
+        "%02d:%02d".format(minutes, seconds)
     }
 }
 

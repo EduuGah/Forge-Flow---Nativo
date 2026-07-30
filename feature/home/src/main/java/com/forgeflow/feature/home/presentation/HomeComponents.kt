@@ -1,20 +1,15 @@
 package com.forgeflow.feature.home.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.FitnessCenter
-import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +24,7 @@ import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
 import com.forgeflow.core.designsystem.component.ForgeFlowEyebrow
 import com.forgeflow.core.designsystem.component.ForgeFlowMetric
+import com.forgeflow.core.designsystem.component.ForgeFlowOutlinedButton
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.feature.home.R
@@ -206,6 +202,59 @@ internal fun NextWorkoutPanel(
             onClick = onOpenRoutines,
             modifier = Modifier.fillMaxWidth(),
             icon = Icons.Outlined.PlayArrow,
+            iconContentDescription = null,
+        )
+    }
+}
+
+@Composable
+internal fun PlannerOverviewPanel(
+    state: HomeUiState,
+    onOpenPlanner: () -> Unit,
+) {
+    val progress = (
+        state.currentWeekWorkouts.toFloat() / state.weeklyWorkoutGoal.coerceAtLeast(1)
+        ).coerceIn(0f, 1f)
+    ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DashboardIcon {
+                Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraSmall),
+            ) {
+                ForgeFlowEyebrow(text = stringResource(R.string.planner_dashboard_eyebrow))
+                Text(
+                    text = stringResource(
+                        R.string.planner_dashboard_progress,
+                        state.currentWeekWorkouts,
+                        state.weeklyWorkoutGoal,
+                    ),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Text(
+                    text = state.nextScheduledWorkout?.let {
+                        stringResource(R.string.planner_dashboard_next, it)
+                    } ?: stringResource(R.string.planner_dashboard_no_schedule),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small),
+        )
+        ForgeFlowOutlinedButton(
+            text = stringResource(R.string.planner_dashboard_open),
+            onClick = onOpenPlanner,
+            modifier = Modifier.fillMaxWidth(),
+            icon = Icons.Outlined.CalendarMonth,
             iconContentDescription = null,
         )
     }

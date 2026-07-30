@@ -122,7 +122,7 @@ class ActiveWorkoutViewModel @Inject constructor(
             ?.let {
                 SetDraft(
                     weight = it.weight.asDisplayValue(currentWeightUnit),
-                    repetitions = it.repetitions.count.toString(),
+                    repetitions = it.repetitions.asInputValue(),
                     weightUnit = currentWeightUnit,
                 )
             }
@@ -140,7 +140,7 @@ class ActiveWorkoutViewModel @Inject constructor(
             ?: return
         val draft = drafts.value[setId] ?: SetDraft(
             weight = set.weight.asDisplayValue(currentWeightUnit),
-            repetitions = set.repetitions.count.toString(),
+            repetitions = set.repetitions.asInputValue(),
             weightUnit = currentWeightUnit,
         )
         viewModelScope.launch {
@@ -234,7 +234,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                 val displaySet = set.copy(
                     weight = draft?.asWeight() ?: set.weight,
                     repetitions = Repetitions(
-                        draft?.repetitions?.toIntOrNull() ?: set.repetitions.count,
+                        draft?.repetitionCount() ?: set.repetitions.count,
                     ),
                 )
                 val personalRecordTypes = displaySet.personalRecordsAgainst(currentComparisonSets)
@@ -246,7 +246,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                     number = index + 1,
                     weight = draft?.asDisplayValue(weightUnit)
                         ?: set.weight.asDisplayValue(weightUnit),
-                    repetitions = draft?.repetitions ?: set.repetitions.count.toString(),
+                    repetitions = draft?.repetitions ?: set.repetitions.asInputValue(),
                     completed = set.isCompleted,
                     type = set.setType,
                     previous = latestSets.getOrNull(index)?.asCompactPerformance(weightUnit),
@@ -270,13 +270,15 @@ class ActiveWorkoutViewModel @Inject constructor(
             )
         }
         val completedUiSets = uiExercises.flatMap(ActiveExerciseUiModel::sets)
-            .filter(ActiveSetUiModel::completed)
+            .filter { set ->
+                set.completed && (set.repetitions.toIntOrNull() ?: 0) > 0
+            }
         val volumeGrams = exercises.sumOf { details ->
             details.sets.sumOf { set ->
                 val draft = currentDrafts[set.id.value]
                 if (set.isCompleted) {
                     (draft?.asWeight()?.grams ?: set.weight.grams) *
-                        (draft?.repetitions?.toIntOrNull() ?: set.repetitions.count)
+                        (draft?.repetitionCount() ?: set.repetitions.count)
                 } else {
                     0L
                 }
@@ -311,6 +313,8 @@ class ActiveWorkoutViewModel @Inject constructor(
         unit = weightUnit,
     )
 
+    private fun SetDraft.repetitionCount(): Int = repetitions.toIntOrNull() ?: 0
+
     private fun String.filterNumeric(): String {
         var separatorFound = false
         return filter { character ->
@@ -336,3 +340,6 @@ class ActiveWorkoutViewModel @Inject constructor(
         val isCapturingLocation: Boolean = false,
     )
 }
+
+internal fun Repetitions.asInputValue(): String =
+    if (count == 0) "" else count.toString()

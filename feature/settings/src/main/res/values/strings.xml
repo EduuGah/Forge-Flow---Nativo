@@ -11,7 +11,7 @@
     <string name="theme_light">Claro</string>
     <string name="theme_system">Sistema</string>
     <string name="accent_title">Cor principal</string>
-    <string name="accent_description">Usada em ações, progresso e no ícone do aplicativo.</string>
+    <string name="accent_description">A interface muda agora; o ícone é atualizado ao sair do aplicativo.</string>
     <string name="layout_eyebrow">Densidade</string>
     <string name="layout_title">Layout da interface</string>
     <string name="layout_description">Controle quanto conteúdo aparece na tela</string>

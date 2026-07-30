@@ -18,6 +18,8 @@ fun HomeScreen(
     onOpenExercises: () -> Unit,
     onOpenRoutines: () -> Unit,
     onOpenActiveWorkout: () -> Unit,
+    onOpenPlanner: () -> Unit,
+    onOpenEvolution: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -31,6 +33,8 @@ fun HomeScreen(
                 onOpenExercises = onOpenExercises,
                 onOpenRoutines = onOpenRoutines,
                 onOpenActiveWorkout = onOpenActiveWorkout,
+                onOpenPlanner = onOpenPlanner,
+                onOpenEvolution = onOpenEvolution,
                 contentPadding = innerPadding,
             )
         }
@@ -43,6 +47,8 @@ private fun HomeContent(
     onOpenExercises: () -> Unit,
     onOpenRoutines: () -> Unit,
     onOpenActiveWorkout: () -> Unit,
+    onOpenPlanner: () -> Unit,
+    onOpenEvolution: () -> Unit,
     contentPadding: PaddingValues,
 ) {
     LazyColumn(
@@ -64,8 +70,19 @@ private fun HomeContent(
                 onOpenRoutines = onOpenRoutines,
             )
         }
+        item {
+            PlannerOverviewPanel(
+                state = state,
+                onOpenPlanner = onOpenPlanner,
+            )
+        }
         item { DashboardMetricGrid(state = state) }
-        item { DashboardEvolutionPanels(state = state) }
+        item {
+            DashboardEvolutionPanels(
+                state = state,
+                onOpenEvolution = onOpenEvolution,
+            )
+        }
         if (state.recentWorkouts.isNotEmpty()) {
             item {
                 RecentWorkoutsPanel(

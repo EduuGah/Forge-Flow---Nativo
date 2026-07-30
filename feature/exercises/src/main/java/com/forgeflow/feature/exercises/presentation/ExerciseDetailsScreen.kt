@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,7 +13,9 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -58,7 +61,6 @@ import com.forgeflow.core.model.PersonalRecordType
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.WorkoutSetType
 import com.forgeflow.feature.exercises.R
-import kotlin.math.roundToInt
 
 @Composable
 fun ExerciseDetailsScreen(
@@ -403,24 +405,31 @@ private fun ExerciseProgressChart(exercise: ExerciseDetailsUiModel) {
         val lineColor = MaterialTheme.colorScheme.primary
         val gridColor = ForgeFlowDesign.colors.divider
         val selectedHaloColor = MaterialTheme.colorScheme.surface
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(170.dp)
                 .pointerInput(points) {
                     detectTapGestures { tap ->
                         if (points.isNotEmpty()) {
-                            selectedPointIndex = if (points.size == 1) {
-                                0
-                            } else {
-                                (
-                                    tap.x / size.width * (points.size - 1)
-                                    ).roundToInt().coerceIn(points.indices)
-                            }
+                            nearestChartPointIndex(
+                                tapX = tap.x,
+                                chartWidth = size.width.toFloat(),
+                                pointCount = points.size,
+                            )?.let { selectedPointIndex = it }
                         }
                     }
                 },
         ) {
+            val tooltipWidth = 92.dp
+            val selectedFraction = if (points.size <= 1) {
+                0.5f
+            } else {
+                selectedPointIndex.toFloat() / (points.size - 1)
+            }
+            val tooltipX = (
+                maxWidth * selectedFraction - tooltipWidth / 2
+                ).coerceIn(0.dp, (maxWidth - tooltipWidth).coerceAtLeast(0.dp))
             Canvas(modifier = Modifier.fillMaxSize()) {
                 repeat(4) { line ->
                     val y = size.height * line / 3f
@@ -474,6 +483,37 @@ private fun ExerciseProgressChart(exercise: ExerciseDetailsUiModel) {
                             color = lineColor,
                             radius = if (isSelected) 6.dp.toPx() else 4.dp.toPx(),
                             center = offset,
+                        )
+                    }
+                }
+            }
+            selectedPoint?.let { point ->
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .offset(x = tooltipX, y = 4.dp)
+                        .width(tooltipWidth),
+                    color = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = MaterialTheme.shapes.small,
+                    shadowElevation = 2.dp,
+                ) {
+                    Column(
+                        modifier = Modifier.padding(
+                            horizontal = ForgeFlowDesign.spacing.small,
+                            vertical = ForgeFlowDesign.spacing.extraSmall,
+                        ),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = "${point.value.toDouble().toCleanString()} " +
+                                exercise.weightUnit.shortLabel(),
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                        Text(
+                            text = point.label,
+                            style = MaterialTheme.typography.labelSmall,
                         )
                     }
                 }

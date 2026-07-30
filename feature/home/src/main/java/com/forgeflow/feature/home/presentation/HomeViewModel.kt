@@ -41,6 +41,16 @@ class HomeViewModel @Inject constructor(
         val active = (activeResult as? DataResult.Success)?.value
         val weekStart = Instant.now().minus(7, ChronoUnit.DAYS)
         val weeklyWorkouts = history.filter { it.session.startedAt >= weekStart }
+        val today = LocalDate.now()
+        val workoutDates = history.mapTo(mutableSetOf()) {
+            it.session.startedAt.atZone(ZoneId.systemDefault()).toLocalDate()
+        }
+        val streakStats = calculateWorkoutStreakStats(workoutDates, today)
+        val nextScheduledWorkout = nextScheduledWorkoutDate(
+            today = today,
+            trainingDays = settings.trainingDays,
+            completedDates = workoutDates,
+        )
         val totalDurationMinutes = history.sumOf { it.durationMinutes() }
         val records = history.personalRecords(settings)
         val completedByMuscle = history
@@ -70,7 +80,14 @@ class HomeViewModel @Inject constructor(
             } else {
                 totalDurationMinutes / history.size
             },
-            currentStreak = history.currentStreak(),
+            currentStreak = streakStats.current,
+            bestStreak = streakStats.best,
+            currentWeekWorkouts = streakStats.currentWeekCount,
+            weeklyWorkoutGoal = settings.weeklyWorkoutGoal,
+            nextScheduledWorkout = nextScheduledWorkout?.let { date ->
+                "${date.format(NEXT_WORKOUT_FORMATTER).replaceFirstChar(Char::uppercase)} • " +
+                    settings.preferredWorkoutTimeMinutes.asTimeLabel()
+            },
             personalRecordCount = records.size,
             weightRecordCount = records.count {
                 it.type == com.forgeflow.core.model.PersonalRecordType.WEIGHT
@@ -140,20 +157,6 @@ class HomeViewModel @Inject constructor(
             ?.let { Duration.between(session.startedAt, it).toMinutes().coerceAtLeast(0) }
             ?: 0
 
-    private fun List<WorkoutDetails>.currentStreak(): Int {
-        val workoutDates = map {
-            it.session.startedAt.atZone(ZoneId.systemDefault()).toLocalDate()
-        }.toSet()
-        var cursor = LocalDate.now()
-        if (cursor !in workoutDates) cursor = cursor.minusDays(1)
-        var streak = 0
-        while (cursor in workoutDates) {
-            streak += 1
-            cursor = cursor.minusDays(1)
-        }
-        return streak
-    }
-
     private fun List<WorkoutDetails>.personalRecords(
         settings: UserSettings,
     ): List<HomePersonalRecordUiModel> {
@@ -193,6 +196,8 @@ class HomeViewModel @Inject constructor(
     private fun Double.toCleanString(): String =
         if (this % 1.0 == 0.0) toLong().toString() else "%.1f".format(this)
 
+    private fun Int.asTimeLabel(): String = "%02d:%02d".format(this / 60, this % 60)
+
     private fun com.forgeflow.core.model.WeightUnit.shortLabel(): String =
         if (this == com.forgeflow.core.model.WeightUnit.KILOGRAM) "kg" else "lb"
 
@@ -203,6 +208,10 @@ class HomeViewModel @Inject constructor(
         )
         val CHART_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern(
             "dd/MM",
+            Locale.forLanguageTag("pt-BR"),
+        )
+        val NEXT_WORKOUT_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern(
+            "EEE, dd MMM",
             Locale.forLanguageTag("pt-BR"),
         )
     }

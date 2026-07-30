@@ -48,11 +48,10 @@ import java.text.NumberFormat
 internal fun HistoryWorkoutCard(
     workout: HistoryWorkoutUiModel,
     weightUnit: WeightUnit,
-    expandedByDefault: Boolean,
     onOpenExercise: (String) -> Unit,
     onDelete: () -> Unit,
 ) {
-    var expanded by rememberSaveable(workout.id) { mutableStateOf(expandedByDefault) }
+    var expanded by rememberSaveable(workout.id) { mutableStateOf(false) }
     ForgeFlowCard(
         modifier = Modifier.fillMaxWidth().animateContentSize(),
     ) {

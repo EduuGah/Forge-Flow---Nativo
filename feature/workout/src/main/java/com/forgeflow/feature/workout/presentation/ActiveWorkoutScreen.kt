@@ -39,6 +39,7 @@ fun ActiveWorkoutScreen(
 ) {
     var showDiscardDialog by remember { mutableStateOf(false) }
     var showFinishSheet by remember { mutableStateOf(false) }
+    var showInvalidFinishDialog by remember { mutableStateOf(false) }
     var includeLocation by remember { mutableStateOf(false) }
     var locationLabel by remember { mutableStateOf("") }
     var locationPermissionDenied by remember { mutableStateOf(false) }
@@ -64,8 +65,14 @@ fun ActiveWorkoutScreen(
         bottomBar = {
             state.workout?.let { workout ->
                 WorkoutBottomActions(
-                    canFinish = workout.completedSets > 0 && !state.isCapturingLocation,
-                    onFinish = { showFinishSheet = true },
+                    finishEnabled = !state.isCapturingLocation,
+                    onFinish = {
+                        if (workout.completedSets > 0) {
+                            showFinishSheet = true
+                        } else {
+                            showInvalidFinishDialog = true
+                        }
+                    },
                     onDiscard = { showDiscardDialog = true },
                 )
             }
@@ -101,6 +108,11 @@ fun ActiveWorkoutScreen(
                 onAction(ActiveWorkoutAction.Discard)
             },
             onDismiss = { showDiscardDialog = false },
+        )
+    }
+    if (showInvalidFinishDialog) {
+        InvalidWorkoutDialog(
+            onDismiss = { showInvalidFinishDialog = false },
         )
     }
     if (showFinishSheet) {

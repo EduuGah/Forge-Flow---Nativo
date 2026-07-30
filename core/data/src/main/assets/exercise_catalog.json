@@ -1,6 +1,6 @@
 [
   {
-    "id": "forgeflow-catalog-incline-bench-press-barbell",
+    "id": "2070674c-360a-5cbc-b49d-a6a6a1e0fbca",
     "name": "Supino inclinado com barra",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -12,7 +12,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/incline-bench-press-barbell.gif"
   },
   {
-    "id": "forgeflow-catalog-decline-bench-press-barbell",
+    "id": "8a7a32fa-7200-5e84-b687-5498606a2b0e",
     "name": "Supino declinado com barra",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -24,7 +24,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/decline-bench-press-barbell.gif"
   },
   {
-    "id": "forgeflow-catalog-bench-press-dumbbell",
+    "id": "d644262e-6d23-5441-bfb2-6ed0aadca1c0",
     "name": "Supino reto com halteres",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -36,7 +36,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/bench-press-dumbbell.gif"
   },
   {
-    "id": "forgeflow-catalog-incline-dumbbell-press",
+    "id": "116cafbe-7cbc-572e-97d0-2f2cfa5cc06e",
     "name": "Supino inclinado com halteres",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -48,7 +48,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/incline-dumbbell-press.gif"
   },
   {
-    "id": "forgeflow-catalog-decline-dumbbell-press",
+    "id": "d1a4cea5-dc12-5c4e-b101-4094b71f7bd9",
     "name": "Supino declinado com halteres",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -60,7 +60,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/decline-dumbbell-press.gif"
   },
   {
-    "id": "forgeflow-catalog-push-up",
+    "id": "483a9a57-371a-5768-a723-617cf8dd34fe",
     "name": "Flexão de braços",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -73,7 +73,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/push-up.gif"
   },
   {
-    "id": "forgeflow-catalog-incline-push-up",
+    "id": "d45a6f4a-274a-56d8-b6ac-f58f5872a834",
     "name": "Flexão inclinada",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -85,7 +85,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/incline-push-up.gif"
   },
   {
-    "id": "forgeflow-catalog-decline-push-up",
+    "id": "e6ea0d5b-4d5b-56f3-9b79-7e96dc76879e",
     "name": "Flexão declinada",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -97,7 +97,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/decline-push-up.gif"
   },
   {
-    "id": "forgeflow-catalog-dumbbell-fly",
+    "id": "a9d17280-f82e-5765-bfea-e455842b13e7",
     "name": "Crucifixo com halteres",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -108,7 +108,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/dumbbell-fly.gif"
   },
   {
-    "id": "forgeflow-catalog-incline-dumbbell-fly",
+    "id": "f29dc3c9-e0c3-5a8f-934e-a9158241c70d",
     "name": "Crucifixo inclinado com halteres",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -119,7 +119,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/incline-dumbbell-fly.gif"
   },
   {
-    "id": "forgeflow-catalog-cable-crossover",
+    "id": "0702e03b-dc04-5774-8485-53df1285d5e7",
     "name": "Crossover no cabo",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -130,7 +130,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/cable-crossover.gif"
   },
   {
-    "id": "forgeflow-catalog-low-cable-fly",
+    "id": "e5e6084e-c520-5b31-91eb-8a94e025b49b",
     "name": "Crucifixo baixo no cabo",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -141,7 +141,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/low-cable-fly.gif"
   },
   {
-    "id": "forgeflow-catalog-chest-fly-machine",
+    "id": "711f7ba7-adad-55ec-925d-a7ecee04f9e1",
     "name": "Crucifixo na máquina",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -152,7 +152,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/chest-fly-machine.gif"
   },
   {
-    "id": "forgeflow-catalog-dip-chest",
+    "id": "e0e379f9-0ed9-59cb-b319-7b31e87a03b3",
     "name": "Mergulho com foco no peito",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -164,7 +164,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/dip-chest.gif"
   },
   {
-    "id": "forgeflow-catalog-wide-push-up",
+    "id": "a5bd1e56-5c37-5fda-8e9c-9533ee527bea",
     "name": "Flexão aberta",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -177,7 +177,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/wide-push-up.gif"
   },
   {
-    "id": "forgeflow-catalog-diamond-push-up",
+    "id": "67963726-b87c-58f3-9330-62360c9ab751",
     "name": "Flexão diamante",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -190,7 +190,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/diamond-push-up.gif"
   },
   {
-    "id": "forgeflow-catalog-weighted-chest-dip",
+    "id": "9fda2df3-ae9c-5868-b487-5aaa4ac0dbcd",
     "name": "Mergulho com peso para peito",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -202,7 +202,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/weighted-chest-dip.gif"
   },
   {
-    "id": "forgeflow-catalog-cable-middle-fly",
+    "id": "a907d237-ade7-52cf-a9cb-51147d505c1d",
     "name": "Crucifixo médio no cabo",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -213,7 +213,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/cable-middle-fly.gif"
   },
   {
-    "id": "forgeflow-catalog-lever-chest-press",
+    "id": "239aaa04-3bdf-5ee2-a430-9a0af339f1fc",
     "name": "Supino na máquina",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -225,7 +225,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/lever-chest-press.gif"
   },
   {
-    "id": "forgeflow-catalog-lever-pec-deck-fly",
+    "id": "b94cea66-dde1-5303-a15a-f8702e07a7e9",
     "name": "Peck deck",
     "primaryMuscleGroup": "CHEST",
     "secondaryMuscleGroups": [
@@ -236,7 +236,7 @@
     "mediaUri": "file:///android_asset/exercise-media/chest/lever-pec-deck-fly.gif"
   },
   {
-    "id": "forgeflow-catalog-pull-up",
+    "id": "48a6226f-bff6-5732-8f29-6807b1095861",
     "name": "Barra fixa",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -247,7 +247,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/pull-up.gif"
   },
   {
-    "id": "forgeflow-catalog-chin-up",
+    "id": "af8ea06b-eead-5d87-8434-51b9fd91f57a",
     "name": "Barra fixa supinada",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -258,7 +258,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/chin-up.gif"
   },
   {
-    "id": "forgeflow-catalog-lat-pulldown",
+    "id": "8742e0fc-27e3-5453-b006-95006c0af93e",
     "name": "Puxada alta",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -270,7 +270,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/lat-pulldown.gif"
   },
   {
-    "id": "forgeflow-catalog-close-grip-lat-pulldown",
+    "id": "387c500b-3b65-5578-89a9-d54f02460eb2",
     "name": "Puxada alta pegada fechada",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -281,7 +281,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/close-grip-lat-pulldown.gif"
   },
   {
-    "id": "forgeflow-catalog-seated-cable-row",
+    "id": "23c4dbd2-0002-5a1c-a9ee-6fe9a6fe5583",
     "name": "Remada baixa no cabo",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -293,7 +293,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/seated-cable-row.gif"
   },
   {
-    "id": "forgeflow-catalog-dumbbell-row",
+    "id": "57610c6a-6f73-5ec1-9dd4-201b0b7ebf69",
     "name": "Remada unilateral com halter",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -305,7 +305,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/dumbbell-row.gif"
   },
   {
-    "id": "forgeflow-catalog-t-bar-row",
+    "id": "289bb017-f5a1-5abf-ba62-cd734b020da2",
     "name": "Remada T",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -317,7 +317,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/t-bar-row.gif"
   },
   {
-    "id": "forgeflow-catalog-rack-pull",
+    "id": "a1277e32-7b79-5b1a-be75-70e4979c88b6",
     "name": "Rack pull",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -329,7 +329,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/rack-pull.gif"
   },
   {
-    "id": "forgeflow-catalog-straight-arm-pulldown",
+    "id": "66aada14-ed67-5169-91b4-adf36097da14",
     "name": "Pulldown com braços retos",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -341,7 +341,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/straight-arm-pulldown.gif"
   },
   {
-    "id": "forgeflow-catalog-back-extension",
+    "id": "347e387f-9d91-5831-954e-e1b3d8e75313",
     "name": "Extensão lombar",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -353,7 +353,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/back-extension.gif"
   },
   {
-    "id": "forgeflow-catalog-wide-grip-pull-up",
+    "id": "f4f03b45-b4e9-52e5-b783-cf0b041515fa",
     "name": "Barra fixa pegada aberta",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -365,7 +365,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/wide-grip-pull-up.gif"
   },
   {
-    "id": "forgeflow-catalog-assisted-pull-up",
+    "id": "01492909-1759-5d29-b9a5-e248cf053ee3",
     "name": "Barra fixa assistida",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -376,7 +376,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/assisted-pull-up.gif"
   },
   {
-    "id": "forgeflow-catalog-reverse-grip-lat-pulldown",
+    "id": "12c13c86-fe92-5a72-b205-55b099f1dedd",
     "name": "Puxada alta supinada",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -387,7 +387,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/reverse-grip-lat-pulldown.gif"
   },
   {
-    "id": "forgeflow-catalog-one-arm-cable-row",
+    "id": "c2b6badf-3bbd-5efb-9de0-50f8eb2b411d",
     "name": "Remada unilateral no cabo",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -399,7 +399,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/one-arm-cable-row.gif"
   },
   {
-    "id": "forgeflow-catalog-machine-row",
+    "id": "8eeac9f8-e3ba-5554-816b-e2572928cd60",
     "name": "Remada na máquina",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -411,7 +411,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/machine-row.gif"
   },
   {
-    "id": "forgeflow-catalog-inverted-row",
+    "id": "29c740b7-9fa4-5436-918a-a879f119085f",
     "name": "Remada invertida",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [
@@ -424,7 +424,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/inverted-row.gif"
   },
   {
-    "id": "forgeflow-catalog-barbell-shrug",
+    "id": "3dc19a31-0510-50ae-ba38-bc797d927f27",
     "name": "Encolhimento com barra",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [],
@@ -433,7 +433,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/barbell-shrug.gif"
   },
   {
-    "id": "forgeflow-catalog-dumbbell-shrug",
+    "id": "2789e3a5-8b8b-533a-acf8-f1f26978e2d0",
     "name": "Encolhimento com halteres",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [],
@@ -442,7 +442,7 @@
     "mediaUri": "file:///android_asset/exercise-media/back/dumbbell-shrug.gif"
   },
   {
-    "id": "forgeflow-catalog-dumbbell-shoulder-press",
+    "id": "8b557a23-3935-54c8-900c-5f6e0158660b",
     "name": "Desenvolvimento com halteres",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -453,7 +453,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/dumbbell-shoulder-press.gif"
   },
   {
-    "id": "forgeflow-catalog-arnold-press",
+    "id": "b1c5910a-385f-5efe-b434-ae55a4d4b8e5",
     "name": "Desenvolvimento Arnold",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -464,7 +464,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/arnold-press.gif"
   },
   {
-    "id": "forgeflow-catalog-dumbbell-lateral-raise",
+    "id": "4843f731-42a2-56fb-a263-9e8496794ae4",
     "name": "Elevação lateral com halteres",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -475,7 +475,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/dumbbell-lateral-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-cable-lateral-raise",
+    "id": "35445724-914b-5a06-8a03-df56e0783af4",
     "name": "Elevação lateral no cabo",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -486,7 +486,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/cable-lateral-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-front-raise",
+    "id": "6fde0e13-e603-5a90-adaa-71726322d033",
     "name": "Elevação frontal",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -497,7 +497,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/front-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-rear-delt-fly",
+    "id": "f90cdecb-4570-5470-8c7c-ec22ed0878a9",
     "name": "Crucifixo inverso",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -508,7 +508,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/rear-delt-fly.gif"
   },
   {
-    "id": "forgeflow-catalog-face-pull",
+    "id": "51c8a86e-eead-52ae-bdb8-ee4289904df3",
     "name": "Face pull",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -519,7 +519,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/face-pull.gif"
   },
   {
-    "id": "forgeflow-catalog-upright-row",
+    "id": "de2ceba6-9caf-5f36-b7da-b53c43246806",
     "name": "Remada alta",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -530,7 +530,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/upright-row.gif"
   },
   {
-    "id": "forgeflow-catalog-shrug",
+    "id": "c4159bd8-33a4-52a0-9b8c-162ed933933e",
     "name": "Encolhimento de ombros",
     "primaryMuscleGroup": "BACK",
     "secondaryMuscleGroups": [],
@@ -539,7 +539,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/shrug.gif"
   },
   {
-    "id": "forgeflow-catalog-seated-barbell-shoulder-press",
+    "id": "bb6eb115-3cf8-5c61-939e-998786a6470f",
     "name": "Desenvolvimento sentado com barra",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -551,7 +551,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/seated-barbell-shoulder-press.gif"
   },
   {
-    "id": "forgeflow-catalog-seated-dumbbell-shoulder-press",
+    "id": "dea20bcf-a83e-502b-9ec7-040fc105664b",
     "name": "Desenvolvimento sentado com halteres",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -562,7 +562,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/seated-dumbbell-shoulder-press.gif"
   },
   {
-    "id": "forgeflow-catalog-machine-shoulder-press",
+    "id": "6ba80f61-e1c2-5d2f-95e7-27a4b1e82b86",
     "name": "Desenvolvimento na máquina",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -573,7 +573,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/machine-shoulder-press.gif"
   },
   {
-    "id": "forgeflow-catalog-cable-front-raise",
+    "id": "601bc556-0033-5098-9dc4-a2513a1b97cb",
     "name": "Elevação frontal no cabo",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -584,7 +584,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/cable-front-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-plate-front-raise",
+    "id": "3a7d6399-ce77-5c14-b6c3-b48a8faabe26",
     "name": "Elevação frontal com anilha",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -595,7 +595,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/plate-front-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-reverse-pec-deck-fly",
+    "id": "4f25eb6d-d2de-5675-836e-d122be302749",
     "name": "Crucifixo inverso na máquina",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -606,7 +606,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/reverse-pec-deck-fly.gif"
   },
   {
-    "id": "forgeflow-catalog-barbell-front-raise",
+    "id": "6d8ef4fd-1d65-525f-8334-bc3fd6eaa290",
     "name": "Elevação frontal com barra",
     "primaryMuscleGroup": "SHOULDERS",
     "secondaryMuscleGroups": [
@@ -617,7 +617,7 @@
     "mediaUri": "file:///android_asset/exercise-media/shoulders/barbell-front-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-barbell-curl",
+    "id": "d2ed7f7c-373c-5693-858b-970f3fe61911",
     "name": "Rosca direta com barra",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -626,7 +626,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/barbell-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-ez-bar-curl",
+    "id": "af01bdd0-dc7e-5c9b-991c-dda348912bde",
     "name": "Rosca direta com barra W",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -635,7 +635,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/ez-bar-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-dumbbell-curl",
+    "id": "aefdd4c6-69c3-59b7-a356-b1720174de9e",
     "name": "Rosca com halteres",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -644,7 +644,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/dumbbell-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-incline-dumbbell-curl",
+    "id": "2d6b73d9-3beb-5aed-91cb-36ae5f453476",
     "name": "Rosca inclinada com halteres",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -653,7 +653,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/incline-dumbbell-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-hammer-curl",
+    "id": "7f86daca-014f-59e5-bf05-605b1d998cff",
     "name": "Rosca martelo",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [
@@ -664,7 +664,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/hammer-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-concentration-curl",
+    "id": "97f5ef6c-f383-5d3b-b9e1-3bdb77b4db8c",
     "name": "Rosca concentrada",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -673,7 +673,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/concentration-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-preacher-curl",
+    "id": "40416e41-8824-5557-8776-e6afed566e27",
     "name": "Rosca Scott",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -682,7 +682,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/preacher-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-cable-curl",
+    "id": "cce05e3c-deda-5e63-b07a-0fe3c2175503",
     "name": "Rosca no cabo",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -691,7 +691,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/cable-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-reverse-curl",
+    "id": "27bb05b1-8cf9-584e-a55f-9d16f8b27efc",
     "name": "Rosca inversa",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [
@@ -702,7 +702,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/reverse-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-zottman-curl",
+    "id": "114c4ec6-e5a4-5be7-ae06-538c237cd397",
     "name": "Rosca Zottman",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [
@@ -713,7 +713,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/zottman-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-spider-curl",
+    "id": "cf4d0757-f5b7-5e80-92f2-d82cb8a3d4bb",
     "name": "Rosca spider",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -722,7 +722,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/spider-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-drag-curl",
+    "id": "20c7c5e1-ed54-500e-91ae-529bce5960e7",
     "name": "Rosca drag",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -731,7 +731,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/drag-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-cross-body-hammer-curl",
+    "id": "11cab6a0-e61b-5f4a-83e6-039316f46fcd",
     "name": "Rosca martelo cruzada",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [
@@ -742,7 +742,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/cross-body-hammer-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-cable-hammer-curl",
+    "id": "1deeafb0-f513-5528-8b49-1594fa0e7285",
     "name": "Rosca martelo no cabo",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [
@@ -753,7 +753,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/cable-hammer-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-machine-preacher-curl",
+    "id": "5ad9afb1-5439-5271-be98-842eb51264d9",
     "name": "Rosca Scott na máquina",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -762,7 +762,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/machine-preacher-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-single-arm-cable-curl",
+    "id": "971fac7a-8bed-52ce-8f3e-ca40a180f639",
     "name": "Rosca unilateral no cabo",
     "primaryMuscleGroup": "BICEPS",
     "secondaryMuscleGroups": [],
@@ -771,7 +771,7 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/single-arm-cable-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-triceps-pushdown",
+    "id": "bae78d99-e526-5654-b94f-305f3aae3ad0",
     "name": "Tríceps na polia",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [],
@@ -780,7 +780,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/triceps-pushdown.gif"
   },
   {
-    "id": "forgeflow-catalog-rope-pushdown",
+    "id": "302f46f8-7dd8-5a12-89b1-74b9bdcd28d6",
     "name": "Tríceps corda",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [],
@@ -789,7 +789,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/rope-pushdown.gif"
   },
   {
-    "id": "forgeflow-catalog-overhead-cable-extension",
+    "id": "4900f22e-ff70-52ea-abd4-cc4843318315",
     "name": "Tríceps acima da cabeça no cabo",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -800,7 +800,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/overhead-cable-extension.gif"
   },
   {
-    "id": "forgeflow-catalog-lying-triceps-extension",
+    "id": "fe66d555-31da-573d-88dc-178ec3dac536",
     "name": "Tríceps testa deitado",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -811,7 +811,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/lying-triceps-extension.gif"
   },
   {
-    "id": "forgeflow-catalog-skull-crusher",
+    "id": "0e801ce7-3157-5401-a4cc-667c825a5e46",
     "name": "Skull crusher",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -822,7 +822,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/skull-crusher.gif"
   },
   {
-    "id": "forgeflow-catalog-close-grip-bench-press",
+    "id": "cb976561-b416-5b78-8575-304f1865daef",
     "name": "Supino fechado",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -834,7 +834,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/close-grip-bench-press.gif"
   },
   {
-    "id": "forgeflow-catalog-bench-dip",
+    "id": "80e4acca-bea8-5843-bf9f-8a17adaf12e4",
     "name": "Mergulho no banco",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -846,7 +846,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/bench-dip.gif"
   },
   {
-    "id": "forgeflow-catalog-triceps-dip",
+    "id": "54062fa3-f654-5b0c-8bad-0a1aa9ec9897",
     "name": "Mergulho nas paralelas para tríceps",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -858,7 +858,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/triceps-dip.gif"
   },
   {
-    "id": "forgeflow-catalog-dumbbell-kickback",
+    "id": "d00949a6-9a75-5b59-90d6-8bc6c19a7896",
     "name": "Coice de tríceps com halter",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -869,7 +869,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/dumbbell-kickback.gif"
   },
   {
-    "id": "forgeflow-catalog-one-arm-triceps-extension",
+    "id": "ebd0bac6-8416-535b-adb0-723d72cd7819",
     "name": "Extensão unilateral de tríceps",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -880,7 +880,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/one-arm-triceps-extension.gif"
   },
   {
-    "id": "forgeflow-catalog-cable-one-arm-triceps-extension",
+    "id": "f769d563-db70-543f-a432-8d1498340897",
     "name": "Extensão unilateral de tríceps no cabo",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [],
@@ -889,7 +889,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/cable-one-arm-triceps-extension.gif"
   },
   {
-    "id": "forgeflow-catalog-dumbbell-overhead-triceps-extension",
+    "id": "e16f58e9-d9d1-5361-86ff-5208f8624a28",
     "name": "Tríceps francês com halter",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -900,7 +900,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/dumbbell-overhead-triceps-extension.gif"
   },
   {
-    "id": "forgeflow-catalog-ez-bar-lying-triceps-extension",
+    "id": "703452a9-d5e7-58b7-ab23-7eca9b961104",
     "name": "Tríceps testa com barra EZ",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -911,7 +911,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/ez-bar-lying-triceps-extension.gif"
   },
   {
-    "id": "forgeflow-catalog-reverse-grip-triceps-pushdown",
+    "id": "5a1382fe-6858-58e6-ae0e-252a3f57d30b",
     "name": "Tríceps na polia pegada inversa",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [],
@@ -920,7 +920,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/reverse-grip-triceps-pushdown.gif"
   },
   {
-    "id": "forgeflow-catalog-bodyweight-triceps-extension",
+    "id": "d0a23385-c85a-5cc9-8db6-31d298c80939",
     "name": "Extensão de tríceps com peso corporal",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [
@@ -932,7 +932,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/bodyweight-triceps-extension.gif"
   },
   {
-    "id": "forgeflow-catalog-machine-triceps-extension",
+    "id": "f8ab3e50-b9dd-5593-b4c8-2f98ced8c7b8",
     "name": "Extensão de tríceps na máquina",
     "primaryMuscleGroup": "TRICEPS",
     "secondaryMuscleGroups": [],
@@ -941,7 +941,7 @@
     "mediaUri": "file:///android_asset/exercise-media/triceps/machine-triceps-extension.gif"
   },
   {
-    "id": "forgeflow-catalog-front-squat",
+    "id": "399e63a5-09f3-5dcb-9f0a-3978514feb3a",
     "name": "Agachamento frontal",
     "primaryMuscleGroup": "QUADRICEPS",
     "secondaryMuscleGroups": [
@@ -953,7 +953,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/front-squat.gif"
   },
   {
-    "id": "forgeflow-catalog-leg-press",
+    "id": "0eb8ae30-7c11-51f1-9da6-93ce918847ed",
     "name": "Leg press",
     "primaryMuscleGroup": "QUADRICEPS",
     "secondaryMuscleGroups": [
@@ -965,7 +965,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/leg-press.gif"
   },
   {
-    "id": "forgeflow-catalog-leg-extension",
+    "id": "ee325876-7d50-5850-a75b-4ad153d3fdd4",
     "name": "Cadeira extensora",
     "primaryMuscleGroup": "QUADRICEPS",
     "secondaryMuscleGroups": [],
@@ -974,7 +974,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/leg-extension.gif"
   },
   {
-    "id": "forgeflow-catalog-lying-leg-curl",
+    "id": "5f63a78f-32d2-5b48-b29d-54fca32f8a02",
     "name": "Mesa flexora",
     "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
@@ -985,7 +985,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/lying-leg-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-romanian-deadlift",
+    "id": "c81a448e-4c6d-58e3-834d-127d0ef92406",
     "name": "Levantamento terra romeno",
     "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
@@ -997,7 +997,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/romanian-deadlift.gif"
   },
   {
-    "id": "forgeflow-catalog-stiff-leg-deadlift",
+    "id": "9b98e8ea-d1ce-53f6-9bd9-1a6e8fa3435f",
     "name": "Stiff",
     "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
@@ -1009,7 +1009,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/stiff-leg-deadlift.gif"
   },
   {
-    "id": "forgeflow-catalog-walking-lunge",
+    "id": "c67ae2bb-faf1-5cde-99e6-638371991510",
     "name": "Avanço caminhando",
     "primaryMuscleGroup": "QUADRICEPS",
     "secondaryMuscleGroups": [
@@ -1021,7 +1021,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/walking-lunge.gif"
   },
   {
-    "id": "forgeflow-catalog-bulgarian-split-squat",
+    "id": "1e6de859-5e71-5722-b961-8940d383e385",
     "name": "Agachamento búlgaro",
     "primaryMuscleGroup": "QUADRICEPS",
     "secondaryMuscleGroups": [
@@ -1033,7 +1033,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/bulgarian-split-squat.gif"
   },
   {
-    "id": "forgeflow-catalog-hip-thrust",
+    "id": "dcb929d4-f16f-582e-8ee0-dfb71846dedf",
     "name": "Elevação pélvica",
     "primaryMuscleGroup": "GLUTES",
     "secondaryMuscleGroups": [
@@ -1045,7 +1045,7 @@
     "mediaUri": null
   },
   {
-    "id": "forgeflow-catalog-standing-calf-raise",
+    "id": "016ccbea-50a1-5865-ae38-0dc4f7be05aa",
     "name": "Panturrilha em pé",
     "primaryMuscleGroup": "CALVES",
     "secondaryMuscleGroups": [],
@@ -1054,7 +1054,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/standing-calf-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-seated-calf-raise",
+    "id": "e0de0fe5-4a7e-5441-b3b4-cf82b749b990",
     "name": "Panturrilha sentada",
     "primaryMuscleGroup": "CALVES",
     "secondaryMuscleGroups": [],
@@ -1063,7 +1063,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/seated-calf-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-goblet-squat",
+    "id": "9e23f4b5-f8ff-506a-96a3-b08454c3b15a",
     "name": "Agachamento goblet",
     "primaryMuscleGroup": "QUADRICEPS",
     "secondaryMuscleGroups": [
@@ -1075,7 +1075,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/goblet-squat.gif"
   },
   {
-    "id": "forgeflow-catalog-hack-squat",
+    "id": "402001e1-6fe4-5249-8315-cd7301de0b8a",
     "name": "Hack squat",
     "primaryMuscleGroup": "QUADRICEPS",
     "secondaryMuscleGroups": [
@@ -1086,7 +1086,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/hack-squat.gif"
   },
   {
-    "id": "forgeflow-catalog-sumo-deadlift",
+    "id": "1a3bf692-bb90-5f50-88fe-932bb653dcea",
     "name": "Levantamento terra sumô",
     "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
@@ -1098,7 +1098,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/sumo-deadlift.gif"
   },
   {
-    "id": "forgeflow-catalog-good-morning",
+    "id": "acdca2fe-d557-5eda-b6cd-c7735d10f8bc",
     "name": "Good morning",
     "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
@@ -1110,7 +1110,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/good-morning.gif"
   },
   {
-    "id": "forgeflow-catalog-glute-bridge",
+    "id": "13a2c4bd-07a3-52be-bd84-d45ca513f258",
     "name": "Ponte de glúteos",
     "primaryMuscleGroup": "GLUTES",
     "secondaryMuscleGroups": [
@@ -1122,7 +1122,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/glute-bridge.gif"
   },
   {
-    "id": "forgeflow-catalog-cable-pull-through",
+    "id": "ec60cc09-a4af-5af8-9122-6cda425b1787",
     "name": "Pull through no cabo",
     "primaryMuscleGroup": "GLUTES",
     "secondaryMuscleGroups": [
@@ -1134,7 +1134,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/cable-pull-through.gif"
   },
   {
-    "id": "forgeflow-catalog-seated-leg-curl",
+    "id": "70ebc2d6-0eba-5e29-82e0-e7f48bc10a7b",
     "name": "Cadeira flexora",
     "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
@@ -1145,7 +1145,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/seated-leg-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-standing-leg-curl",
+    "id": "6653bbfe-dabb-5b78-b75c-52d88e005e13",
     "name": "Flexora em pé",
     "primaryMuscleGroup": "HAMSTRINGS",
     "secondaryMuscleGroups": [
@@ -1156,7 +1156,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/standing-leg-curl.gif"
   },
   {
-    "id": "forgeflow-catalog-smith-machine-squat",
+    "id": "1f4c811a-236d-5881-8d91-422523a3d82e",
     "name": "Agachamento no smith",
     "primaryMuscleGroup": "QUADRICEPS",
     "secondaryMuscleGroups": [
@@ -1167,7 +1167,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/smith-machine-squat.gif"
   },
   {
-    "id": "forgeflow-catalog-calf-press-on-leg-press",
+    "id": "f0f139a0-08b9-5633-b57c-fcbe73f1e11a",
     "name": "Panturrilha no leg press",
     "primaryMuscleGroup": "CALVES",
     "secondaryMuscleGroups": [],
@@ -1176,7 +1176,7 @@
     "mediaUri": "file:///android_asset/exercise-media/legs/calf-press-on-leg-press.gif"
   },
   {
-    "id": "forgeflow-catalog-crunch",
+    "id": "74b387a6-370b-51c9-947d-d2cae6383979",
     "name": "Abdominal crunch",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
@@ -1185,7 +1185,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/crunch.gif"
   },
   {
-    "id": "forgeflow-catalog-sit-up",
+    "id": "8a916078-3ea2-5e66-ad61-de8e832ef091",
     "name": "Abdominal completo",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
@@ -1194,7 +1194,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/sit-up.gif"
   },
   {
-    "id": "forgeflow-catalog-leg-raise",
+    "id": "e150ef2b-179e-55d4-ba1a-b846dccfdd4a",
     "name": "Elevação de pernas",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
@@ -1203,7 +1203,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/leg-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-hanging-leg-raise",
+    "id": "6250f01d-a1b9-5638-9587-ee093527a9e9",
     "name": "Elevação de pernas suspenso",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
@@ -1212,7 +1212,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/hanging-leg-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-russian-twist",
+    "id": "2cc1267d-24a8-53f4-8b16-b44104bbe7cc",
     "name": "Giro russo",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [
@@ -1223,7 +1223,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/russian-twist.gif"
   },
   {
-    "id": "forgeflow-catalog-plank",
+    "id": "c1d95013-ae01-5313-b028-942d5e6062dc",
     "name": "Prancha",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [
@@ -1235,7 +1235,7 @@
     "mediaUri": null
   },
   {
-    "id": "forgeflow-catalog-side-plank",
+    "id": "b70b5d95-f782-5a13-832a-ed2277426dbe",
     "name": "Prancha lateral",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [
@@ -1247,7 +1247,7 @@
     "mediaUri": null
   },
   {
-    "id": "forgeflow-catalog-mountain-climber",
+    "id": "db083e82-6360-5d91-aff1-83f4b62b6c7c",
     "name": "Escalador",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [
@@ -1259,7 +1259,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/mountain-climber.gif"
   },
   {
-    "id": "forgeflow-catalog-bicycle-crunch",
+    "id": "26fb6b89-a277-5d20-bd93-4ed2567cd3cf",
     "name": "Abdominal bicicleta",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [
@@ -1270,7 +1270,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/bicycle-crunch.gif"
   },
   {
-    "id": "forgeflow-catalog-cable-crunch",
+    "id": "605cfe25-3dc3-5f27-bf3d-35de2eced2f2",
     "name": "Abdominal no cabo",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
@@ -1279,7 +1279,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/cable-crunch.gif"
   },
   {
-    "id": "forgeflow-catalog-reverse-crunch",
+    "id": "6b05368c-7513-5452-9119-4f8cf842d29e",
     "name": "Abdominal reverso",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
@@ -1288,7 +1288,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/reverse-crunch.gif"
   },
   {
-    "id": "forgeflow-catalog-ab-wheel-rollout",
+    "id": "6f1a7aab-e0e1-5903-94fe-7a79dc65cb6e",
     "name": "Ab wheel rollout",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [
@@ -1300,7 +1300,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/ab-wheel-rollout.gif"
   },
   {
-    "id": "forgeflow-catalog-kneeling-cable-crunch",
+    "id": "7be0ce8f-0e37-5657-9069-233e13281e04",
     "name": "Abdominal ajoelhado no cabo",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
@@ -1309,7 +1309,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/kneeling-cable-crunch.gif"
   },
   {
-    "id": "forgeflow-catalog-hanging-knee-raise",
+    "id": "fb5a5190-cea9-5fba-9cd5-688cd6b7a6dc",
     "name": "Elevação de joelhos suspenso",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
@@ -1318,7 +1318,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/hanging-knee-raise.gif"
   },
   {
-    "id": "forgeflow-catalog-flutter-kicks",
+    "id": "86c286f0-aeee-5b29-801a-e6ef07586777",
     "name": "Flutter kicks",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
@@ -1327,7 +1327,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/flutter-kicks.gif"
   },
   {
-    "id": "forgeflow-catalog-dead-bug",
+    "id": "9c624b88-3b93-5d49-9332-6f65e97d1a4c",
     "name": "Dead bug",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [
@@ -1338,7 +1338,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/dead-bug.gif"
   },
   {
-    "id": "forgeflow-catalog-v-up",
+    "id": "281a99ed-b0ee-5b1b-8bb7-a2aaabf593a1",
     "name": "Abdominal V-up",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
@@ -1347,7 +1347,7 @@
     "mediaUri": "file:///android_asset/exercise-media/core/v-up.gif"
   },
   {
-    "id": "forgeflow-catalog-wood-chop",
+    "id": "26d9db5e-ee4f-513e-8f97-6d728883ccfc",
     "name": "Wood chop no cabo",
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [

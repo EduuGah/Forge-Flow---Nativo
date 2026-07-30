@@ -179,6 +179,9 @@ class DefaultWorkoutRepository @Inject constructor(
         sessionId: WorkoutSessionId,
         location: WorkoutLocation?,
     ): DataResult<Unit> = runCatching {
+        val activeWorkout = requireNotNull(workoutDao.getActive()).asExternalModel()
+        check(activeWorkout.session.id == sessionId)
+        check(activeWorkout.completedSetCount > 0)
         check(
             workoutDao.finish(
                 sessionId = sessionId.value,

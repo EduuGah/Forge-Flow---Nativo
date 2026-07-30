@@ -1,24 +1,24 @@
 package com.forgeflow.feature.history.presentation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import com.forgeflow.core.designsystem.component.ForgeFlowCard
 import com.forgeflow.core.designsystem.component.ForgeFlowEmptyState
 import com.forgeflow.core.designsystem.component.ForgeFlowLoadingState
-import com.forgeflow.core.designsystem.component.ForgeFlowLocationMap
-import com.forgeflow.core.designsystem.component.ForgeFlowMapPoint
 import com.forgeflow.core.designsystem.component.ForgeFlowPageHeader
 import com.forgeflow.core.designsystem.component.ForgeFlowOutlinedButton
 import com.forgeflow.core.designsystem.component.ForgeFlowScaffold
@@ -84,42 +84,45 @@ private fun HistoryContent(
             )
         }
         item {
-            HistoryMetricGrid(state = state)
+            HistoryFilters(state = state, onAction = onAction)
         }
         item {
-            HistoryFilters(state = state, onAction = onAction)
+            HistoryMetricGrid(state = state)
         }
         if (state.mapPoints.isNotEmpty()) {
             item {
-                androidx.compose.foundation.layout.Column(
-                    verticalArrangement = Arrangement.spacedBy(
-                        ForgeFlowDesign.spacing.small,
-                    ),
-                ) {
-                    Text(
-                        text = stringResource(R.string.training_map_title),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                    Text(
-                        text = stringResource(
-                            R.string.training_map_description,
-                            state.mapPoints.size,
+                ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            ForgeFlowDesign.spacing.medium,
                         ),
-                        color = ForgeFlowDesign.colors.textSecondary,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    ForgeFlowLocationMap(
-                        points = state.mapPoints.map {
-                            ForgeFlowMapPoint(
-                                latitude = it.latitude,
-                                longitude = it.longitude,
-                                label = it.label,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Map,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(
+                                ForgeFlowDesign.spacing.extraSmall,
+                            ),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.training_map_title),
+                                style = MaterialTheme.typography.titleMedium,
                             )
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(210.dp),
-                    )
+                            Text(
+                                text = stringResource(
+                                    R.string.training_map_description,
+                                    state.mapPoints.size,
+                                ),
+                                color = ForgeFlowDesign.colors.textSecondary,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
                     ForgeFlowOutlinedButton(
                         text = stringResource(R.string.open_training_map),
                         onClick = onOpenTrainingMap,

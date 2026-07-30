@@ -71,6 +71,9 @@ class RoutinesViewModel @Inject constructor(
                     folder = RoutineFolderEditorUiState(selectAfterSave = true),
                 )
             }
+            is RoutinesAction.BrowseSearchChanged -> editors.update {
+                it.copy(routineSearch = action.value)
+            }
             RoutinesAction.CloseEditor -> editors.update { it.copy(routine = null) }
             RoutinesAction.CloseFolderEditor -> editors.update { it.copy(folder = null) }
             RoutinesAction.DismissError -> operationState.update { it.copy(error = null) }
@@ -107,11 +110,25 @@ class RoutinesViewModel @Inject constructor(
         val exercises = (exercisesResult as? DataResult.Success)?.value.orEmpty()
         routineDetails = routines
         routineFolders = folders
+        val normalizedQuery = currentEditors.routineSearch.trim()
+        val visibleRoutines = routines.filter { details ->
+            normalizedQuery.isBlank() ||
+                details.routine.name.contains(normalizedQuery, ignoreCase = true) ||
+                details.routine.description.contains(normalizedQuery, ignoreCase = true) ||
+                details.exercises.any { item ->
+                    item.exercise.name.contains(normalizedQuery, ignoreCase = true)
+                } ||
+                folders.firstOrNull { it.id == details.routine.folderId }
+                    ?.name
+                    .orEmpty()
+                    .contains(normalizedQuery, ignoreCase = true)
+        }
         return RoutinesUiState(
             isLoading = routinesResult !is DataResult.Success ||
                 foldersResult !is DataResult.Success ||
                 exercisesResult !is DataResult.Success,
-            routines = routines.map { details ->
+            searchQuery = currentEditors.routineSearch,
+            routines = visibleRoutines.map { details ->
                 RoutineUiModel(
                     id = details.routine.id.value,
                     folderId = details.routine.folderId?.value,
@@ -125,7 +142,9 @@ class RoutinesViewModel @Inject constructor(
                 RoutineFolderUiModel(
                     id = folder.id.value,
                     name = folder.name,
-                    routineCount = routines.count { it.routine.folderId == folder.id },
+                    routineCount = visibleRoutines.count {
+                        it.routine.folderId == folder.id
+                    },
                 )
             },
             exercises = exercises.map { exercise ->
@@ -281,6 +300,7 @@ class RoutinesViewModel @Inject constructor(
     private data class EditorsState(
         val routine: RoutineEditorUiState? = null,
         val folder: RoutineFolderEditorUiState? = null,
+        val routineSearch: String = "",
     )
 
     private data class OperationState(

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.data.routine.RoutineRepository
+import com.forgeflow.core.data.profile.ProfileRepository
 import com.forgeflow.core.data.settings.SettingsRepository
 import com.forgeflow.core.data.workout.WorkoutRepository
 import com.forgeflow.core.model.UserSettings
@@ -31,13 +32,15 @@ class HomeViewModel @Inject constructor(
     routineRepository: RoutineRepository,
     workoutRepository: WorkoutRepository,
     settingsRepository: SettingsRepository,
+    profileRepository: ProfileRepository,
 ) : ViewModel() {
     val uiState = combine(
         routineRepository.observeRoutines(),
         workoutRepository.observeHistory(),
         workoutRepository.observeActiveWorkout(),
         settingsRepository.observeSettings(),
-    ) { routinesResult, historyResult, activeResult, settings ->
+        profileRepository.observeProfile(),
+    ) { routinesResult, historyResult, activeResult, settings, profile ->
         val routines = (routinesResult as? DataResult.Success)?.value.orEmpty()
         val history = (historyResult as? DataResult.Success)?.value.orEmpty()
         val active = (activeResult as? DataResult.Success)?.value
@@ -68,6 +71,7 @@ class HomeViewModel @Inject constructor(
         val totalMuscleSets = completedByMuscle.values.sum().coerceAtLeast(1)
         HomeUiState(
             isLoading = false,
+            displayName = profile.displayName,
             routineCount = routines.size,
             workoutsLastSevenDays = weeklyWorkouts.size,
             totalWorkoutCount = history.size,

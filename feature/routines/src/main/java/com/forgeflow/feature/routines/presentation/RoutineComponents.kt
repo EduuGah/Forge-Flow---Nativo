@@ -15,8 +15,10 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -30,13 +32,69 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
 import com.forgeflow.core.designsystem.component.ForgeFlowPill
+import com.forgeflow.core.designsystem.component.ForgeFlowTextField
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.feature.routines.R
+
+@Composable
+internal fun RoutineBrowserControls(
+    state: RoutinesUiState,
+    onAction: (RoutinesAction) -> Unit,
+) {
+    ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text(
+                    text = stringResource(R.string.saved_workouts_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.saved_workouts_description,
+                        state.routines.size,
+                        state.routines.size,
+                    ),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+        ForgeFlowTextField(
+            value = state.searchQuery,
+            onValueChange = { onAction(RoutinesAction.BrowseSearchChanged(it)) },
+            label = stringResource(R.string.search_saved_routines),
+            placeholder = stringResource(R.string.search_saved_routines_hint),
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = {
+                Icon(Icons.Outlined.Search, contentDescription = null)
+            },
+            trailingIcon = {
+                if (state.searchQuery.isNotBlank()) {
+                    IconButton(
+                        onClick = {
+                            onAction(RoutinesAction.BrowseSearchChanged(""))
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Clear,
+                            contentDescription = stringResource(R.string.clear_routine_search),
+                        )
+                    }
+                }
+            },
+        )
+    }
+}
 
 @Composable
 internal fun RoutineFolderSection(

@@ -1,6 +1,8 @@
 package com.forgeflow.feature.settings.navigation
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -27,6 +29,13 @@ fun NavGraphBuilder.settingsScreen() {
                 SettingsAction.HealthConnectPermissionsResult(grantedPermissions),
             )
         }
+        val photoPicker = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickVisualMedia(),
+        ) { uri ->
+            uri?.let {
+                viewModel.onAction(SettingsAction.ImportProgressPhoto(it.toString()))
+            }
+        }
         LifecycleResumeEffect(viewModel) {
             viewModel.onAction(
                 SettingsAction.HealthConnectRefresh,
@@ -38,6 +47,11 @@ fun NavGraphBuilder.settingsScreen() {
             onAction = viewModel::onAction,
             onRequestHealthPermissions = {
                 permissionLauncher.launch(viewModel.requiredHealthPermissions)
+            },
+            onAddProgressPhoto = {
+                photoPicker.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
             },
         )
     }

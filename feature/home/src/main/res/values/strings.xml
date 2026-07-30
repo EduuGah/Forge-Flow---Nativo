@@ -1,7 +1,8 @@
 <resources>
     <string name="home_loading">Carregando resumo</string>
     <string name="home_eyebrow">ForgeFlow</string>
-    <string name="home_title">Dashboard</string>
+    <string name="home_title">Seu treino</string>
+    <string name="home_title_named">Olá, %1$s</string>
     <string name="dashboard_empty_week">Sua semana começa no próximo treino.</string>
     <string name="dashboard_week_summary">%1$d treinos e %2$s %3$s de volume nos últimos 7 dias.</string>
     <string name="last_workout">Último treino: %1$s</string>
@@ -34,6 +35,9 @@
     <string name="metric_training">em treino</string>
     <string name="metric_personal_records">PRs</string>
     <string name="metric_pr_breakdown">%1$d peso • %2$d volume</string>
+    <string name="dashboard_week_volume">volume (%1$s)</string>
+    <string name="dashboard_calendar">Calendário</string>
+    <string name="dashboard_evolution_short">Evolução</string>
     <string name="volume_value">%1$d kg</string>
     <string name="open_exercise_library">Biblioteca de exercícios</string>
     <string name="latest_activity">Última atividade</string>

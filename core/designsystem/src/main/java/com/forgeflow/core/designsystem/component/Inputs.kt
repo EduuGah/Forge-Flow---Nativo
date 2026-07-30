@@ -14,6 +14,8 @@ fun ForgeFlowTextField(
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
     leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    placeholder: String? = null,
 ) {
     OutlinedTextField(
         value = value,
@@ -22,6 +24,10 @@ fun ForgeFlowTextField(
         modifier = modifier,
         singleLine = singleLine,
         leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        placeholder = placeholder?.let { text ->
+            { androidx.compose.material3.Text(text = text) }
+        },
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),

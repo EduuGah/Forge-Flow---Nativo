@@ -71,22 +71,16 @@ private fun HomeContent(
             )
         }
         item {
-            PlannerOverviewPanel(
+            DashboardOverviewPanel(
                 state = state,
                 onOpenPlanner = onOpenPlanner,
-            )
-        }
-        item { DashboardMetricGrid(state = state) }
-        item {
-            DashboardEvolutionPanels(
-                state = state,
                 onOpenEvolution = onOpenEvolution,
             )
         }
-        if (state.recentWorkouts.isNotEmpty()) {
+        state.latestWorkout?.let { workout ->
             item {
-                RecentWorkoutsPanel(
-                    workouts = state.recentWorkouts,
+                LatestWorkoutPanel(
+                    workout = workout,
                     weightUnit = state.weightUnit,
                 )
             }

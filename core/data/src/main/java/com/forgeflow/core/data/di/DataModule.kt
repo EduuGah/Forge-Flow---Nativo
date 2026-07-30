@@ -10,6 +10,8 @@ import com.forgeflow.core.data.exercise.DefaultExerciseRepository
 import com.forgeflow.core.data.exercise.ExerciseLocalDataSource
 import com.forgeflow.core.data.exercise.ExerciseRepository
 import com.forgeflow.core.data.exercise.RoomExerciseLocalDataSource
+import com.forgeflow.core.data.profile.DataStoreProfileRepository
+import com.forgeflow.core.data.profile.ProfileRepository
 import com.forgeflow.core.data.routine.DefaultRoutineRepository
 import com.forgeflow.core.data.routine.RoutineRepository
 import com.forgeflow.core.data.settings.DataStoreSettingsRepository
@@ -45,6 +47,12 @@ abstract class RepositoryModule {
     abstract fun bindSettingsRepository(
         implementation: DataStoreSettingsRepository,
     ): SettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindProfileRepository(
+        implementation: DataStoreProfileRepository,
+    ): ProfileRepository
 
     @Binds
     @Singleton

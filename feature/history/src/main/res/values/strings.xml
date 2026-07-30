@@ -34,6 +34,12 @@
     <string name="personal_record">Recorde pessoal</string>
     <string name="history_search_label">Pesquisar histórico</string>
     <string name="history_search_placeholder">Treino, exercício, local ou data</string>
+    <string name="history_filters_title">Encontrar treino</string>
+    <plurals name="history_results_count">
+        <item quantity="one">%1$d treino encontrado</item>
+        <item quantity="other">%1$d treinos encontrados</item>
+    </plurals>
+    <string name="clear_filters">Limpar filtros</string>
     <string name="clear_search">Limpar pesquisa</string>
     <string name="filter_all_dates">Todas</string>
     <string name="filter_last_7_days">7 dias</string>

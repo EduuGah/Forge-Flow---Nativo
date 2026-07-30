@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -143,50 +145,52 @@ internal fun QuickAccessPanel(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
         ForgeFlowEyebrow(text = stringResource(R.string.quick_access))
-        QuickAccessRow(
-            title = stringResource(R.string.open_exercise_library),
-            description = stringResource(R.string.exercise_library_helper),
-            onClick = onOpenExercises,
-        )
-        QuickAccessRow(
-            title = stringResource(R.string.manage_routines),
-            description = stringResource(R.string.manage_routines_helper),
-            onClick = onOpenRoutines,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+        ) {
+            QuickAccessTile(
+                title = stringResource(R.string.open_exercise_library),
+                icon = Icons.Outlined.MenuBook,
+                onClick = onOpenExercises,
+                modifier = Modifier.weight(1f),
+            )
+            QuickAccessTile(
+                title = stringResource(R.string.manage_routines),
+                icon = Icons.Outlined.FitnessCenter,
+                onClick = onOpenRoutines,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
 @Composable
-private fun QuickAccessRow(
+private fun QuickAccessTile(
     title: String,
-    description: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     ForgeFlowCard(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = modifier
+            .height(112.dp)
+            .clickable(onClick = onClick),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            DashboardIcon {
-                Icon(Icons.Outlined.FitnessCenter, contentDescription = null)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = description,
-                    color = ForgeFlowDesign.colors.textSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.weight(1f))
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
                 contentDescription = null,
                 tint = ForgeFlowDesign.colors.textSecondary,
             )
         }
+        Text(text = title, style = MaterialTheme.typography.titleSmall)
     }
 }
 

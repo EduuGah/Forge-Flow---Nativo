@@ -15,12 +15,14 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import com.forgeflow.core.designsystem.component.ForgeFlowCard
+import com.forgeflow.core.designsystem.component.ForgeFlowTextField
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.feature.history.R
 
@@ -29,17 +31,41 @@ internal fun HistoryFilters(
     state: HistoryUiState,
     onAction: (HistoryAction) -> Unit,
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
-    ) {
-        OutlinedTextField(
+    val hasActiveFilters = state.searchQuery.isNotBlank() ||
+        state.dateFilter != HistoryDateFilter.ALL ||
+        state.onlyWithLocation
+    ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column {
+                Text(
+                    text = stringResource(R.string.history_filters_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.history_results_count,
+                        state.workouts.size,
+                        state.workouts.size,
+                    ),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            if (hasActiveFilters) {
+                TextButton(onClick = { onAction(HistoryAction.ClearFilters) }) {
+                    Text(stringResource(R.string.clear_filters))
+                }
+            }
+        }
+        ForgeFlowTextField(
             value = state.searchQuery,
             onValueChange = { onAction(HistoryAction.SearchChanged(it)) },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = { Text(stringResource(R.string.history_search_label)) },
-            placeholder = { Text(stringResource(R.string.history_search_placeholder)) },
+            label = stringResource(R.string.history_search_label),
+            placeholder = stringResource(R.string.history_search_placeholder),
             leadingIcon = {
                 Icon(Icons.Outlined.Search, contentDescription = null)
             },

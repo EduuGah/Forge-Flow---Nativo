@@ -8,6 +8,7 @@ import com.forgeflow.core.model.WeightUnit
 @Immutable
 data class HomeUiState(
     val isLoading: Boolean = true,
+    val displayName: String = "",
     val routineCount: Int = 0,
     val workoutsLastSevenDays: Int = 0,
     val totalWorkoutCount: Int = 0,

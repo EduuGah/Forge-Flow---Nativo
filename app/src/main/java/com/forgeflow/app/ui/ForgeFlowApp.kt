@@ -14,7 +14,7 @@ import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
@@ -303,7 +303,7 @@ private enum class MainDestination(
     HISTORY(R.string.navigation_history, Icons.Outlined.History, HistoryRoute::class.qualifiedName),
     SETTINGS(
         R.string.navigation_settings,
-        Icons.Outlined.Settings,
+        Icons.Outlined.Person,
         SettingsRoute::class.qualifiedName,
     ),
 }

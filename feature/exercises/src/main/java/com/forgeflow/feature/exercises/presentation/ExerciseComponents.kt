@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Search
@@ -58,12 +59,53 @@ internal fun ExerciseFilters(
     onAction: (ExercisesAction) -> Unit,
 ) {
     ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text(
+                    text = stringResource(R.string.exercise_browser_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = stringResource(
+                        R.string.exercise_browser_results,
+                        state.exercises.size,
+                        state.totalCount,
+                    ),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            if (state.customCount > 0) {
+                ForgeFlowPill(
+                    text = stringResource(
+                        R.string.exercise_browser_custom,
+                        state.customCount,
+                    ),
+                )
+            }
+        }
         ForgeFlowTextField(
             value = state.query,
             onValueChange = { onAction(ExercisesAction.SearchChanged(it)) },
             label = stringResource(R.string.search_exercises),
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+            trailingIcon = {
+                if (state.query.isNotBlank()) {
+                    IconButton(
+                        onClick = { onAction(ExercisesAction.SearchChanged("")) },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Clear,
+                            contentDescription = stringResource(R.string.clear_exercise_search),
+                        )
+                    }
+                }
+            },
         )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             item {

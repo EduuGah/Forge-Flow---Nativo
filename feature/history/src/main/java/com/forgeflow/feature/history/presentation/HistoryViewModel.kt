@@ -78,6 +78,7 @@ class HistoryViewModel @Inject constructor(
             is HistoryAction.OnlyWithLocationChanged -> filters.update {
                 it.copy(onlyWithLocation = action.enabled)
             }
+            HistoryAction.ClearFilters -> filters.value = HistoryFilters()
             is HistoryAction.DeleteRequested -> pendingDeleteId.value = action.workoutId
             HistoryAction.DeleteDismissed -> pendingDeleteId.value = null
             HistoryAction.DeleteConfirmed -> deletePendingWorkout()

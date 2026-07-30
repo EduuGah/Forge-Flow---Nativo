@@ -297,7 +297,7 @@ private fun HealthConnectStatus(state: SettingsUiState) {
 }
 
 @Composable
-private fun SettingsSection(
+internal fun SettingsSection(
     eyebrow: String,
     title: String,
     description: String,

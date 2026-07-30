@@ -11,6 +11,10 @@
     <string name="metric_filtered">no filtro</string>
     <string name="metric_created">criados por você</string>
     <string name="search_exercises">Buscar exercício</string>
+    <string name="exercise_browser_title">Explorar biblioteca</string>
+    <string name="exercise_browser_results">%1$d de %2$d exercícios</string>
+    <string name="exercise_browser_custom">%1$d pessoais</string>
+    <string name="clear_exercise_search">Limpar busca de exercícios</string>
     <string name="filter_all">Todos</string>
     <string name="exercises_loading">Carregando exercícios</string>
     <string name="exercises_error_title">Não foi possível carregar</string>

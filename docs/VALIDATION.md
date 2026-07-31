@@ -39,6 +39,8 @@ Prioridades:
 - [ ] Alternar entre kg e lb sem alterar o valor real
 - [ ] Adicionar uma foto pelo seletor do Android
 - [ ] Comparar duas ou mais fotos
+- [ ] Abrir detalhes com toque, selecionar com pressão longa e filtrar período exato
+- [ ] Arrastar a divisória entre duas fotos na comparação
 - [ ] Navegar entre registros e excluir uma foto
 - [ ] Reiniciar o aplicativo e confirmar a persistência
 
@@ -47,8 +49,12 @@ Prioridades:
 - [ ] Buscar rotina por nome, exercício e pasta
 - [ ] Expandir e recolher pastas
 - [ ] Criar, editar, mover e excluir uma rotina
+- [ ] Copiar uma rotina e uma pasta; reordenar ambas por pressão longa
+- [ ] Definir séries normais, aquecimentos e observação por exercício
 - [ ] Buscar e filtrar exercícios por músculo
+- [ ] Buscar por apelidos comuns (`serrote`, `hip thrust`, `preacher curl`) e com espaço final
 - [ ] Abrir detalhes de um exercício
+- [ ] Conferir GIF e instruções dos nove exercícios corrigidos nesta rodada
 - [ ] Criar e excluir exercício personalizado
 
 ### Treino ativo
@@ -57,9 +63,12 @@ Prioridades:
 - [ ] Registrar aquecimento e séries normais
 - [ ] Confirmar peso anterior, PR de carga e PR de volume
 - [ ] Adicionar e excluir série
+- [ ] Reordenar, adicionar, trocar e remover exercício durante o treino
+- [ ] Salvar uma anotação e confirmá-la no treino seguinte
 - [ ] Usar cronômetro em primeiro e segundo plano
 - [ ] Tentar finalizar sem séries válidas
 - [ ] Finalizar com nome e localização
+- [ ] Finalizar mantendo a rotina, atualizando a original e criando uma cópia
 - [ ] Conferir notificação e barra de treino ativo
 
 ### Histórico e evolução
@@ -78,6 +87,8 @@ Prioridades:
 - [ ] Confirmar que a troca de cor não fecha o aplicativo
 - [ ] Verificar ícone adaptativo após sair do app
 - [ ] Conectar, sincronizar e revogar Health Connect
+- [ ] Conferir origem Samsung Health e histórico de passos em 7 e 30 dias
+- [ ] Registrar água e validar lembretes de bem-estar
 - [ ] Testar widget e atalhos
 - [ ] Reiniciar o aparelho com treino ou cronômetro ativo
 

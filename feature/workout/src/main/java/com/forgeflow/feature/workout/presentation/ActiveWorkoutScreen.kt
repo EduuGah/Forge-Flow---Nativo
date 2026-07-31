@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +36,7 @@ fun ActiveWorkoutScreen(
     state: ActiveWorkoutUiState,
     onAction: (ActiveWorkoutAction) -> Unit,
     onBack: () -> Unit,
+    onOpenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showDiscardDialog by remember { mutableStateOf(false) }
@@ -43,6 +45,8 @@ fun ActiveWorkoutScreen(
     var includeLocation by remember { mutableStateOf(false) }
     var locationLabel by remember { mutableStateOf("") }
     var locationPermissionDenied by remember { mutableStateOf(false) }
+    var routineAction by remember { mutableStateOf(RoutineFinishAction.KEEP_ORIGINAL) }
+    var pickerTarget by remember { mutableStateOf<ExercisePickerTarget?>(null) }
     val context = LocalContext.current
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -97,6 +101,8 @@ fun ActiveWorkoutScreen(
                 workout = state.workout,
                 onAction = onAction,
                 onBack = onBack,
+                onOpenExercise = onOpenExercise,
+                onShowExercisePicker = { pickerTarget = it },
                 contentPadding = innerPadding,
             )
         }
@@ -121,11 +127,14 @@ fun ActiveWorkoutScreen(
             locationLabel = locationLabel,
             locationPermissionDenied = locationPermissionDenied,
             isFinishing = state.isCapturingLocation,
+            hasRoutine = state.workout?.routineId != null,
+            routineAction = routineAction,
             onIncludeLocationChanged = {
                 includeLocation = it
                 locationPermissionDenied = false
             },
             onLocationLabelChanged = { locationLabel = it },
+            onRoutineActionChanged = { routineAction = it },
             onConfirm = {
                 when {
                     !includeLocation -> {
@@ -134,6 +143,7 @@ fun ActiveWorkoutScreen(
                             ActiveWorkoutAction.Finish(
                                 includeLocation = false,
                                 locationLabel = "",
+                                routineAction = routineAction,
                             ),
                         )
                     }
@@ -143,6 +153,7 @@ fun ActiveWorkoutScreen(
                             ActiveWorkoutAction.Finish(
                                 includeLocation = true,
                                 locationLabel = locationLabel,
+                                routineAction = routineAction,
                             ),
                         )
                     }
@@ -157,6 +168,28 @@ fun ActiveWorkoutScreen(
             onDismiss = { showFinishSheet = false },
         )
     }
+    pickerTarget?.let { target ->
+        ActiveExercisePickerSheet(
+            exercises = state.availableExercises,
+            onSelect = { exerciseId ->
+                when (target) {
+                    ExercisePickerTarget.Add -> {
+                        onAction(ActiveWorkoutAction.AddExercise(exerciseId))
+                    }
+                    is ExercisePickerTarget.Replace -> {
+                        onAction(
+                            ActiveWorkoutAction.ReplaceExercise(
+                                target.sessionExerciseId,
+                                exerciseId,
+                            ),
+                        )
+                    }
+                }
+                pickerTarget = null
+            },
+            onDismiss = { pickerTarget = null },
+        )
+    }
 }
 
 @Composable
@@ -164,6 +197,8 @@ private fun WorkoutContent(
     workout: ActiveWorkoutUiModel,
     onAction: (ActiveWorkoutAction) -> Unit,
     onBack: () -> Unit,
+    onOpenExercise: (String) -> Unit,
+    onShowExercisePicker: (ExercisePickerTarget) -> Unit,
     contentPadding: PaddingValues,
 ) {
     LazyColumn(
@@ -200,9 +235,25 @@ private fun WorkoutContent(
                 exercise = exercise,
                 weightUnit = workout.weightUnit,
                 onAction = onAction,
+                onOpenExercise = onOpenExercise,
+                onReplaceExercise = {
+                    onShowExercisePicker(ExercisePickerTarget.Replace(exercise.id))
+                },
+            )
+        }
+        item {
+            com.forgeflow.core.designsystem.component.ForgeFlowOutlinedButton(
+                text = stringResource(R.string.add_exercise),
+                onClick = { onShowExercisePicker(ExercisePickerTarget.Add) },
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
+}
+
+internal sealed interface ExercisePickerTarget {
+    data object Add : ExercisePickerTarget
+    data class Replace(val sessionExerciseId: String) : ExercisePickerTarget
 }
 
 private fun android.content.Context.hasLocationPermission(): Boolean {

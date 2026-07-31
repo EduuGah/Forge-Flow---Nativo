@@ -131,6 +131,7 @@ internal fun HealthConnectSection(
     state: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
     onRequestPermissions: () -> Unit,
+    onOpenDashboard: () -> Unit,
 ) {
     SettingsSection(
         eyebrow = stringResource(R.string.health_connect_eyebrow),
@@ -138,6 +139,16 @@ internal fun HealthConnectSection(
         description = stringResource(R.string.health_connect_description),
         icon = Icons.Outlined.HealthAndSafety,
     ) {
+        FilledTonalButton(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onOpenDashboard,
+        ) {
+            Icon(Icons.Outlined.HealthAndSafety, contentDescription = null)
+            Text(
+                text = stringResource(R.string.health_dashboard_open),
+                modifier = Modifier.padding(start = ForgeFlowDesign.spacing.small),
+            )
+        }
         HealthConnectStatus(state = state)
         Text(
             text = stringResource(R.string.health_connect_samsung_description),

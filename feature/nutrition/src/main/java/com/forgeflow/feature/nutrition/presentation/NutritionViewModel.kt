@@ -8,6 +8,9 @@ import com.forgeflow.core.model.NutritionGoals
 import com.forgeflow.core.model.NutritionJournal
 import com.forgeflow.core.model.NutritionMeal
 import com.forgeflow.core.model.NutritionMealType
+import com.forgeflow.core.model.HydrationEntry
+import com.forgeflow.core.model.NutritionReminderSettings
+import com.forgeflow.core.platform.notification.WellnessReminderScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import java.time.LocalDate
@@ -28,6 +31,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class NutritionViewModel @Inject constructor(
     private val repository: NutritionRepository,
+    private val wellnessReminderScheduler: WellnessReminderScheduler,
 ) : ViewModel() {
     private val selectedDate = MutableStateFlow(LocalDate.now())
     private val operation = MutableStateFlow(NutritionOperationState())
@@ -94,7 +98,18 @@ class NutritionViewModel @Inject constructor(
             is NutritionAction.GoalFatChanged -> updateGoalsEditor {
                 copy(fatGrams = action.value.decimalInput())
             }
+            is NutritionAction.GoalWaterChanged -> updateGoalsEditor {
+                copy(waterMilliliters = action.value.numericInput(MAX_WATER_LENGTH))
+            }
             NutritionAction.SaveGoals -> saveGoals()
+            is NutritionAction.AddWater -> addWater(action.milliliters)
+            NutritionAction.RemoveLastWater -> removeLastWater()
+            is NutritionAction.WellnessRemindersChanged -> {
+                saveReminderSettings(enabled = action.enabled)
+            }
+            is NutritionAction.WellnessReminderIntervalChanged -> {
+                saveReminderSettings(intervalHours = action.hours)
+            }
             NutritionAction.DismissError -> operation.update { it.copy(writeFailed = false) }
         }
     }
@@ -184,6 +199,7 @@ class NutritionViewModel @Inject constructor(
                         proteinGrams = goals.proteinGrams.toInputValue(),
                         carbohydrateGrams = goals.carbohydrateGrams.toInputValue(),
                         fatGrams = goals.fatGrams.toInputValue(),
+                        waterMilliliters = goals.waterMilliliters.toString(),
                     ),
                     writeFailed = false,
                 )
@@ -202,6 +218,9 @@ class NutritionViewModel @Inject constructor(
                     proteinGrams = editor.proteinGrams.decimalValue().coerceAtLeast(1.0),
                     carbohydrateGrams = editor.carbohydrateGrams.decimalValue().coerceAtLeast(1.0),
                     fatGrams = editor.fatGrams.decimalValue().coerceAtLeast(1.0),
+                    waterMilliliters = editor.waterMilliliters.toIntOrNull()
+                        ?.coerceIn(500, 10_000)
+                        ?: 2_500,
                 ),
             )
             operation.update {
@@ -215,6 +234,47 @@ class NutritionViewModel @Inject constructor(
         }
     }
 
+    private fun addWater(milliliters: Int) {
+        if (milliliters !in 50..2_000 || selectedDate.value.isAfter(LocalDate.now())) return
+        viewModelScope.launch {
+            val consumedAt = selectedDate.value
+                .atTime(LocalTime.now())
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+            repository.addHydration(
+                HydrationEntry(
+                    id = UUID.randomUUID().toString(),
+                    milliliters = milliliters,
+                    consumedAt = consumedAt,
+                ),
+            )
+        }
+    }
+
+    private fun removeLastWater() {
+        val id = uiState.value.lastHydrationEntryId ?: return
+        viewModelScope.launch { repository.removeHydration(id) }
+    }
+
+    private fun saveReminderSettings(
+        enabled: Boolean = uiState.value.wellnessRemindersEnabled,
+        intervalHours: Int = uiState.value.wellnessReminderIntervalHours,
+    ) {
+        val settings = NutritionReminderSettings(
+            enabled = enabled,
+            intervalHours = intervalHours.coerceIn(1, 12),
+        )
+        viewModelScope.launch {
+            if (repository.saveReminderSettings(settings) is DataResult.Success) {
+                if (settings.enabled) {
+                    wellnessReminderScheduler.schedule(settings.intervalHours)
+                } else {
+                    wellnessReminderScheduler.cancel()
+                }
+            }
+        }
+    }
+
     private fun NutritionJournal.asUiState(
         date: LocalDate,
         currentOperation: NutritionOperationState,
@@ -222,6 +282,9 @@ class NutritionViewModel @Inject constructor(
         val zone = ZoneId.systemDefault()
         val dailyMeals = meals.filter { meal ->
             meal.eatenAt.atZone(zone).toLocalDate() == date
+        }
+        val dailyHydration = hydration.filter { entry ->
+            entry.consumedAt.atZone(zone).toLocalDate() == date
         }
         return NutritionUiState(
             isLoading = false,
@@ -235,6 +298,11 @@ class NutritionViewModel @Inject constructor(
             carbohydrateGoalGrams = goals.carbohydrateGrams,
             fatGrams = dailyMeals.sumOf(NutritionMeal::fatGrams),
             fatGoalGrams = goals.fatGrams,
+            waterMilliliters = dailyHydration.sumOf(HydrationEntry::milliliters),
+            waterGoalMilliliters = goals.waterMilliliters,
+            lastHydrationEntryId = dailyHydration.maxByOrNull(HydrationEntry::consumedAt)?.id,
+            wellnessRemindersEnabled = reminders.enabled,
+            wellnessReminderIntervalHours = reminders.intervalHours,
             meals = dailyMeals.map { meal ->
                 NutritionMealUiModel(
                     id = meal.id,
@@ -302,6 +370,7 @@ class NutritionViewModel @Inject constructor(
         const val MAX_NOTES_LENGTH = 280
         const val MAX_CALORIES_LENGTH = 5
         const val MAX_MACRO_LENGTH = 6
+        const val MAX_WATER_LENGTH = 5
         val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern(
             "EEEE, dd 'de' MMMM",
             Locale.forLanguageTag("pt-BR"),

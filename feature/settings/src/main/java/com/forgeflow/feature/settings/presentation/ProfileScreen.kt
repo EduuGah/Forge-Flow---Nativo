@@ -21,13 +21,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Scale
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +39,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -68,6 +72,11 @@ import com.forgeflow.core.model.TrainingGoal
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.feature.settings.R
 import java.io.File
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun ProfileScreen(
@@ -179,20 +188,6 @@ private fun ProfileHero(
                             contentDescription = null,
                             modifier = Modifier.size(48.dp),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(30.dp)
-                            .background(MaterialTheme.colorScheme.primary, CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.CameraAlt,
-                            contentDescription = stringResource(R.string.profile_change_avatar),
-                            modifier = Modifier.size(17.dp),
-                            tint = MaterialTheme.colorScheme.onPrimary,
                         )
                     }
                 }
@@ -524,15 +519,22 @@ private fun ProgressPhotosShortcut(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun BodyWeightEditorDialog(
     editor: BodyWeightEditorUiState,
     unitLabel: String,
     onAction: (SettingsAction) -> Unit,
 ) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    val maximumDateMillis = LocalDate.now()
+        .atStartOfDay(ZoneOffset.UTC)
+        .toInstant()
+        .toEpochMilli()
     AlertDialog(
         onDismissRequest = { onAction(SettingsAction.CloseBodyWeightEditor) },
         title = { Text(stringResource(R.string.weight_editor_title)) },
         text = {
+            Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
             OutlinedTextField(
                 value = editor.value,
                 onValueChange = { onAction(SettingsAction.BodyWeightChanged(it)) },
@@ -542,6 +544,22 @@ private fun BodyWeightEditorDialog(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
             )
+                ForgeFlowOutlinedButton(
+                    text = stringResource(
+                        R.string.weight_editor_date_value,
+                        editor.measuredAtEpochMillis.asDateLabel(),
+                    ),
+                    onClick = { showDatePicker = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = Icons.Outlined.CalendarMonth,
+                    iconContentDescription = null,
+                )
+                Text(
+                    text = stringResource(R.string.weight_editor_date_helper),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         },
         confirmButton = {
             TextButton(
@@ -557,7 +575,45 @@ private fun BodyWeightEditorDialog(
             }
         },
     )
+    if (showDatePicker) {
+        val pickerState = rememberDatePickerState(
+            initialSelectedDateMillis = editor.measuredAtEpochMillis,
+            selectableDates = object : androidx.compose.material3.SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                    utcTimeMillis <= maximumDateMillis
+            },
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pickerState.selectedDateMillis?.let {
+                            onAction(SettingsAction.BodyWeightDateChanged(it))
+                        }
+                        showDatePicker = false
+                    },
+                ) { Text(stringResource(R.string.profile_save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(stringResource(R.string.profile_cancel))
+                }
+            },
+        ) {
+            DatePicker(state = pickerState)
+        }
+    }
 }
+
+private fun Long.asDateLabel(): String = DATE_PICKER_FORMATTER.format(
+    Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate(),
+)
+
+private val DATE_PICKER_FORMATTER = DateTimeFormatter.ofPattern(
+    "dd 'de' MMMM 'de' yyyy",
+    Locale.forLanguageTag("pt-BR"),
+)
 
 private fun WeightUnit.shortLabel(): String = if (this == WeightUnit.KILOGRAM) "kg" else "lb"
 

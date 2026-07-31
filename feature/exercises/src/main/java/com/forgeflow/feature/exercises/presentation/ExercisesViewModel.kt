@@ -7,6 +7,7 @@ import com.forgeflow.core.data.exercise.ExerciseRepository
 import com.forgeflow.core.model.Exercise
 import com.forgeflow.core.model.ExerciseId
 import com.forgeflow.core.model.MuscleGroup
+import com.forgeflow.core.model.matchesSearch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -98,8 +99,7 @@ class ExercisesViewModel @Inject constructor(
                 exercises = value
                     .asSequence()
                     .filter { exercise ->
-                        currentQuery.isBlank() ||
-                            exercise.name.contains(currentQuery.trim(), ignoreCase = true)
+                        exercise.matchesSearch(currentQuery)
                     }
                     .filter { exercise ->
                         muscleGroup == null || exercise.primaryMuscleGroup == muscleGroup

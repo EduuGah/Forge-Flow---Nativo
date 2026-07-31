@@ -4,6 +4,8 @@ import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.model.NutritionGoals
 import com.forgeflow.core.model.NutritionJournal
 import com.forgeflow.core.model.NutritionMeal
+import com.forgeflow.core.model.HydrationEntry
+import com.forgeflow.core.model.NutritionReminderSettings
 import kotlinx.coroutines.flow.Flow
 
 interface NutritionRepository {
@@ -17,4 +19,10 @@ interface NutritionRepository {
     suspend fun deleteMeal(mealId: String): DataResult<Unit>
 
     suspend fun saveGoals(goals: NutritionGoals): DataResult<Unit>
+
+    suspend fun addHydration(entry: HydrationEntry): DataResult<Unit>
+
+    suspend fun removeHydration(entryId: String): DataResult<Unit>
+
+    suspend fun saveReminderSettings(settings: NutritionReminderSettings): DataResult<Unit>
 }

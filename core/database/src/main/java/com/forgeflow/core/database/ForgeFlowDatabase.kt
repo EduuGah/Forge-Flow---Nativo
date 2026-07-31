@@ -23,7 +23,7 @@ import com.forgeflow.core.database.workout.WorkoutSetEntity
         WorkoutSessionExerciseEntity::class,
         WorkoutSetEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class ForgeFlowDatabase : RoomDatabase() {

@@ -41,6 +41,14 @@
     <string name="nutrition_notes">Observações</string>
     <string name="nutrition_goals_title">Metas diárias</string>
     <string name="nutrition_calories_goal">Calorias</string>
+    <string name="nutrition_water">Água</string>
+    <string name="nutrition_water_goal">Meta de água</string>
+    <string name="nutrition_hydration_title">Hidratação</string>
+    <string name="nutrition_hydration_value">%1$d de %2$d ml</string>
+    <string name="nutrition_water_undo">Desfazer último registro de água</string>
+    <string name="nutrition_reminders_title">Lembretes de bem-estar</string>
+    <string name="nutrition_reminders_description">Água, movimento e recuperação em horários espaçados.</string>
+    <string name="nutrition_reminder_interval">A cada %1$dh</string>
     <string name="nutrition_type_breakfast">Café da manhã</string>
     <string name="nutrition_type_lunch">Almoço</string>
     <string name="nutrition_type_snack">Lanche</string>

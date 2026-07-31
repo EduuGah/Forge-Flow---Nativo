@@ -97,6 +97,7 @@ data class HealthReadUiResult(
 @Immutable
 data class BodyWeightEditorUiState(
     val value: String = "",
+    val measuredAtEpochMillis: Long = 0L,
     val isSaving: Boolean = false,
 )
 
@@ -146,6 +147,7 @@ sealed interface SettingsAction {
     data object OpenBodyWeightEditor : SettingsAction
     data object CloseBodyWeightEditor : SettingsAction
     data class BodyWeightChanged(val value: String) : SettingsAction
+    data class BodyWeightDateChanged(val epochMillis: Long) : SettingsAction
     data object SaveBodyWeight : SettingsAction
     data class ImportProgressPhoto(val sourceUri: String) : SettingsAction
     data class DeleteProgressPhoto(val photoId: String) : SettingsAction

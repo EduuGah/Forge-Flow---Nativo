@@ -40,6 +40,9 @@ interface WorkoutDao {
     suspend fun insertExercises(exercises: List<WorkoutSessionExerciseEntity>)
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertExercise(exercise: WorkoutSessionExerciseEntity)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertSets(sets: List<WorkoutSetEntity>)
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
@@ -104,6 +107,64 @@ interface WorkoutDao {
 
     @Query("DELETE FROM workout_sets WHERE id = :setId")
     suspend fun deleteSet(setId: String)
+
+    @Query("SELECT * FROM workout_session_exercises WHERE id = :id LIMIT 1")
+    suspend fun getSessionExercise(id: String): WorkoutSessionExerciseEntity?
+
+    @Query(
+        "SELECT * FROM workout_session_exercises WHERE session_id = :sessionId ORDER BY position",
+    )
+    suspend fun getSessionExercises(sessionId: String): List<WorkoutSessionExerciseEntity>
+
+    @Query(
+        "SELECT COALESCE(MAX(position), -1) FROM workout_session_exercises WHERE session_id = :sessionId",
+    )
+    suspend fun getLastExercisePosition(sessionId: String): Int
+
+    @Query("UPDATE workout_session_exercises SET notes = :notes WHERE id = :id")
+    suspend fun updateExerciseNotes(id: String, notes: String)
+
+    @Query(
+        """
+        UPDATE workout_session_exercises
+        SET exercise_id = :exerciseId,
+            exercise_name_snapshot = :name,
+            muscle_group_snapshot = :muscleGroup,
+            media_uri_snapshot = :mediaUri,
+            media_type_snapshot = :mediaType,
+            media_thumbnail_uri_snapshot = :mediaThumbnailUri
+        WHERE id = :id
+        """,
+    )
+    suspend fun replaceExercise(
+        id: String,
+        exerciseId: String,
+        name: String,
+        muscleGroup: String,
+        mediaUri: String?,
+        mediaType: String?,
+        mediaThumbnailUri: String?,
+    )
+
+    @Query("DELETE FROM workout_session_exercises WHERE id = :id")
+    suspend fun deleteExercise(id: String)
+
+    @Query("UPDATE workout_session_exercises SET position = :position WHERE id = :id")
+    suspend fun updateExercisePosition(id: String, position: Int)
+
+    @Transaction
+    suspend fun moveExercise(id: String, direction: Int) {
+        val exercise = getSessionExercise(id) ?: return
+        val ordered = getSessionExercises(exercise.sessionId)
+        val currentIndex = ordered.indexOfFirst { it.id == id }
+        if (currentIndex < 0 || ordered.isEmpty()) return
+        val targetIndex = (currentIndex + direction).coerceIn(0, ordered.lastIndex)
+        if (targetIndex == currentIndex) return
+        val target = ordered[targetIndex]
+        updateExercisePosition(exercise.id, -1)
+        updateExercisePosition(target.id, exercise.position)
+        updateExercisePosition(exercise.id, target.position)
+    }
 
     @Query("DELETE FROM workout_sessions WHERE id = :sessionId AND status = 'COMPLETED'")
     suspend fun deleteCompletedWorkout(sessionId: String): Int

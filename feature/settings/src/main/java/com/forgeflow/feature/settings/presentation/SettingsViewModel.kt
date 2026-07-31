@@ -22,6 +22,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.UUID
@@ -169,6 +170,20 @@ class SettingsViewModel @Inject constructor(
                     ),
                 )
             }
+            is SettingsAction.BodyWeightDateChanged -> operation.update { current ->
+                val selectedDate = Instant.ofEpochMilli(action.epochMillis)
+                    .atZone(ZoneOffset.UTC)
+                    .toLocalDate()
+                current.copy(
+                    weightEditor = current.weightEditor?.copy(
+                        measuredAtEpochMillis = if (selectedDate.isAfter(LocalDate.now())) {
+                            current.weightEditor.measuredAtEpochMillis
+                        } else {
+                            action.epochMillis
+                        },
+                    ),
+                )
+            }
             SettingsAction.SaveBodyWeight -> saveBodyWeight()
             is SettingsAction.ImportProgressPhoto -> importProgressPhoto(action.sourceUri)
             is SettingsAction.DeleteProgressPhoto -> deleteProgressPhoto(action.photoId)
@@ -309,7 +324,15 @@ class SettingsViewModel @Inject constructor(
             ?.substringBefore(' ')
             .orEmpty()
         operation.update {
-            it.copy(weightEditor = BodyWeightEditorUiState(value = initialValue))
+            it.copy(
+                weightEditor = BodyWeightEditorUiState(
+                    value = initialValue,
+                    measuredAtEpochMillis = LocalDate.now()
+                        .atStartOfDay(ZoneOffset.UTC)
+                        .toInstant()
+                        .toEpochMilli(),
+                ),
+            )
         }
     }
 
@@ -318,6 +341,13 @@ class SettingsViewModel @Inject constructor(
         val value = editor.value.replace(',', '.').toDoubleOrNull()
             ?.takeIf { it in MIN_BODY_WEIGHT..MAX_BODY_WEIGHT }
             ?: return
+        val measuredDate = Instant.ofEpochMilli(editor.measuredAtEpochMillis)
+            .atZone(ZoneOffset.UTC)
+            .toLocalDate()
+        if (measuredDate.isAfter(LocalDate.now())) return
+        val measuredAt = measuredDate.atTime(12, 0)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
         viewModelScope.launch {
             operation.update { it.copy(weightEditor = editor.copy(isSaving = true)) }
             val settings = settingsRepository.observeSettings().first()
@@ -325,7 +355,7 @@ class SettingsViewModel @Inject constructor(
             val currentProfile = profileRepository.observeProfile().first()
             val profileResult = profileRepository.saveProfile(currentProfile.copy(bodyWeight = weight))
             val historyResult = if (profileResult is DataResult.Success) {
-                profileRepository.addBodyWeight(weight, Instant.now())
+                profileRepository.addBodyWeight(weight, measuredAt)
             } else {
                 profileResult
             }

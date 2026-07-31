@@ -2,6 +2,7 @@ package com.forgeflow.core.data.workout
 
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.model.Repetitions
+import com.forgeflow.core.model.ExerciseId
 import com.forgeflow.core.model.RoutineId
 import com.forgeflow.core.model.SessionExerciseId
 import com.forgeflow.core.model.Weight
@@ -31,6 +32,28 @@ interface WorkoutRepository {
     suspend fun updateSetType(setId: WorkoutSetId, type: WorkoutSetType): DataResult<Unit>
 
     suspend fun deleteSet(setId: WorkoutSetId): DataResult<Unit>
+
+    suspend fun updateExerciseNotes(
+        sessionExerciseId: SessionExerciseId,
+        notes: String,
+    ): DataResult<Unit>
+
+    suspend fun addExercise(
+        sessionId: WorkoutSessionId,
+        exerciseId: ExerciseId,
+    ): DataResult<Unit>
+
+    suspend fun replaceExercise(
+        sessionExerciseId: SessionExerciseId,
+        exerciseId: ExerciseId,
+    ): DataResult<Unit>
+
+    suspend fun deleteExercise(sessionExerciseId: SessionExerciseId): DataResult<Unit>
+
+    suspend fun moveExercise(
+        sessionExerciseId: SessionExerciseId,
+        direction: Int,
+    ): DataResult<Unit>
 
     suspend fun finishWorkout(
         sessionId: WorkoutSessionId,

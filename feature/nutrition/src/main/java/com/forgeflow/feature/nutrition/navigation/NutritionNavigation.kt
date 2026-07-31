@@ -1,7 +1,10 @@
 package com.forgeflow.feature.nutrition.navigation
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
@@ -41,6 +45,11 @@ fun NavGraphBuilder.nutritionScreen(onBack: () -> Unit) {
                 }
             }
         }
+        val notificationPermission = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            viewModel.onAction(NutritionAction.WellnessRemindersChanged(granted))
+        }
         NutritionScreen(
             state = state,
             onAction = viewModel::onAction,
@@ -53,6 +62,20 @@ fun NavGraphBuilder.nutritionScreen(onBack: () -> Unit) {
             onTakeMealPhoto = {
                 pendingCameraUri = context.createNutritionCameraUri()
                 camera.launch(pendingCameraUri!!)
+            },
+            onWellnessReminderChanged = { enabled ->
+                if (
+                    enabled &&
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS,
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    viewModel.onAction(NutritionAction.WellnessRemindersChanged(enabled))
+                }
             },
         )
     }

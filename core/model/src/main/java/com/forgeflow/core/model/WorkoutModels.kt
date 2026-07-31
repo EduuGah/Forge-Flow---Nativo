@@ -7,6 +7,8 @@ data class WorkoutRoutine(
     val folderId: RoutineFolderId?,
     val name: String,
     val description: String,
+    val position: Int = 0,
+    val compareHistoryWithinFolder: Boolean = false,
     val createdAt: Instant,
     val updatedAt: Instant,
     val archivedAt: Instant?,
@@ -29,6 +31,7 @@ data class RoutineExercise(
     val defaultRestSeconds: Int,
     val plannedRepetitions: RepetitionRange?,
     val plannedSets: Int,
+    val plannedWarmUpSets: Int = 0,
 )
 
 data class RoutineExerciseDetails(
@@ -44,6 +47,7 @@ data class RoutineDetails(
 data class RoutineExerciseDraft(
     val exerciseId: ExerciseId,
     val plannedSets: Int = 3,
+    val plannedWarmUpSets: Int = 0,
     val plannedRepetitions: RepetitionRange = RepetitionRange(8, 12),
     val restSeconds: Int = 90,
     val notes: String = "",
@@ -54,6 +58,7 @@ data class RoutineDraft(
     val folderId: RoutineFolderId? = null,
     val name: String,
     val description: String = "",
+    val compareHistoryWithinFolder: Boolean = false,
     val exercises: List<RoutineExerciseDraft>,
 )
 

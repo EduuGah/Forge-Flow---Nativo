@@ -63,4 +63,22 @@
     <string name="invalid_workout_title">Treino sem séries válidas</string>
     <string name="invalid_workout_message">Conclua pelo menos uma série com uma ou mais repetições antes de finalizar.</string>
     <string name="invalid_workout_confirm">Continuar treino</string>
+    <string name="add_exercise">Adicionar exercício</string>
+    <string name="choose_exercise">Escolha um exercício</string>
+    <string name="search_exercise">Buscar exercício</string>
+    <string name="exercise_result_count">%1$d resultados</string>
+    <string name="exercise_notes">Anotações para o próximo treino</string>
+    <string name="exercise_notes_hint">Ex.: a última série pesou; reduzir a carga.</string>
+    <string name="exercise_options">Opções do exercício</string>
+    <string name="open_exercise_history">Abrir histórico e recordes</string>
+    <string name="replace_exercise">Trocar exercício</string>
+    <string name="remove_exercise">Remover do treino</string>
+    <string name="drag_exercise">Segure e arraste para reorganizar</string>
+    <string name="routine_after_workout_title">Depois de finalizar</string>
+    <string name="routine_keep_original">Manter rotina original</string>
+    <string name="routine_keep_original_description">Salva somente este treino no histórico.</string>
+    <string name="routine_update_original">Atualizar rotina original</string>
+    <string name="routine_update_original_description">Usa a ordem, os exercícios e as séries deste treino.</string>
+    <string name="routine_save_copy">Salvar como nova rotina</string>
+    <string name="routine_save_copy_description">Cria uma cópia sem alterar a rotina que iniciou o treino.</string>
 </resources>

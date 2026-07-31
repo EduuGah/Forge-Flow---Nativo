@@ -6,6 +6,7 @@ import com.forgeflow.core.model.MuscleGroup
 import com.forgeflow.core.model.PersonalRecordType
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.WorkoutSetType
+import com.forgeflow.core.model.Equipment
 
 @Immutable
 data class ActiveWorkoutUiState(
@@ -13,11 +14,13 @@ data class ActiveWorkoutUiState(
     val workout: ActiveWorkoutUiModel? = null,
     val isCapturingLocation: Boolean = false,
     val error: Boolean = false,
+    val availableExercises: List<ActiveExercisePickerUiModel> = emptyList(),
 )
 
 @Immutable
 data class ActiveWorkoutUiModel(
     val id: String,
+    val routineId: String?,
     val name: String,
     val elapsedSeconds: Long,
     val completedSets: Int,
@@ -31,14 +34,33 @@ data class ActiveWorkoutUiModel(
 @Immutable
 data class ActiveExerciseUiModel(
     val id: String,
+    val exerciseId: String?,
     val name: String,
     val muscleGroup: MuscleGroup,
     val mediaUri: String? = null,
     val mediaType: ExerciseMediaType? = null,
     val mediaThumbnailUri: String? = null,
     val lastPerformance: String? = null,
+    val notes: String = "",
     val sets: List<ActiveSetUiModel>,
 )
+
+@Immutable
+data class ActiveExercisePickerUiModel(
+    val id: String,
+    val name: String,
+    val muscleGroup: MuscleGroup,
+    val equipment: Equipment,
+    val mediaUri: String? = null,
+    val mediaThumbnailUri: String? = null,
+    val searchTerms: String = name,
+)
+
+enum class RoutineFinishAction {
+    KEEP_ORIGINAL,
+    UPDATE_ORIGINAL,
+    SAVE_COPY,
+}
 
 @Immutable
 data class ActiveSetUiModel(
@@ -65,9 +87,24 @@ sealed interface ActiveWorkoutAction {
         val type: WorkoutSetType,
     ) : ActiveWorkoutAction
     data class DeleteSet(val setId: String) : ActiveWorkoutAction
+    data class ExerciseNotesChanged(
+        val sessionExerciseId: String,
+        val notes: String,
+    ) : ActiveWorkoutAction
+    data class AddExercise(val exerciseId: String) : ActiveWorkoutAction
+    data class ReplaceExercise(
+        val sessionExerciseId: String,
+        val exerciseId: String,
+    ) : ActiveWorkoutAction
+    data class DeleteExercise(val sessionExerciseId: String) : ActiveWorkoutAction
+    data class MoveExercise(
+        val sessionExerciseId: String,
+        val direction: Int,
+    ) : ActiveWorkoutAction
     data class Finish(
         val includeLocation: Boolean,
         val locationLabel: String,
+        val routineAction: RoutineFinishAction = RoutineFinishAction.KEEP_ORIGINAL,
     ) : ActiveWorkoutAction
     data object Discard : ActiveWorkoutAction
 }

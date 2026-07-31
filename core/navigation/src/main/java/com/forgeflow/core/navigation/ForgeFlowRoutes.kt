@@ -40,3 +40,6 @@ data object SettingsRoute
 
 @Serializable
 data object NutritionRoute
+
+@Serializable
+data object HealthDashboardRoute

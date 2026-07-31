@@ -19,6 +19,7 @@ fun SettingsScreen(
     onRequestHealthPermissions: () -> Unit,
     onSelectWorkoutCsv: () -> Unit,
     onSelectMeasurementCsv: () -> Unit,
+    onOpenHealthDashboard: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -64,6 +65,7 @@ fun SettingsScreen(
                     state = state,
                     onAction = onAction,
                     onRequestPermissions = onRequestHealthPermissions,
+                    onOpenDashboard = onOpenHealthDashboard,
                 )
             }
         }

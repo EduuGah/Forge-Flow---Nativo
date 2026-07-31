@@ -17,7 +17,7 @@ interface RoutineDao {
         """
         SELECT * FROM routines
         WHERE archived_at_epoch_millis IS NULL
-        ORDER BY updated_at_epoch_millis DESC
+        ORDER BY folder_id, position, updated_at_epoch_millis DESC
         """,
     )
     fun observeActive(): Flow<List<RoutineRecord>>
@@ -25,6 +25,26 @@ interface RoutineDao {
     @Transaction
     @Query("SELECT * FROM routines WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): RoutineRecord?
+
+    @Transaction
+    @Query(
+        """
+        SELECT * FROM routines
+        WHERE archived_at_epoch_millis IS NULL
+          AND ((:folderId IS NULL AND folder_id IS NULL) OR folder_id = :folderId)
+        ORDER BY position, updated_at_epoch_millis DESC
+        """,
+    )
+    suspend fun getActiveInFolder(folderId: String?): List<RoutineRecord>
+
+    @Query(
+        """
+        SELECT COALESCE(MAX(position), -1) FROM routines
+        WHERE archived_at_epoch_millis IS NULL
+          AND ((:folderId IS NULL AND folder_id IS NULL) OR folder_id = :folderId)
+        """,
+    )
+    suspend fun getLastRoutinePosition(folderId: String?): Int
 
     @Query("SELECT * FROM routine_folders WHERE id = :id LIMIT 1")
     suspend fun getFolderById(id: String): RoutineFolderEntity?
@@ -59,6 +79,20 @@ interface RoutineDao {
 
     @Query("DELETE FROM routine_folders WHERE id = :folderId")
     suspend fun deleteFolderEntity(folderId: String)
+
+    @Query("UPDATE routine_folders SET position = :position WHERE id = :folderId")
+    suspend fun updateFolderPosition(folderId: String, position: Int)
+
+    @Query("UPDATE routines SET position = :position WHERE id = :routineId")
+    suspend fun updateRoutinePosition(routineId: String, position: Int)
+
+    @Query(
+        """
+        UPDATE routine_exercises SET notes = :notes
+        WHERE routine_id = :routineId AND exercise_id = :exerciseId
+        """,
+    )
+    suspend fun updateExerciseNotes(routineId: String, exerciseId: String, notes: String)
 
     @Transaction
     suspend fun deleteFolder(folderId: String) {

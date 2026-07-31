@@ -34,7 +34,7 @@ data class ExerciseDetailsUiModel(
     val estimatedOneRepMax: String,
     val bestSet: String,
     val personalRecordCount: Int,
-    val personalRecords: List<ExercisePersonalRecordUiModel>,
+    val personalRecords: List<ExerciseRecordSummaryUiModel>,
     val chartPoints: List<ExerciseChartPointUiModel>,
     val sessions: List<ExerciseSessionUiModel>,
 )
@@ -66,8 +66,15 @@ val ExerciseSessionSetUiModel.isPersonalRecord: Boolean
 
 @Immutable
 data class ExercisePersonalRecordUiModel(
-    val types: Set<PersonalRecordType>,
+    val type: PersonalRecordType,
     val workoutName: String,
     val date: String,
     val performance: String,
+)
+
+@Immutable
+data class ExerciseRecordSummaryUiModel(
+    val type: PersonalRecordType,
+    val current: ExercisePersonalRecordUiModel,
+    val previous: List<ExercisePersonalRecordUiModel>,
 )

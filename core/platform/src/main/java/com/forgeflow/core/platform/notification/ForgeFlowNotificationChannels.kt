@@ -6,4 +6,5 @@ object ForgeFlowNotificationChannels {
     const val SCHEDULED_WORKOUTS = "scheduled_workouts"
     const val PROGRESS = "training_progress"
     const val APP_UPDATES = "app_updates"
+    const val WELLNESS = "wellness_reminders"
 }

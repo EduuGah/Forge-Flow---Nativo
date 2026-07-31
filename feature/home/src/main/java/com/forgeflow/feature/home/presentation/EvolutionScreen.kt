@@ -320,7 +320,7 @@ private fun EvolutionProgressPanel(state: EvolutionUiState) {
         EvolutionMetric.BODY_WEIGHT -> state.bodyWeightChart
         EvolutionMetric.PERSONAL_RECORDS -> state.personalRecordChart
     }
-    var selectedIndex by remember(points) {
+    var selectedIndex by remember(metric, points, state.period) {
         mutableIntStateOf(points.lastIndex.coerceAtLeast(0))
     }
     val selectedPoint = points.getOrNull(selectedIndex)

@@ -14,9 +14,13 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.forgeflow.core.navigation.ProfileRoute
+import com.forgeflow.core.navigation.HealthDashboardRoute
 import com.forgeflow.core.navigation.ProgressPhotosRoute
 import com.forgeflow.core.navigation.SettingsRoute
 import com.forgeflow.feature.settings.presentation.ProfileScreen
+import com.forgeflow.feature.settings.presentation.HealthDashboardAction
+import com.forgeflow.feature.settings.presentation.HealthDashboardScreen
+import com.forgeflow.feature.settings.presentation.HealthDashboardViewModel
 import com.forgeflow.feature.settings.presentation.ProgressPhotosScreen
 import com.forgeflow.feature.settings.presentation.SettingsAction
 import com.forgeflow.feature.settings.presentation.SettingsScreen
@@ -26,7 +30,9 @@ fun NavController.navigateToProgressPhotos() {
     navigate(ProgressPhotosRoute)
 }
 
-fun NavGraphBuilder.settingsScreen() {
+fun NavGraphBuilder.settingsScreen(
+    onOpenHealthDashboard: () -> Unit,
+) {
     composable<SettingsRoute> {
         val viewModel: SettingsViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -60,6 +66,34 @@ fun NavGraphBuilder.settingsScreen() {
             },
             onSelectWorkoutCsv = { workoutCsvPicker.launch(CSV_MIME_TYPES) },
             onSelectMeasurementCsv = { measurementCsvPicker.launch(CSV_MIME_TYPES) },
+            onOpenHealthDashboard = onOpenHealthDashboard,
+        )
+    }
+}
+
+fun NavGraphBuilder.healthDashboardScreen(
+    onBack: () -> Unit,
+) {
+    composable<HealthDashboardRoute> {
+        val viewModel: HealthDashboardViewModel = hiltViewModel()
+        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val permissionContract = remember(viewModel) {
+            viewModel.createPermissionContract()
+        }
+        val permissionLauncher = rememberLauncherForActivityResult(permissionContract) { granted ->
+            viewModel.onAction(HealthDashboardAction.PermissionsResult(granted))
+        }
+        LifecycleResumeEffect(viewModel) {
+            viewModel.onAction(HealthDashboardAction.Refresh)
+            onPauseOrDispose {}
+        }
+        HealthDashboardScreen(
+            state = state,
+            onAction = viewModel::onAction,
+            onBack = onBack,
+            onRequestPermissions = {
+                permissionLauncher.launch(viewModel.requiredPermissions)
+            },
         )
     }
 }

@@ -18,7 +18,10 @@ fun NavController.navigateToActiveWorkout() {
     }
 }
 
-fun NavGraphBuilder.activeWorkoutScreen(onBack: () -> Unit) {
+fun NavGraphBuilder.activeWorkoutScreen(
+    onBack: () -> Unit,
+    onOpenExercise: (String) -> Unit,
+) {
     composable<ActiveWorkoutRoute> {
         val viewModel: ActiveWorkoutViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -31,6 +34,7 @@ fun NavGraphBuilder.activeWorkoutScreen(onBack: () -> Unit) {
             state = state,
             onAction = viewModel::onAction,
             onBack = onBack,
+            onOpenExercise = onOpenExercise,
         )
     }
 }

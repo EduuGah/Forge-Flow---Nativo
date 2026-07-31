@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,8 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Search
@@ -32,9 +35,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
 import com.forgeflow.core.designsystem.component.ForgeFlowPill
@@ -114,6 +119,13 @@ internal fun RoutineFolderSection(
             horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (folder != null) {
+                ReorderHandle(
+                    onMove = { direction ->
+                        onAction(RoutinesAction.MoveFolder(folder.id, direction))
+                    },
+                )
+            }
             Icon(
                 imageVector = if (expanded) {
                     Icons.Outlined.ExpandLess
@@ -142,6 +154,16 @@ internal fun RoutineFolderSection(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
                 ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.copy_folder)) },
+                        leadingIcon = {
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = null)
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onAction(RoutinesAction.CopyFolder(folder.id))
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.rename_folder)) },
                         leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
@@ -201,6 +223,17 @@ private fun RoutineCard(
             horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            ReorderHandle(
+                onMove = { direction ->
+                    onAction(
+                        RoutinesAction.MoveRoutine(
+                            id = routine.id,
+                            folderId = routine.folderId,
+                            direction = direction,
+                        ),
+                    )
+                },
+            )
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraSmall),
@@ -229,6 +262,16 @@ private fun RoutineCard(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
             ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.copy_routine)) },
+                    leadingIcon = {
+                        Icon(Icons.Outlined.ContentCopy, contentDescription = null)
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onAction(RoutinesAction.CopyRoutine(routine.id))
+                    },
+                )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.edit_routine)) },
                     leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
@@ -266,4 +309,28 @@ private fun RoutineCard(
             iconContentDescription = null,
         )
     }
+}
+
+@Composable
+private fun ReorderHandle(onMove: (Int) -> Unit) {
+    var accumulatedDrag by rememberSaveable { mutableStateOf(0f) }
+    Icon(
+        imageVector = Icons.Outlined.DragHandle,
+        contentDescription = stringResource(R.string.drag_to_reorder),
+        tint = ForgeFlowDesign.colors.textSecondary,
+        modifier = Modifier.pointerInput(Unit) {
+            detectDragGesturesAfterLongPress(
+                onDragStart = { accumulatedDrag = 0f },
+                onDragEnd = { accumulatedDrag = 0f },
+                onDragCancel = { accumulatedDrag = 0f },
+            ) { change, dragAmount ->
+                change.consume()
+                accumulatedDrag += dragAmount.y
+                if (kotlin.math.abs(accumulatedDrag) >= 52.dp.toPx()) {
+                    onMove(if (accumulatedDrag > 0) 1 else -1)
+                    accumulatedDrag = 0f
+                }
+            }
+        },
+    )
 }

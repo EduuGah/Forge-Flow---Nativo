@@ -57,6 +57,12 @@ interface HealthConnectManager {
         endTime: Instant,
     ): HealthConnectReadResult?
 
+    suspend fun readDataOrigins(
+        dataTypes: Set<HealthConnectDataType>,
+        startTime: Instant,
+        endTime: Instant,
+    ): Set<String>
+
     suspend fun syncWorkout(
         workout: WorkoutDetails,
         weightUnit: WeightUnit,

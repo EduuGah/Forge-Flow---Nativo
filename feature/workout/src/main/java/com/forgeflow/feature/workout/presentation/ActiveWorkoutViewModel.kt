@@ -4,8 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.data.settings.SettingsRepository
+import com.forgeflow.core.data.exercise.ExerciseRepository
+import com.forgeflow.core.data.routine.RoutineRepository
 import com.forgeflow.core.data.workout.WorkoutRepository
+import com.forgeflow.core.model.Exercise
+import com.forgeflow.core.model.ExerciseId
 import com.forgeflow.core.model.Repetitions
+import com.forgeflow.core.model.RepetitionRange
+import com.forgeflow.core.model.RoutineDetails
+import com.forgeflow.core.model.RoutineDraft
+import com.forgeflow.core.model.RoutineExerciseDraft
+import com.forgeflow.core.model.RoutineId
 import com.forgeflow.core.model.SessionExerciseId
 import com.forgeflow.core.model.Weight
 import com.forgeflow.core.model.WeightUnit
@@ -16,6 +25,7 @@ import com.forgeflow.core.model.WorkoutSetId
 import com.forgeflow.core.model.WorkoutSetType
 import com.forgeflow.core.model.gramsIn
 import com.forgeflow.core.model.personalRecordsAgainst
+import com.forgeflow.core.model.searchTerms
 import com.forgeflow.core.platform.health.HealthConnectManager
 import com.forgeflow.core.platform.location.CurrentLocationProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +35,7 @@ import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,12 +49,16 @@ import kotlinx.coroutines.withTimeoutOrNull
 @HiltViewModel
 class ActiveWorkoutViewModel @Inject constructor(
     private val repository: WorkoutRepository,
+    private val exerciseRepository: ExerciseRepository,
+    private val routineRepository: RoutineRepository,
     settingsRepository: SettingsRepository,
     private val currentLocationProvider: CurrentLocationProvider,
     private val healthConnectManager: HealthConnectManager,
 ) : ViewModel() {
     private val drafts = MutableStateFlow<Map<String, SetDraft>>(emptyMap())
+    private val exerciseNotes = MutableStateFlow<Map<String, String>>(emptyMap())
     private val operation = MutableStateFlow(WorkoutOperationState())
+    private val noteSaveJobs = mutableMapOf<String, Job>()
     private var currentWorkout: WorkoutDetails? = null
     private var currentWeightUnit = WeightUnit.KILOGRAM
     private var healthConnectSyncEnabled = false
@@ -57,37 +72,56 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
-    private val workouts = combine(
+    private val workoutSources = combine(
         repository.observeActiveWorkout(),
         repository.observeHistory(),
-    ) { active, history -> active to history }
+        exerciseRepository.observeExercises(),
+        routineRepository.observeRoutines(),
+    ) { active, history, exercises, routines ->
+        WorkoutSources(active, history, exercises, routines)
+    }
+
+    private val editorState = combine(drafts, exerciseNotes, operation) {
+            currentDrafts,
+            currentNotes,
+            currentOperation,
+        ->
+        WorkoutEditorState(currentDrafts, currentNotes, currentOperation)
+    }
 
     val uiState = combine(
-        workouts,
-        drafts,
+        workoutSources,
+        editorState,
         ticker,
         settingsRepository.observeSettings(),
-        operation,
-    ) { (result, historyResult), currentDrafts, now, settings, currentOperation ->
+    ) { sources, editor, now, settings ->
         currentWeightUnit = settings.weightUnit
         healthConnectSyncEnabled = settings.healthConnectSyncEnabled
-        when (result) {
+        when (val result = sources.active) {
             is DataResult.Failure -> ActiveWorkoutUiState(
                 isLoading = false,
-                isCapturingLocation = currentOperation.isCapturingLocation,
+                isCapturingLocation = editor.operation.isCapturingLocation,
                 error = true,
             )
             is DataResult.Success -> {
                 currentWorkout = result.value
+                val routines = (sources.routines as? DataResult.Success)?.value.orEmpty()
+                val scopedHistory = (sources.history as? DataResult.Success)?.value.orEmpty()
+                    .scopedFor(result.value, routines)
                 ActiveWorkoutUiState(
                     isLoading = false,
-                    isCapturingLocation = currentOperation.isCapturingLocation,
+                    isCapturingLocation = editor.operation.isCapturingLocation,
                     workout = result.value?.toUiModel(
-                        currentDrafts = currentDrafts,
+                        currentDrafts = editor.setDrafts,
+                        currentNotes = editor.exerciseNotes,
                         now = now,
                         weightUnit = settings.weightUnit,
-                        history = (historyResult as? DataResult.Success)?.value.orEmpty(),
+                        history = scopedHistory,
                     ),
+                    availableExercises = (sources.exercises as? DataResult.Success)
+                        ?.value
+                        .orEmpty()
+                        .map { it.toPickerUiModel() },
                 )
             }
         }
@@ -112,9 +146,24 @@ class ActiveWorkoutViewModel @Inject constructor(
             is ActiveWorkoutAction.AddSet -> addSet(action.sessionExerciseId)
             is ActiveWorkoutAction.SetTypeChanged -> updateSetType(action.setId, action.type)
             is ActiveWorkoutAction.DeleteSet -> deleteSet(action.setId)
+            is ActiveWorkoutAction.ExerciseNotesChanged -> updateExerciseNotes(
+                action.sessionExerciseId,
+                action.notes,
+            )
+            is ActiveWorkoutAction.AddExercise -> addExercise(action.exerciseId)
+            is ActiveWorkoutAction.ReplaceExercise -> replaceExercise(
+                action.sessionExerciseId,
+                action.exerciseId,
+            )
+            is ActiveWorkoutAction.DeleteExercise -> deleteExercise(action.sessionExerciseId)
+            is ActiveWorkoutAction.MoveExercise -> moveExercise(
+                action.sessionExerciseId,
+                action.direction,
+            )
             is ActiveWorkoutAction.Finish -> finishWorkout(
                 includeLocation = action.includeLocation,
                 locationLabel = action.locationLabel,
+                routineAction = action.routineAction,
             )
             ActiveWorkoutAction.Discard -> discardWorkout()
         }
@@ -178,7 +227,49 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
-    private fun finishWorkout(includeLocation: Boolean, locationLabel: String) {
+    private fun updateExerciseNotes(sessionExerciseId: String, notes: String) {
+        exerciseNotes.update { it + (sessionExerciseId to notes) }
+        noteSaveJobs.remove(sessionExerciseId)?.cancel()
+        noteSaveJobs[sessionExerciseId] = viewModelScope.launch {
+            delay(NOTE_SAVE_DELAY_MILLIS)
+            repository.updateExerciseNotes(SessionExerciseId(sessionExerciseId), notes)
+        }
+    }
+
+    private fun addExercise(exerciseId: String) {
+        val workout = currentWorkout ?: return
+        viewModelScope.launch {
+            repository.addExercise(workout.session.id, ExerciseId(exerciseId))
+        }
+    }
+
+    private fun replaceExercise(sessionExerciseId: String, exerciseId: String) {
+        viewModelScope.launch {
+            repository.replaceExercise(
+                SessionExerciseId(sessionExerciseId),
+                ExerciseId(exerciseId),
+            )
+        }
+    }
+
+    private fun deleteExercise(sessionExerciseId: String) {
+        exerciseNotes.update { it - sessionExerciseId }
+        viewModelScope.launch {
+            repository.deleteExercise(SessionExerciseId(sessionExerciseId))
+        }
+    }
+
+    private fun moveExercise(sessionExerciseId: String, direction: Int) {
+        viewModelScope.launch {
+            repository.moveExercise(SessionExerciseId(sessionExerciseId), direction)
+        }
+    }
+
+    private fun finishWorkout(
+        includeLocation: Boolean,
+        locationLabel: String,
+        routineAction: RoutineFinishAction,
+    ) {
         val workout = currentWorkout ?: return
         viewModelScope.launch {
             operation.update { it.copy(isCapturingLocation = includeLocation) }
@@ -192,6 +283,13 @@ class ActiveWorkoutViewModel @Inject constructor(
                     repetitions = Repetitions(draft.repetitions.toIntOrNull() ?: 0),
                     completed = original.isCompleted,
                 )
+            }
+            exerciseNotes.value.forEach { (exerciseId, notes) ->
+                noteSaveJobs.remove(exerciseId)?.cancel()
+                repository.updateExerciseNotes(SessionExerciseId(exerciseId), notes)
+            }
+            if (routineAction != RoutineFinishAction.KEEP_ORIGINAL) {
+                saveWorkoutAsRoutine(workout, routineAction)
             }
             val location = if (includeLocation) {
                 currentLocationProvider.captureCurrentLocation()?.copy(
@@ -230,6 +328,7 @@ class ActiveWorkoutViewModel @Inject constructor(
 
     private fun WorkoutDetails.toUiModel(
         currentDrafts: Map<String, SetDraft>,
+        currentNotes: Map<String, String>,
         now: Instant,
         weightUnit: WeightUnit,
         history: List<WorkoutDetails>,
@@ -274,6 +373,7 @@ class ActiveWorkoutViewModel @Inject constructor(
             }
             ActiveExerciseUiModel(
                 id = details.sessionExercise.id.value,
+                exerciseId = details.sessionExercise.exerciseId?.value,
                 name = details.sessionExercise.exerciseNameSnapshot,
                 muscleGroup = details.sessionExercise.muscleGroupSnapshot,
                 mediaUri = details.sessionExercise.mediaUriSnapshot
@@ -285,6 +385,8 @@ class ActiveWorkoutViewModel @Inject constructor(
                 lastPerformance = latestSets
                     .maxByOrNull { it.weight.grams }
                     ?.asCompactPerformance(weightUnit),
+                notes = currentNotes[details.sessionExercise.id.value]
+                    ?: details.sessionExercise.notes,
                 sets = uiSets,
             )
         }
@@ -305,6 +407,7 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
         return ActiveWorkoutUiModel(
             id = session.id.value,
+            routineId = session.routineId?.value,
             name = session.name,
             elapsedSeconds = Duration.between(session.startedAt, now).seconds.coerceAtLeast(0),
             completedSets = completedUiSets.size,
@@ -344,6 +447,72 @@ class ActiveWorkoutViewModel @Inject constructor(
             )
         },
     )
+
+    private suspend fun saveWorkoutAsRoutine(
+        workout: WorkoutDetails,
+        action: RoutineFinishAction,
+    ) {
+        val sourceId = workout.session.routineId ?: return
+        val source = (routineRepository.getRoutine(sourceId) as? DataResult.Success)?.value ?: return
+        routineRepository.saveRoutine(
+            RoutineDraft(
+                id = sourceId.takeIf { action == RoutineFinishAction.UPDATE_ORIGINAL },
+                folderId = source.routine.folderId,
+                name = if (action == RoutineFinishAction.SAVE_COPY) {
+                    "${source.routine.name} - cópia"
+                } else {
+                    source.routine.name
+                },
+                description = source.routine.description,
+                compareHistoryWithinFolder = source.routine.compareHistoryWithinFolder,
+                exercises = workout.exercises.mapNotNull { details ->
+                    val exerciseId = details.sessionExercise.exerciseId ?: return@mapNotNull null
+                    val original = source.exercises.firstOrNull {
+                        it.exercise.id == exerciseId
+                    }?.routineExercise
+                    RoutineExerciseDraft(
+                        exerciseId = exerciseId,
+                        plannedSets = details.sets.count {
+                            it.setType == WorkoutSetType.NORMAL
+                        }.coerceAtLeast(1),
+                        plannedWarmUpSets = details.sets.count {
+                            it.setType == WorkoutSetType.WARM_UP
+                        },
+                        plannedRepetitions = original?.plannedRepetitions
+                            ?: RepetitionRange(8, 12),
+                        restSeconds = original?.defaultRestSeconds ?: 90,
+                        notes = exerciseNotes.value[details.sessionExercise.id.value]
+                            ?: details.sessionExercise.notes,
+                    )
+                },
+            ),
+        )
+    }
+
+    private fun List<WorkoutDetails>.scopedFor(
+        active: WorkoutDetails?,
+        routines: List<RoutineDetails>,
+    ): List<WorkoutDetails> {
+        val routineId = active?.session?.routineId ?: return this
+        val source = routines.firstOrNull { it.routine.id == routineId } ?: return this
+        if (!source.routine.compareHistoryWithinFolder) return this
+        val comparableRoutineIds = routines
+            .filter { it.routine.folderId == source.routine.folderId }
+            .map { it.routine.id }
+            .toSet()
+        return filter { it.session.routineId in comparableRoutineIds }
+    }
+
+    private fun Exercise.toPickerUiModel(): ActiveExercisePickerUiModel =
+        ActiveExercisePickerUiModel(
+            id = id.value,
+            name = name,
+            muscleGroup = primaryMuscleGroup,
+            equipment = equipment,
+            mediaUri = media?.uri,
+            mediaThumbnailUri = media?.thumbnailUri,
+            searchTerms = searchTerms(),
+        )
 
     private fun Weight.asDisplayValue(unit: WeightUnit): String =
         if (grams == 0L) "" else valueIn(unit).toCleanString()
@@ -388,8 +557,22 @@ class ActiveWorkoutViewModel @Inject constructor(
         val isCapturingLocation: Boolean = false,
     )
 
+    private data class WorkoutEditorState(
+        val setDrafts: Map<String, SetDraft>,
+        val exerciseNotes: Map<String, String>,
+        val operation: WorkoutOperationState,
+    )
+
+    private data class WorkoutSources(
+        val active: DataResult<WorkoutDetails?>,
+        val history: DataResult<List<WorkoutDetails>>,
+        val exercises: DataResult<List<Exercise>>,
+        val routines: DataResult<List<RoutineDetails>>,
+    )
+
     private companion object {
         const val HEALTH_CONNECT_SYNC_TIMEOUT_MILLIS = 8_000L
+        const val NOTE_SAVE_DELAY_MILLIS = 600L
     }
 }
 

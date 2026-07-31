@@ -15,6 +15,8 @@ import com.forgeflow.core.model.RoutineExerciseDraft
 import com.forgeflow.core.model.RoutineFolder
 import com.forgeflow.core.model.RoutineFolderId
 import com.forgeflow.core.model.RoutineId
+import com.forgeflow.core.model.normalizedSearchText
+import com.forgeflow.core.model.searchTerms
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -88,11 +90,35 @@ class RoutinesViewModel @Inject constructor(
                 it.copy(folder = it.folder?.copy(name = action.value))
             }
             is RoutinesAction.ExerciseToggled -> toggleExercise(action.id)
+            is RoutinesAction.SelectedExerciseMoved -> moveSelectedExercise(
+                action.id,
+                action.direction,
+            )
+            is RoutinesAction.PlannedSetsChanged -> updateExercisePlan(action.id) {
+                copy(plannedSets = action.value.coerceIn(1, 12))
+            }
+            is RoutinesAction.WarmUpSetsChanged -> updateExercisePlan(action.id) {
+                copy(warmUpSets = action.value.coerceIn(0, 6))
+            }
+            is RoutinesAction.ExerciseNotesChanged -> updateExercisePlan(action.id) {
+                copy(notes = action.value.take(240))
+            }
+            is RoutinesAction.CompareHistoryWithinFolderChanged -> updateEditor {
+                copy(compareHistoryWithinFolder = action.enabled)
+            }
             is RoutinesAction.EditRoutine -> openEditor(action.id)
             is RoutinesAction.EditFolder -> openFolderEditor(action.id)
             is RoutinesAction.ArchiveRoutine -> archiveRoutine(action.id)
             is RoutinesAction.DeleteFolder -> deleteFolder(action.id)
             is RoutinesAction.StartRoutine -> startRoutine(action.id)
+            is RoutinesAction.CopyRoutine -> copyRoutine(action.id)
+            is RoutinesAction.CopyFolder -> copyFolder(action.id)
+            is RoutinesAction.MoveRoutine -> moveRoutine(
+                action.id,
+                action.folderId,
+                action.direction,
+            )
+            is RoutinesAction.MoveFolder -> moveFolder(action.id, action.direction)
             RoutinesAction.SaveRoutine -> saveRoutine()
             RoutinesAction.SaveFolder -> saveFolder()
         }
@@ -110,18 +136,19 @@ class RoutinesViewModel @Inject constructor(
         val exercises = (exercisesResult as? DataResult.Success)?.value.orEmpty()
         routineDetails = routines
         routineFolders = folders
-        val normalizedQuery = currentEditors.routineSearch.trim()
+        val normalizedQuery = currentEditors.routineSearch.normalizedSearchText()
         val visibleRoutines = routines.filter { details ->
             normalizedQuery.isBlank() ||
-                details.routine.name.contains(normalizedQuery, ignoreCase = true) ||
-                details.routine.description.contains(normalizedQuery, ignoreCase = true) ||
+                details.routine.name.normalizedSearchText().contains(normalizedQuery) ||
+                details.routine.description.normalizedSearchText().contains(normalizedQuery) ||
                 details.exercises.any { item ->
-                    item.exercise.name.contains(normalizedQuery, ignoreCase = true)
+                    item.exercise.searchTerms().contains(normalizedQuery)
                 } ||
                 folders.firstOrNull { it.id == details.routine.folderId }
                     ?.name
                     .orEmpty()
-                    .contains(normalizedQuery, ignoreCase = true)
+                    .normalizedSearchText()
+                    .contains(normalizedQuery)
         }
         return RoutinesUiState(
             isLoading = routinesResult !is DataResult.Success ||
@@ -136,6 +163,7 @@ class RoutinesViewModel @Inject constructor(
                     description = details.routine.description,
                     exerciseNames = details.exercises.map { it.exercise.name },
                     totalSets = details.exercises.sumOf { it.routineExercise.plannedSets },
+                    position = details.routine.position,
                 )
             },
             folders = folders.map { folder ->
@@ -145,6 +173,7 @@ class RoutinesViewModel @Inject constructor(
                     routineCount = visibleRoutines.count {
                         it.routine.folderId == folder.id
                     },
+                    position = folder.position,
                 )
             },
             exercises = exercises.map { exercise ->
@@ -156,6 +185,7 @@ class RoutinesViewModel @Inject constructor(
                     mediaUri = exercise.media?.uri,
                     mediaType = exercise.media?.type,
                     mediaThumbnailUri = exercise.media?.thumbnailUri,
+                    searchTerms = exercise.searchTerms(),
                 )
             },
             editor = currentEditors.routine,
@@ -185,6 +215,18 @@ class RoutinesViewModel @Inject constructor(
                     selectedExerciseIds = details.exercises.map { item ->
                         item.exercise.id.value
                     },
+                    exercisePlans = details.exercises.map { item ->
+                        RoutineExercisePlanUiModel(
+                            exerciseId = item.exercise.id.value,
+                            plannedSets = item.routineExercise.plannedSets,
+                            warmUpSets = item.routineExercise.plannedWarmUpSets,
+                            repetitionsMinimum = item.routineExercise.plannedRepetitions?.minimum ?: 8,
+                            repetitionsMaximum = item.routineExercise.plannedRepetitions?.maximum ?: 12,
+                            restSeconds = item.routineExercise.defaultRestSeconds,
+                            notes = item.routineExercise.notes,
+                        )
+                    },
+                    compareHistoryWithinFolder = details.routine.compareHistoryWithinFolder,
                 ),
             )
         }
@@ -203,11 +245,37 @@ class RoutinesViewModel @Inject constructor(
     }
 
     private fun toggleExercise(id: String) = updateEditor {
+        if (id in selectedExerciseIds) {
+            copy(
+                selectedExerciseIds = selectedExerciseIds - id,
+                exercisePlans = exercisePlans.filterNot { it.exerciseId == id },
+            )
+        } else {
+            copy(
+                selectedExerciseIds = selectedExerciseIds + id,
+                exercisePlans = exercisePlans + RoutineExercisePlanUiModel(exerciseId = id),
+            )
+        }
+    }
+
+    private fun moveSelectedExercise(id: String, direction: Int) = updateEditor {
+        val currentIndex = selectedExerciseIds.indexOf(id)
+        if (currentIndex < 0) return@updateEditor this
+        val targetIndex = (currentIndex + direction).coerceIn(selectedExerciseIds.indices)
+        if (currentIndex == targetIndex) return@updateEditor this
+        val reordered = selectedExerciseIds.toMutableList().apply {
+            add(targetIndex, removeAt(currentIndex))
+        }
+        copy(selectedExerciseIds = reordered)
+    }
+
+    private fun updateExercisePlan(
+        id: String,
+        transform: RoutineExercisePlanUiModel.() -> RoutineExercisePlanUiModel,
+    ) = updateEditor {
         copy(
-            selectedExerciseIds = if (id in selectedExerciseIds) {
-                selectedExerciseIds - id
-            } else {
-                selectedExerciseIds + id
+            exercisePlans = exercisePlans.map { plan ->
+                if (plan.exerciseId == id) plan.transform() else plan
             },
         )
     }
@@ -226,12 +294,20 @@ class RoutinesViewModel @Inject constructor(
                     folderId = current.folderId?.let(::RoutineFolderId),
                     name = current.name,
                     description = current.description,
+                    compareHistoryWithinFolder = current.compareHistoryWithinFolder,
                     exercises = current.selectedExerciseIds.map { id ->
+                        val plan = current.exercisePlans.firstOrNull { it.exerciseId == id }
+                            ?: RoutineExercisePlanUiModel(exerciseId = id)
                         RoutineExerciseDraft(
                             exerciseId = ExerciseId(id),
-                            plannedSets = 3,
-                            plannedRepetitions = RepetitionRange(8, 12),
-                            restSeconds = 90,
+                            plannedSets = plan.plannedSets,
+                            plannedWarmUpSets = plan.warmUpSets,
+                            plannedRepetitions = RepetitionRange(
+                                plan.repetitionsMinimum,
+                                plan.repetitionsMaximum,
+                            ),
+                            restSeconds = plan.restSeconds,
+                            notes = plan.notes,
                         )
                     },
                 ),
@@ -289,6 +365,40 @@ class RoutinesViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun copyRoutine(id: String) {
+        viewModelScope.launch { routineRepository.copyRoutine(RoutineId(id)) }
+    }
+
+    private fun copyFolder(id: String) {
+        viewModelScope.launch { routineRepository.copyFolder(RoutineFolderId(id)) }
+    }
+
+    private fun moveRoutine(id: String, folderId: String?, direction: Int) {
+        val ordered = routineDetails
+            .filter { it.routine.folderId?.value == folderId }
+            .sortedBy { it.routine.position }
+            .map { it.routine.id }
+            .toMutableList()
+        val index = ordered.indexOfFirst { it.value == id }
+        if (index < 0) return
+        val target = (index + direction).coerceIn(ordered.indices)
+        if (index == target) return
+        ordered.add(target, ordered.removeAt(index))
+        viewModelScope.launch {
+            routineRepository.reorderRoutines(folderId?.let(::RoutineFolderId), ordered)
+        }
+    }
+
+    private fun moveFolder(id: String, direction: Int) {
+        val ordered = routineFolders.sortedBy(RoutineFolder::position).map { it.id }.toMutableList()
+        val index = ordered.indexOfFirst { it.value == id }
+        if (index < 0) return
+        val target = (index + direction).coerceIn(ordered.indices)
+        if (index == target) return
+        ordered.add(target, ordered.removeAt(index))
+        viewModelScope.launch { routineRepository.reorderFolders(ordered) }
     }
 
     private fun updateEditor(transform: RoutineEditorUiState.() -> RoutineEditorUiState) {

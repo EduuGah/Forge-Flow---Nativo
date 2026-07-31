@@ -3,6 +3,7 @@ package com.forgeflow.feature.routines.presentation
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CreateNewFolder
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Search
@@ -33,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
@@ -53,6 +59,7 @@ import com.forgeflow.core.designsystem.component.ForgeFlowTextField
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.core.model.Equipment
 import com.forgeflow.core.model.MuscleGroup
+import com.forgeflow.core.model.normalizedSearchText
 import com.forgeflow.feature.routines.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,10 +73,17 @@ internal fun RoutineEditorSheet(
     onOpenExercise: (String) -> Unit,
 ) {
     val visibleExercises = exercises.filter {
-        (editor.query.isBlank() || it.name.contains(editor.query, ignoreCase = true)) &&
+        (editor.query.isBlank() ||
+            it.searchTerms.contains(editor.query.normalizedSearchText())) &&
             (editor.selectedMuscleGroup == null ||
                 it.muscleGroup == editor.selectedMuscleGroup)
-    }
+    }.sortedWith(
+        compareBy<RoutineExercisePickerModel> {
+            editor.selectedExerciseIds.indexOf(it.id).let { index ->
+                if (index < 0) Int.MAX_VALUE else index
+            }
+        }.thenBy(RoutineExercisePickerModel::name),
+    )
     ModalBottomSheet(onDismissRequest = { onAction(RoutinesAction.CloseEditor) }) {
         Column(
             modifier = Modifier
@@ -108,6 +122,29 @@ internal fun RoutineEditorSheet(
                 onFolderSelected = { onAction(RoutinesAction.FolderChanged(it)) },
                 onCreateFolder = { onAction(RoutinesAction.CreateFolderInEditor) },
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.folder_history_scope),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        text = stringResource(R.string.folder_history_scope_description),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                Switch(
+                    checked = editor.compareHistoryWithinFolder,
+                    onCheckedChange = {
+                        onAction(RoutinesAction.CompareHistoryWithinFolderChanged(it))
+                    },
+                )
+            }
             ForgeFlowTextField(
                 value = editor.query,
                 onValueChange = { onAction(RoutinesAction.SearchChanged(it)) },
@@ -171,10 +208,25 @@ internal fun RoutineEditorSheet(
                     ExercisePickerRow(
                         exercise = exercise,
                         selected = exercise.id in editor.selectedExerciseIds,
+                        plan = editor.exercisePlans.firstOrNull {
+                            it.exerciseId == exercise.id
+                        },
                         onToggle = {
                             onAction(RoutinesAction.ExerciseToggled(exercise.id))
                         },
                         onOpenDetails = { onOpenExercise(exercise.id) },
+                        onMove = { direction ->
+                            onAction(RoutinesAction.SelectedExerciseMoved(exercise.id, direction))
+                        },
+                        onPlannedSetsChanged = {
+                            onAction(RoutinesAction.PlannedSetsChanged(exercise.id, it))
+                        },
+                        onWarmUpSetsChanged = {
+                            onAction(RoutinesAction.WarmUpSetsChanged(exercise.id, it))
+                        },
+                        onNotesChanged = {
+                            onAction(RoutinesAction.ExerciseNotesChanged(exercise.id, it))
+                        },
                     )
                 }
             }
@@ -246,10 +298,16 @@ private fun FolderSelector(
 private fun ExercisePickerRow(
     exercise: RoutineExercisePickerModel,
     selected: Boolean,
+    plan: RoutineExercisePlanUiModel?,
     onToggle: () -> Unit,
     onOpenDetails: () -> Unit,
+    onMove: (Int) -> Unit,
+    onPlannedSetsChanged: (Int) -> Unit,
+    onWarmUpSetsChanged: (Int) -> Unit,
+    onNotesChanged: (String) -> Unit,
 ) {
-    Row(
+    var accumulatedDrag by remember { mutableStateOf(0f) }
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
@@ -262,9 +320,34 @@ private fun ExercisePickerRow(
             )
             .clickable(onClick = onToggle)
             .padding(ForgeFlowDesign.spacing.small),
-        horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+        if (selected) {
+            Icon(
+                imageVector = Icons.Outlined.DragHandle,
+                contentDescription = stringResource(R.string.drag_to_reorder),
+                tint = ForgeFlowDesign.colors.textSecondary,
+                modifier = Modifier.pointerInput(exercise.id) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { accumulatedDrag = 0f },
+                        onDragEnd = { accumulatedDrag = 0f },
+                        onDragCancel = { accumulatedDrag = 0f },
+                    ) { change, dragAmount ->
+                        change.consume()
+                        accumulatedDrag += dragAmount.y
+                        if (kotlin.math.abs(accumulatedDrag) >= 52.dp.toPx()) {
+                            onMove(if (accumulatedDrag > 0) 1 else -1)
+                            accumulatedDrag = 0f
+                        }
+                    }
+                },
+            )
+        }
         ForgeFlowExerciseMedia(
             mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
             contentDescription = exercise.name,
@@ -303,6 +386,72 @@ private fun ExercisePickerRow(
             checked = selected,
             onCheckedChange = null,
         )
+        }
+        if (selected && plan != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                RoutinePlanStepper(
+                    label = stringResource(R.string.normal_sets),
+                    value = plan.plannedSets,
+                    minimum = 1,
+                    maximum = 12,
+                    onValueChanged = onPlannedSetsChanged,
+                    modifier = Modifier.weight(1f),
+                )
+                RoutinePlanStepper(
+                    label = stringResource(R.string.warm_up_sets),
+                    value = plan.warmUpSets,
+                    minimum = 0,
+                    maximum = 6,
+                    onValueChanged = onWarmUpSetsChanged,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            ForgeFlowTextField(
+                value = plan.notes,
+                onValueChange = onNotesChanged,
+                label = stringResource(R.string.exercise_notes_next_workout),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun RoutinePlanStepper(
+    label: String,
+    value: Int,
+    minimum: Int,
+    maximum: Int,
+    onValueChanged: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = label.uppercase(),
+            color = ForgeFlowDesign.colors.textSecondary,
+            style = MaterialTheme.typography.labelSmall,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = { onValueChanged(value - 1) },
+                enabled = value > minimum,
+            ) {
+                Icon(Icons.Outlined.Remove, contentDescription = null)
+            }
+            Text(
+                text = value.toString(),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            IconButton(
+                onClick = { onValueChanged(value + 1) },
+                enabled = value < maximum,
+            ) {
+                Icon(Icons.Outlined.Add, contentDescription = null)
+            }
+        }
     }
 }
 

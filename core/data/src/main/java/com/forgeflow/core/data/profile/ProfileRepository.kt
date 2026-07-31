@@ -12,7 +12,12 @@ interface ProfileRepository {
 
     suspend fun saveProfile(profile: UserProfile): DataResult<Unit>
 
-    suspend fun importProfilePhoto(sourceUri: String): DataResult<Unit>
+    suspend fun importProfilePhoto(
+        sourceUri: String,
+        zoom: Float,
+        horizontalOffset: Float,
+        verticalOffset: Float,
+    ): DataResult<Unit>
 
     suspend fun addBodyWeight(
         weight: Weight,

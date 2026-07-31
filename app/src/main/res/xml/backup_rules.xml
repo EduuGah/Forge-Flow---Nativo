@@ -12,4 +12,7 @@
     <include
         domain="file"
         path="profile/" />
+    <include
+        domain="file"
+        path="nutrition_photos/" />
 </full-backup-content>

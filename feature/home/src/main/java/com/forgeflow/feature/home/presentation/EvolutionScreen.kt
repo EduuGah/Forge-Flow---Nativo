@@ -16,12 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -34,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -122,7 +125,7 @@ private fun EvolutionContent(
         } else {
             item { EvolutionMetricGrid(state) }
             item { EvolutionOverviewPanel(state) }
-            item { EvolutionVolumePanel(state) }
+            item { EvolutionProgressPanel(state) }
             item { EvolutionFrequencyPanel(state.frequency) }
             if (state.muscleDistribution.isNotEmpty()) {
                 item { EvolutionMusclePanel(state.muscleDistribution) }
@@ -309,8 +312,14 @@ private fun EvolutionSummaryMetric(
 }
 
 @Composable
-private fun EvolutionVolumePanel(state: EvolutionUiState) {
-    val points = state.volumeChart
+private fun EvolutionProgressPanel(state: EvolutionUiState) {
+    var metric by remember { mutableStateOf(EvolutionMetric.WORKOUTS) }
+    val points = when (metric) {
+        EvolutionMetric.WORKOUTS -> state.workoutChart
+        EvolutionMetric.VOLUME -> state.volumeChart
+        EvolutionMetric.BODY_WEIGHT -> state.bodyWeightChart
+        EvolutionMetric.PERSONAL_RECORDS -> state.personalRecordChart
+    }
     var selectedIndex by remember(points) {
         mutableIntStateOf(points.lastIndex.coerceAtLeast(0))
     }
@@ -322,17 +331,16 @@ private fun EvolutionVolumePanel(state: EvolutionUiState) {
             verticalAlignment = Alignment.Bottom,
         ) {
             Column {
-                ForgeFlowEyebrow(text = stringResource(R.string.evolution_volume_eyebrow))
+                ForgeFlowEyebrow(text = stringResource(R.string.evolution_all_metrics_eyebrow))
                 Text(
-                    text = stringResource(R.string.evolution_volume_title),
+                    text = stringResource(R.string.evolution_all_metrics_title),
                     style = MaterialTheme.typography.titleLarge,
                 )
             }
             selectedPoint?.let { point ->
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "${point.value.asWeightLabel(state.weightUnit)} " +
-                            state.weightUnit.symbol,
+                        text = point.value.asMetricLabel(metric, state.weightUnit),
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.ExtraBold,
                         style = MaterialTheme.typography.titleMedium,
@@ -345,16 +353,53 @@ private fun EvolutionVolumePanel(state: EvolutionUiState) {
                 }
             }
         }
-        EvolutionLineChart(
-            points = points,
-            selectedIndex = selectedIndex,
-            onSelect = { selectedIndex = it },
-        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(EvolutionMetric.entries.size) { index ->
+                val item = EvolutionMetric.entries[index]
+                FilterChip(
+                    selected = metric == item,
+                    onClick = { metric = item },
+                    label = { Text(stringResource(item.labelResource())) },
+                )
+            }
+        }
+        if (points.isEmpty()) {
+            Text(
+                text = stringResource(R.string.evolution_metric_chart_empty),
+                color = ForgeFlowDesign.colors.textSecondary,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        } else {
+            EvolutionLineChart(
+                points = points,
+                selectedIndex = selectedIndex,
+                onSelect = { selectedIndex = it },
+            )
+        }
         Text(
             text = stringResource(R.string.evolution_chart_hint),
             color = ForgeFlowDesign.colors.textSecondary,
             style = MaterialTheme.typography.labelSmall,
         )
+    }
+}
+
+@StringRes
+private fun EvolutionMetric.labelResource(): Int = when (this) {
+    EvolutionMetric.WORKOUTS -> R.string.evolution_metric_chart_workouts
+    EvolutionMetric.VOLUME -> R.string.evolution_metric_chart_volume
+    EvolutionMetric.BODY_WEIGHT -> R.string.evolution_metric_chart_weight
+    EvolutionMetric.PERSONAL_RECORDS -> R.string.evolution_metric_chart_records
+}
+
+private fun Double.asMetricLabel(metric: EvolutionMetric, unit: com.forgeflow.core.model.WeightUnit): String {
+    return when (metric) {
+        EvolutionMetric.VOLUME,
+        EvolutionMetric.BODY_WEIGHT,
+        -> "${asWeightLabel(unit)} ${unit.symbol}"
+        EvolutionMetric.WORKOUTS,
+        EvolutionMetric.PERSONAL_RECORDS,
+        -> toInt().toString()
     }
 }
 

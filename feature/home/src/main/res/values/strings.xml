@@ -139,6 +139,13 @@
     <string name="evolution_volume_eyebrow">Carga de trabalho</string>
     <string name="evolution_volume_title">Volume ao longo do tempo</string>
     <string name="evolution_chart_hint">Toque no gráfico para consultar outro período.</string>
+    <string name="evolution_all_metrics_eyebrow">Evolução separada</string>
+    <string name="evolution_all_metrics_title">Indicadores ao longo do tempo</string>
+    <string name="evolution_metric_chart_workouts">Treinos</string>
+    <string name="evolution_metric_chart_volume">Volume</string>
+    <string name="evolution_metric_chart_weight">Peso corporal</string>
+    <string name="evolution_metric_chart_records">PRs</string>
+    <string name="evolution_metric_chart_empty">Ainda não há registros deste indicador no período.</string>
     <string name="evolution_consistency">Frequência</string>
     <string name="evolution_frequency_title">Treinos por dia da semana</string>
     <string name="evolution_balance">Equilíbrio</string>

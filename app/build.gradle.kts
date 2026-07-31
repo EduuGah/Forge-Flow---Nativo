@@ -5,6 +5,10 @@ plugins {
     id("forgeflow.android.testing")
 }
 
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.forgeflow.app"
 
@@ -36,6 +40,7 @@ dependencies {
     implementation(project(":feature:exercises"))
     implementation(project(":feature:history"))
     implementation(project(":feature:home"))
+    implementation(project(":feature:nutrition"))
     implementation(project(":feature:routines"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:workout"))
@@ -48,4 +53,11 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.google.identity.googleid)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
 }

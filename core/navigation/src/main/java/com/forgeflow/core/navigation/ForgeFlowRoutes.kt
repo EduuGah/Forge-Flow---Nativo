@@ -37,3 +37,6 @@ data object ProgressPhotosRoute
 
 @Serializable
 data object SettingsRoute
+
+@Serializable
+data object NutritionRoute

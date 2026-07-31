@@ -90,6 +90,7 @@ class SettingsViewModel @Inject constructor(
                         dateLabel = PHOTO_DATE_FORMATTER.format(
                             photo.capturedAt.atZone(ZoneId.systemDefault()),
                         ),
+                        capturedAtEpochMillis = photo.capturedAt.toEpochMilli(),
                     )
                 },
                 completedWorkoutCount = history.size,
@@ -158,7 +159,7 @@ class SettingsViewModel @Inject constructor(
                 copy(experienceLevel = action.value)
             }
             SettingsAction.SaveProfile -> saveProfile()
-            is SettingsAction.ImportProfilePhoto -> importProfilePhoto(action.sourceUri)
+            is SettingsAction.ImportProfilePhoto -> importProfilePhoto(action)
             SettingsAction.OpenBodyWeightEditor -> openBodyWeightEditor()
             SettingsAction.CloseBodyWeightEditor -> operation.update { it.copy(weightEditor = null) }
             is SettingsAction.BodyWeightChanged -> operation.update { current ->
@@ -284,11 +285,16 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun importProfilePhoto(sourceUri: String) {
+    private fun importProfilePhoto(action: SettingsAction.ImportProfilePhoto) {
         if (operation.value.isImportingPhoto) return
         viewModelScope.launch {
             operation.update { it.copy(isImportingPhoto = true, profileWriteFailed = false) }
-            val result = profileRepository.importProfilePhoto(sourceUri)
+            val result = profileRepository.importProfilePhoto(
+                sourceUri = action.sourceUri,
+                zoom = action.zoom,
+                horizontalOffset = action.horizontalOffset,
+                verticalOffset = action.verticalOffset,
+            )
             operation.update {
                 it.copy(
                     isImportingPhoto = false,
@@ -598,7 +604,7 @@ class SettingsViewModel @Inject constructor(
     private fun WeightUnit.shortLabel(): String = if (this == WeightUnit.KILOGRAM) "kg" else "lb"
 
     private companion object {
-        const val MAX_PROFILE_NAME_LENGTH = 32
+        const val MAX_PROFILE_NAME_LENGTH = 80
         const val MAX_WEIGHT_INPUT_LENGTH = 6
         const val MIN_BIRTH_YEAR = 1900
         const val MIN_HEIGHT_CENTIMETERS = 100

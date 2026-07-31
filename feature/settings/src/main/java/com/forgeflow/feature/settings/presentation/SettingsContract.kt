@@ -62,6 +62,7 @@ data class ProgressPhotoUiModel(
     val id: String,
     val filePath: String,
     val dateLabel: String,
+    val capturedAtEpochMillis: Long,
 )
 
 @Immutable
@@ -136,7 +137,12 @@ sealed interface SettingsAction {
     data class ProfileGoalChanged(val value: TrainingGoal) : SettingsAction
     data class ProfileExperienceChanged(val value: ExperienceLevel) : SettingsAction
     data object SaveProfile : SettingsAction
-    data class ImportProfilePhoto(val sourceUri: String) : SettingsAction
+    data class ImportProfilePhoto(
+        val sourceUri: String,
+        val zoom: Float,
+        val horizontalOffset: Float,
+        val verticalOffset: Float,
+    ) : SettingsAction
     data object OpenBodyWeightEditor : SettingsAction
     data object CloseBodyWeightEditor : SettingsAction
     data class BodyWeightChanged(val value: String) : SettingsAction

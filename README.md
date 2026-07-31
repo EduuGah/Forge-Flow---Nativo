@@ -11,7 +11,10 @@ O aplicativo já contém:
 - dashboard, calendário, metas, horários e evolução;
 - biblioteca de exercícios, rotinas em pastas e treino ativo persistente;
 - histórico, recordes, gráficos, filtros e mapas de locais;
-- perfil local e comparação de fotos de progresso;
+- perfil local, editor de avatar e galeria comparativa de fotos;
+- evolução separada por treinos, volume, peso corporal e recordes;
+- diário de nutrição local com fotos, metas e macronutrientes;
+- navegação principal compacta com menu lateral;
 - notificações, widget, atalhos e integração com Health Connect;
 - backup criptografado e transferência de dados oferecidos pelo Android;
 - testes locais, instrumentados e verificação com Android Lint.
@@ -72,6 +75,7 @@ app/build/outputs/apk/debug/app-debug.apk
 :core:navigation
 :core:testing
 :feature:home
+:feature:nutrition
 :feature:exercises
 :feature:routines
 :feature:workout

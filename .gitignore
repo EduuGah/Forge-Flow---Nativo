@@ -13,6 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+app/google-services.json
+**/service-account*.json
+**/*firebase-admin*.json
 
 # Gradle
 .gradle/

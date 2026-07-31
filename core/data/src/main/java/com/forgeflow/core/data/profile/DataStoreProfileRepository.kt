@@ -1,7 +1,13 @@
 package com.forgeflow.core.data.profile
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.ImageDecoder
+import android.graphics.Matrix
 import android.net.Uri
+import android.os.Build
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
@@ -59,18 +65,29 @@ class DataStoreProfileRepository @Inject constructor(
 
     override suspend fun importProfilePhoto(
         sourceUri: String,
+        zoom: Float,
+        horizontalOffset: Float,
+        verticalOffset: Float,
     ): DataResult<Unit> = withContext(ioDispatcher) {
         val photoDirectory = profileDirectory()
         val source = Uri.parse(sourceUri)
-        val target = File(photoDirectory, "avatar.${source.imageExtension()}")
-        val temporary = File(photoDirectory, "avatar.tmp")
+        val target = File(photoDirectory, "avatar.jpg")
+        val temporary = File(photoDirectory, "avatar.tmp.jpg")
         runCatching {
             photoDirectory.mkdirs()
             require(photoDirectory.isDirectory)
-            context.contentResolver.openInputStream(source).use { input ->
-                requireNotNull(input)
-                temporary.outputStream().use(input::copyTo)
+            val sourceBitmap = decodeBitmap(source)
+            val croppedBitmap = sourceBitmap.cropSquare(
+                outputSize = AVATAR_OUTPUT_SIZE,
+                zoom = zoom.coerceIn(MIN_AVATAR_ZOOM, MAX_AVATAR_ZOOM),
+                horizontalOffset = horizontalOffset.coerceIn(-1f, 1f),
+                verticalOffset = verticalOffset.coerceIn(-1f, 1f),
+            )
+            temporary.outputStream().use { output ->
+                check(croppedBitmap.compress(Bitmap.CompressFormat.JPEG, AVATAR_JPEG_QUALITY, output))
             }
+            if (croppedBitmap !== sourceBitmap) croppedBitmap.recycle()
+            sourceBitmap.recycle()
             require(temporary.length() > 0)
             photoDirectory.listFiles()
                 .orEmpty()
@@ -87,6 +104,55 @@ class DataStoreProfileRepository @Inject constructor(
                 DataResult.Failure(AppError.WriteFailed)
             },
         )
+    }
+
+    private fun decodeBitmap(uri: Uri): Bitmap {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val source = ImageDecoder.createSource(context.contentResolver, uri)
+            ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                val longestEdge = maxOf(info.size.width, info.size.height)
+                if (longestEdge > MAX_SOURCE_EDGE) {
+                    val ratio = MAX_SOURCE_EDGE.toFloat() / longestEdge
+                    decoder.setTargetSize(
+                        (info.size.width * ratio).toInt().coerceAtLeast(1),
+                        (info.size.height * ratio).toInt().coerceAtLeast(1),
+                    )
+                }
+            }
+        } else {
+            context.contentResolver.openInputStream(uri).use { input ->
+                requireNotNull(input)
+                requireNotNull(BitmapFactory.decodeStream(input))
+            }
+        }
+    }
+
+    private fun Bitmap.cropSquare(
+        outputSize: Int,
+        zoom: Float,
+        horizontalOffset: Float,
+        verticalOffset: Float,
+    ): Bitmap {
+        val output = Bitmap.createBitmap(outputSize, outputSize, Bitmap.Config.ARGB_8888)
+        val baseScale = maxOf(
+            outputSize.toFloat() / width,
+            outputSize.toFloat() / height,
+        )
+        val scale = baseScale * zoom
+        val scaledWidth = width * scale
+        val scaledHeight = height * scale
+        val maxHorizontalShift = ((scaledWidth - outputSize) / 2f).coerceAtLeast(0f)
+        val maxVerticalShift = ((scaledHeight - outputSize) / 2f).coerceAtLeast(0f)
+        val matrix = Matrix().apply {
+            postScale(scale, scale)
+            postTranslate(
+                (outputSize - scaledWidth) / 2f + horizontalOffset * maxHorizontalShift,
+                (outputSize - scaledHeight) / 2f + verticalOffset * maxVerticalShift,
+            )
+        }
+        Canvas(output).drawBitmap(this, matrix, null)
+        return output
     }
 
     override suspend fun addBodyWeight(
@@ -304,5 +370,10 @@ class DataStoreProfileRepository @Inject constructor(
         const val PROFILE_DIRECTORY = "profile"
         const val PHOTO_SEPARATOR = '\t'
         const val WEIGHT_SEPARATOR = '\t'
+        const val AVATAR_OUTPUT_SIZE = 1024
+        const val MAX_SOURCE_EDGE = 4096
+        const val AVATAR_JPEG_QUALITY = 90
+        const val MIN_AVATAR_ZOOM = 1f
+        const val MAX_AVATAR_ZOOM = 4f
     }
 }

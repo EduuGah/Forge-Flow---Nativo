@@ -13,6 +13,9 @@
         <include
             domain="file"
             path="profile/" />
+        <include
+            domain="file"
+            path="nutrition_photos/" />
     </cloud-backup>
     <device-transfer>
         <include
@@ -27,5 +30,8 @@
         <include
             domain="file"
             path="profile/" />
+        <include
+            domain="file"
+            path="nutrition_photos/" />
     </device-transfer>
 </data-extraction-rules>

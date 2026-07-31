@@ -3,6 +3,7 @@ package com.forgeflow.feature.settings.presentation
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Scale
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
@@ -31,18 +33,27 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -63,6 +74,9 @@ fun ProfileScreen(
     state: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
     onSelectAvatar: () -> Unit,
+    pendingAvatarUri: String?,
+    onConfirmAvatarCrop: (zoom: Float, horizontalOffset: Float, verticalOffset: Float) -> Unit,
+    onDismissAvatarCrop: () -> Unit,
     onOpenProgressPhotos: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -119,6 +133,14 @@ fun ProfileScreen(
             onAction = onAction,
         )
     }
+    pendingAvatarUri?.let { sourceUri ->
+        AvatarCropDialog(
+            sourceUri = sourceUri,
+            isSaving = state.isImportingPhoto,
+            onConfirm = onConfirmAvatarCrop,
+            onDismiss = onDismissAvatarCrop,
+        )
+    }
 }
 
 @Composable
@@ -128,71 +150,81 @@ private fun ProfileHero(
     onEdit: () -> Unit,
 ) {
     ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
                 modifier = Modifier
-                    .size(92.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .clickable(onClick = onSelectAvatar),
-                contentAlignment = Alignment.Center,
+                    .fillMaxWidth()
+                    .padding(end = 40.dp),
+                horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (state.profile.profilePhotoPath != null) {
-                    AsyncImage(
-                        model = File(state.profile.profilePhotoPath),
-                        contentDescription = stringResource(R.string.profile_avatar_description),
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Outlined.Person,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(30.dp)
-                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                        .size(92.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable(onClick = onSelectAvatar),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.CameraAlt,
-                        contentDescription = stringResource(R.string.profile_change_avatar),
-                        modifier = Modifier.size(17.dp),
-                        tint = MaterialTheme.colorScheme.onPrimary,
+                    if (state.profile.profilePhotoPath != null) {
+                        AsyncImage(
+                            model = File(state.profile.profilePhotoPath),
+                            contentDescription = stringResource(R.string.profile_avatar_description),
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(30.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.CameraAlt,
+                            contentDescription = stringResource(R.string.profile_change_avatar),
+                            modifier = Modifier.size(17.dp),
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = state.profile.displayName.ifBlank {
+                            stringResource(R.string.profile_default_name)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 3,
+                        overflow = TextOverflow.Visible,
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        text = stringResource(state.profile.trainingGoal.labelResource()),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    Text(
+                        text = stringResource(state.profile.experienceLevel.labelResource()),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+            IconButton(
+                onClick = onEdit,
+                modifier = Modifier.align(Alignment.TopEnd),
             ) {
-                Text(
-                    text = state.profile.displayName.ifBlank {
-                        stringResource(R.string.profile_default_name)
-                    },
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-                Text(
-                    text = stringResource(state.profile.trainingGoal.labelResource()),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelLarge,
-                )
-                Text(
-                    text = stringResource(state.profile.experienceLevel.labelResource()),
-                    color = ForgeFlowDesign.colors.textSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            IconButton(onClick = onEdit) {
                 Icon(
                     imageVector = Icons.Outlined.Edit,
                     contentDescription = stringResource(R.string.profile_edit),
@@ -218,6 +250,123 @@ private fun ProfileHero(
             )
         }
     }
+}
+
+@Composable
+private fun AvatarCropDialog(
+    sourceUri: String,
+    isSaving: Boolean,
+    onConfirm: (zoom: Float, horizontalOffset: Float, verticalOffset: Float) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var zoom by remember(sourceUri) { mutableFloatStateOf(1f) }
+    var pan by remember(sourceUri) { mutableStateOf(Offset.Zero) }
+    var viewportSize by remember(sourceUri) { mutableFloatStateOf(1f) }
+    val maxPan = (viewportSize * (0.25f + (zoom - 1f) / 2f)).coerceAtLeast(1f)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.avatar_crop_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium)) {
+                Text(
+                    text = stringResource(R.string.avatar_crop_description),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .pointerInput(sourceUri, zoom) {
+                            viewportSize = size.width.toFloat()
+                            detectTransformGestures { _, drag, gestureZoom, _ ->
+                                zoom = (zoom * gestureZoom).coerceIn(1f, 4f)
+                                val limit = (
+                                    size.width * (0.25f + (zoom - 1f) / 2f)
+                                    ).coerceAtLeast(1f)
+                                pan = Offset(
+                                    x = (pan.x + drag.x).coerceIn(-limit, limit),
+                                    y = (pan.y + drag.y).coerceIn(-limit, limit),
+                                )
+                            }
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AsyncImage(
+                        model = sourceUri,
+                        contentDescription = stringResource(R.string.avatar_crop_preview),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer(
+                                scaleX = zoom,
+                                scaleY = zoom,
+                                translationX = pan.x,
+                                translationY = pan.y,
+                            ),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.avatar_crop_zoom),
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                    Slider(
+                        value = zoom,
+                        onValueChange = { newZoom ->
+                            zoom = newZoom
+                            val limit = (
+                                viewportSize * (0.25f + (zoom - 1f) / 2f)
+                                ).coerceAtLeast(1f)
+                            pan = Offset(
+                                pan.x.coerceIn(-limit, limit),
+                                pan.y.coerceIn(-limit, limit),
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        valueRange = 1f..4f,
+                    )
+                    IconButton(
+                        onClick = {
+                            zoom = 1f
+                            pan = Offset.Zero
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Refresh,
+                            contentDescription = stringResource(R.string.avatar_crop_reset),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(
+                        zoom,
+                        (pan.x / maxPan).coerceIn(-1f, 1f),
+                        (pan.y / maxPan).coerceIn(-1f, 1f),
+                    )
+                },
+                enabled = !isSaving,
+            ) {
+                Text(stringResource(R.string.avatar_crop_apply))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isSaving) {
+                Text(stringResource(R.string.profile_cancel))
+            }
+        },
+    )
 }
 
 @Composable

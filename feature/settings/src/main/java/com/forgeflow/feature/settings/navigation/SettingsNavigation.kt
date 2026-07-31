@@ -4,7 +4,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,10 +70,11 @@ fun NavGraphBuilder.profileScreen(
     composable<ProfileRoute> {
         val viewModel: SettingsViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsStateWithLifecycle()
+        var pendingAvatarUri by remember { mutableStateOf<String?>(null) }
         val avatarPicker = rememberLauncherForActivityResult(
             ActivityResultContracts.PickVisualMedia(),
         ) { uri ->
-            uri?.let { viewModel.onAction(SettingsAction.ImportProfilePhoto(it.toString())) }
+            pendingAvatarUri = uri?.toString()
         }
         ProfileScreen(
             state = state,
@@ -81,6 +84,21 @@ fun NavGraphBuilder.profileScreen(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                 )
             },
+            pendingAvatarUri = pendingAvatarUri,
+            onConfirmAvatarCrop = { zoom, horizontalOffset, verticalOffset ->
+                pendingAvatarUri?.let { sourceUri ->
+                    viewModel.onAction(
+                        SettingsAction.ImportProfilePhoto(
+                            sourceUri = sourceUri,
+                            zoom = zoom,
+                            horizontalOffset = horizontalOffset,
+                            verticalOffset = verticalOffset,
+                        ),
+                    )
+                    pendingAvatarUri = null
+                }
+            },
+            onDismissAvatarCrop = { pendingAvatarUri = null },
             onOpenProgressPhotos = onOpenProgressPhotos,
         )
     }

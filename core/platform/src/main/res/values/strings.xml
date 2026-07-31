@@ -9,7 +9,10 @@
     <string name="notification_channel_progress_description">Resumo de metas, consistência e recordes.</string>
     <string name="notification_channel_updates">Atualizações do aplicativo</string>
     <string name="notification_channel_updates_description">Avisos importantes sobre o ForgeFlow.</string>
-    <string name="active_workout_notification_progress">%1$d de %2$d séries concluídas</string>
+    <plurals name="active_workout_notification_progress">
+        <item quantity="one">%1$d de %2$d série concluída</item>
+        <item quantity="other">%1$d de %2$d séries concluídas</item>
+    </plurals>
     <plurals name="active_workout_notification_exercises">
         <item quantity="one">%1$d exercício</item>
         <item quantity="other">%1$d exercícios</item>

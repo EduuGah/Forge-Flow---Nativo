@@ -21,6 +21,9 @@ data class EvolutionUiState(
     val averageDurationMinutes: Long = 0,
     val activeDays: Int = 0,
     val volumeChart: List<EvolutionChartPointUiModel> = emptyList(),
+    val workoutChart: List<EvolutionChartPointUiModel> = emptyList(),
+    val bodyWeightChart: List<EvolutionChartPointUiModel> = emptyList(),
+    val personalRecordChart: List<EvolutionChartPointUiModel> = emptyList(),
     val frequency: List<EvolutionFrequencyUiModel> = emptyList(),
     val muscleDistribution: List<EvolutionMuscleUiModel> = emptyList(),
     val topExercises: List<EvolutionExerciseUiModel> = emptyList(),
@@ -30,6 +33,13 @@ enum class EvolutionPeriod(val days: Long) {
     THIRTY_DAYS(30),
     NINETY_DAYS(90),
     ONE_YEAR(365),
+}
+
+enum class EvolutionMetric {
+    WORKOUTS,
+    VOLUME,
+    BODY_WEIGHT,
+    PERSONAL_RECORDS,
 }
 
 @Immutable

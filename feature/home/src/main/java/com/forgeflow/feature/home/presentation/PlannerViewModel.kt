@@ -8,6 +8,9 @@ import com.forgeflow.core.data.workout.WorkoutRepository
 import com.forgeflow.core.model.TrainingDay
 import com.forgeflow.core.model.UserSettings
 import com.forgeflow.core.model.WorkoutDetails
+import com.forgeflow.core.model.calculateWorkoutStreakStats
+import com.forgeflow.core.model.nextScheduledWorkoutDate
+import com.forgeflow.core.model.toTrainingDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.YearMonth

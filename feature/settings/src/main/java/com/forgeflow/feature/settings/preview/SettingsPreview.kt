@@ -14,6 +14,8 @@ private fun SettingsScreenPreview() {
             state = SettingsUiState(),
             onAction = {},
             onRequestHealthPermissions = {},
+            onSelectWorkoutCsv = {},
+            onSelectMeasurementCsv = {},
         )
     }
 }

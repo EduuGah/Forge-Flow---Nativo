@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.forgeflow.core.common.result.AppError
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.model.AccentColor
+import com.forgeflow.core.model.HealthConnectDataType
 import com.forgeflow.core.model.ThemePreference
 import com.forgeflow.core.model.TrainingDay
 import com.forgeflow.core.model.UserSettings
@@ -62,6 +63,11 @@ class DataStoreSettingsRepository @Inject constructor(
                         .coerceIn(MIN_TIME_MINUTES, MAX_TIME_MINUTES),
                 healthConnectSyncEnabled =
                     preferences[HEALTH_CONNECT_SYNC_ENABLED] ?: false,
+                healthConnectReadDataTypes = preferences[HEALTH_CONNECT_READ_DATA_TYPES]
+                    ?.mapNotNullTo(mutableSetOf()) { storedValue ->
+                        HealthConnectDataType.entries.firstOrNull { it.name == storedValue }
+                    }
+                    ?: DEFAULT_HEALTH_CONNECT_READ_DATA_TYPES,
                 hasCompletedOnboarding = preferences[ONBOARDING_COMPLETED] ?: false,
                 hasRequestedNotificationPermission =
                     preferences[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
@@ -117,6 +123,13 @@ class DataStoreSettingsRepository @Inject constructor(
         preferences[HEALTH_CONNECT_SYNC_ENABLED] = enabled
     }
 
+    override suspend fun setHealthConnectReadDataTypes(
+        dataTypes: Set<HealthConnectDataType>,
+    ): DataResult<Unit> = updatePreferences { preferences ->
+        preferences[HEALTH_CONNECT_READ_DATA_TYPES] =
+            dataTypes.mapTo(mutableSetOf(), HealthConnectDataType::name)
+    }
+
     override suspend fun setOnboardingCompleted(
         completed: Boolean,
     ): DataResult<Unit> = updatePreferences { preferences ->
@@ -149,6 +162,8 @@ class DataStoreSettingsRepository @Inject constructor(
             intPreferencesKey("preferred_workout_time_minutes")
         val HEALTH_CONNECT_SYNC_ENABLED =
             booleanPreferencesKey("health_connect_sync_enabled")
+        val HEALTH_CONNECT_READ_DATA_TYPES =
+            stringSetPreferencesKey("health_connect_read_data_types")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val NOTIFICATION_PERMISSION_REQUESTED =
             booleanPreferencesKey("notification_permission_requested")
@@ -157,5 +172,10 @@ class DataStoreSettingsRepository @Inject constructor(
         const val DEFAULT_WORKOUT_TIME_MINUTES = 18 * 60
         const val MIN_TIME_MINUTES = 0
         const val MAX_TIME_MINUTES = 24 * 60 - 1
+        val DEFAULT_HEALTH_CONNECT_READ_DATA_TYPES = setOf(
+            HealthConnectDataType.BODY_WEIGHT,
+            HealthConnectDataType.STEPS,
+            HealthConnectDataType.EXERCISE_SESSIONS,
+        )
     }
 }

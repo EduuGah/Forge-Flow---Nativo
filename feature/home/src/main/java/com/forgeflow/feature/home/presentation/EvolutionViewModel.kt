@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.data.settings.SettingsRepository
+import com.forgeflow.core.data.profile.ProfileRepository
 import com.forgeflow.core.data.workout.WorkoutRepository
 import com.forgeflow.core.model.UserSettings
+import com.forgeflow.core.model.UserProfile
 import com.forgeflow.core.model.WorkoutDetails
 import com.forgeflow.core.model.WorkoutSet
 import com.forgeflow.core.model.gramsIn
@@ -28,14 +30,16 @@ import kotlinx.coroutines.flow.stateIn
 class EvolutionViewModel @Inject constructor(
     workoutRepository: WorkoutRepository,
     settingsRepository: SettingsRepository,
+    profileRepository: ProfileRepository,
 ) : ViewModel() {
     private val selectedPeriod = MutableStateFlow(EvolutionPeriod.THIRTY_DAYS)
 
     val uiState = combine(
         workoutRepository.observeHistory(),
         settingsRepository.observeSettings(),
+        profileRepository.observeProfile(),
         selectedPeriod,
-    ) { historyResult, settings, period ->
+    ) { historyResult, settings, profile, period ->
         when (historyResult) {
             is DataResult.Failure -> EvolutionUiState(
                 isLoading = false,
@@ -46,6 +50,7 @@ class EvolutionViewModel @Inject constructor(
             is DataResult.Success -> historyResult.value.toEvolutionUiState(
                 period = period,
                 settings = settings,
+                profile = profile,
                 now = Instant.now(),
             )
         }
@@ -65,6 +70,7 @@ class EvolutionViewModel @Inject constructor(
 private fun List<WorkoutDetails>.toEvolutionUiState(
     period: EvolutionPeriod,
     settings: UserSettings,
+    profile: UserProfile,
     now: Instant,
 ): EvolutionUiState {
     val currentStart = now.minus(period.days, ChronoUnit.DAYS)
@@ -152,6 +158,23 @@ private fun List<WorkoutDetails>.toEvolutionUiState(
             settings = settings,
             now = now,
         ),
+        workoutChart = current.workoutCountChart(period = period, now = now),
+        bodyWeightChart = profile.bodyWeightHistory
+            .filter { entry -> !entry.measuredAt.isBefore(currentStart) }
+            .takeLast(MAX_BODY_WEIGHT_POINTS)
+            .map { entry ->
+                EvolutionChartPointUiModel(
+                    label = CHART_DATE_FORMATTER.format(
+                        entry.measuredAt.atZone(ZoneId.systemDefault()),
+                    ),
+                    value = entry.weight.valueIn(settings.weightUnit),
+                )
+            },
+        personalRecordChart = current.personalRecordChart(
+            period = period,
+            now = now,
+            recordsByWorkout = recordsByWorkout,
+        ),
         frequency = DayOfWeek.entries.map { day ->
             val count = frequencyCounts[day] ?: 0
             EvolutionFrequencyUiModel(
@@ -173,16 +196,49 @@ private fun List<WorkoutDetails>.toEvolutionUiState(
     )
 }
 
+private fun List<WorkoutDetails>.workoutCountChart(
+    period: EvolutionPeriod,
+    now: Instant,
+): List<EvolutionChartPointUiModel> = bucketedChart(period, now) { 1.0 }
+
+private fun List<WorkoutDetails>.personalRecordChart(
+    period: EvolutionPeriod,
+    now: Instant,
+    recordsByWorkout: Map<String, Int>,
+): List<EvolutionChartPointUiModel> = bucketedChart(period, now) { workout ->
+    (recordsByWorkout[workout.session.id.value] ?: 0).toDouble()
+}
+
+private fun List<WorkoutDetails>.bucketedChart(
+    period: EvolutionPeriod,
+    now: Instant,
+    valueOf: (WorkoutDetails) -> Double,
+): List<EvolutionChartPointUiModel> {
+    val bucketCount = period.bucketCount
+    val bucketSizeDays = (period.days + bucketCount - 1) / bucketCount
+    val zone = ZoneId.systemDefault()
+    val startDate = now.atZone(zone).toLocalDate().minusDays(period.days - 1)
+    val values = DoubleArray(bucketCount)
+    forEach { workout ->
+        val date = workout.session.startedAt.atZone(zone).toLocalDate()
+        val dayOffset = ChronoUnit.DAYS.between(startDate, date)
+        val index = (dayOffset / bucketSizeDays).toInt()
+        if (index in values.indices) values[index] += valueOf(workout)
+    }
+    return values.mapIndexed { index, value ->
+        EvolutionChartPointUiModel(
+            label = CHART_DATE_FORMATTER.format(startDate.plusDays(index * bucketSizeDays)),
+            value = value,
+        )
+    }
+}
+
 private fun List<WorkoutDetails>.volumeChart(
     period: EvolutionPeriod,
     settings: UserSettings,
     now: Instant,
 ): List<EvolutionChartPointUiModel> {
-    val bucketCount = when (period) {
-        EvolutionPeriod.THIRTY_DAYS -> 6
-        EvolutionPeriod.NINETY_DAYS -> 9
-        EvolutionPeriod.ONE_YEAR -> 12
-    }
+    val bucketCount = period.bucketCount
     val bucketSizeDays = (period.days + bucketCount - 1) / bucketCount
     val zone = ZoneId.systemDefault()
     val startDate = now.atZone(zone).toLocalDate().minusDays(period.days - 1)
@@ -203,6 +259,13 @@ private fun List<WorkoutDetails>.volumeChart(
         )
     }
 }
+
+private val EvolutionPeriod.bucketCount: Int
+    get() = when (this) {
+        EvolutionPeriod.THIRTY_DAYS -> 6
+        EvolutionPeriod.NINETY_DAYS -> 9
+        EvolutionPeriod.ONE_YEAR -> 12
+    }
 
 private fun List<WorkoutDetails>.personalRecordsByWorkout(): Map<String, Int> {
     val previousByExercise = mutableMapOf<String, MutableList<WorkoutSet>>()
@@ -245,3 +308,5 @@ private val CHART_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPatter
     "dd/MM",
     Locale.forLanguageTag("pt-BR"),
 )
+
+private const val MAX_BODY_WEIGHT_POINTS = 14

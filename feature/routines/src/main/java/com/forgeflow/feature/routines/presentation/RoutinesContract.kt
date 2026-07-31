@@ -8,6 +8,7 @@ import com.forgeflow.core.model.MuscleGroup
 @Immutable
 data class RoutinesUiState(
     val isLoading: Boolean = true,
+    val searchQuery: String = "",
     val routines: List<RoutineUiModel> = emptyList(),
     val folders: List<RoutineFolderUiModel> = emptyList(),
     val exercises: List<RoutineExercisePickerModel> = emptyList(),
@@ -73,6 +74,7 @@ sealed interface RoutinesAction {
     data object CreateRoutine : RoutinesAction
     data object CreateFolder : RoutinesAction
     data object CreateFolderInEditor : RoutinesAction
+    data class BrowseSearchChanged(val value: String) : RoutinesAction
     data class EditRoutine(val id: String) : RoutinesAction
     data class EditFolder(val id: String) : RoutinesAction
     data object CloseEditor : RoutinesAction

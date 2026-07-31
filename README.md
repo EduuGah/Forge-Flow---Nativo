@@ -6,18 +6,18 @@ histórico, tutorial e sincronização.
 
 ## Estado atual
 
-A Fase 0 contém:
+O aplicativo já contém:
 
-- projeto Kotlin com Jetpack Compose e Material 3;
-- arquitetura multi-módulo com convention plugins;
-- Hilt, Room e DataStore;
-- navegação de uma única Activity com quatro abas;
-- Design System claro e escuro;
-- biblioteca de exercícios alimentada pelo Room;
-- seed idempotente com cinco exercícios;
-- busca local reativa;
-- telas provisórias de Home, Rotinas, Histórico, Configurações e Treino Ativo;
-- testes locais e instrumentados.
+- dashboard, calendário, metas, horários e evolução;
+- biblioteca de exercícios, rotinas em pastas e treino ativo persistente;
+- histórico, recordes, gráficos, filtros e mapas de locais;
+- perfil local, editor de avatar e galeria comparativa de fotos;
+- evolução separada por treinos, volume, peso corporal e recordes;
+- diário de nutrição local com fotos, metas e macronutrientes;
+- navegação principal compacta com menu lateral;
+- notificações, widget, atalhos e integração com Health Connect;
+- backup criptografado e transferência de dados oferecidos pelo Android;
+- testes locais, instrumentados e verificação com Android Lint.
 
 Não há WebView, Capacitor, React, TypeScript ou código reaproveitado da versão web.
 
@@ -75,6 +75,7 @@ app/build/outputs/apk/debug/app-debug.apk
 :core:navigation
 :core:testing
 :feature:home
+:feature:nutrition
 :feature:exercises
 :feature:routines
 :feature:workout
@@ -83,4 +84,6 @@ app/build/outputs/apk/debug/app-debug.apk
 ```
 
 Consulte [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para o fluxo de dados e
-[docs/DATABASE.md](docs/DATABASE.md) para a modelagem persistente.
+[docs/DATABASE.md](docs/DATABASE.md) para a modelagem persistente. O planejamento
+atual está em [docs/ROADMAP.md](docs/ROADMAP.md), e o roteiro para testar o APK
+está em [docs/VALIDATION.md](docs/VALIDATION.md).

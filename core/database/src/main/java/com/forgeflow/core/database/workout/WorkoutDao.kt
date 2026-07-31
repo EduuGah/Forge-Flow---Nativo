@@ -7,6 +7,12 @@ import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
+data class ImportedWorkoutEntities(
+    val session: WorkoutSessionEntity,
+    val exercises: List<WorkoutSessionExerciseEntity>,
+    val sets: List<WorkoutSetEntity>,
+)
+
 @Dao
 interface WorkoutDao {
     @Transaction
@@ -38,6 +44,18 @@ interface WorkoutDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertSet(set: WorkoutSetEntity)
+
+    @Query("SELECT COUNT(*) FROM workout_sessions WHERE id = :sessionId")
+    suspend fun sessionCount(sessionId: String): Int
+
+    @Transaction
+    suspend fun insertImportedWorkout(workout: ImportedWorkoutEntities): Boolean {
+        if (sessionCount(workout.session.id) > 0) return false
+        insertSession(workout.session)
+        insertExercises(workout.exercises)
+        insertSets(workout.sets)
+        return true
+    }
 
     @Query("SELECT * FROM workout_sets WHERE id = :setId LIMIT 1")
     suspend fun getSet(setId: String): WorkoutSetEntity?

@@ -1,13 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
--->
+<?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <include
+        domain="database"
+        path="." />
+    <include
+        domain="file"
+        path="datastore/forgeflow_settings.preferences_pb" />
+    <include
+        domain="file"
+        path="progress_photos/" />
+    <include
+        domain="file"
+        path="profile/" />
+    <include
+        domain="file"
+        path="nutrition_photos/" />
 </full-backup-content>

@@ -4,12 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.data.routine.RoutineRepository
+import com.forgeflow.core.data.profile.ProfileRepository
 import com.forgeflow.core.data.settings.SettingsRepository
 import com.forgeflow.core.data.workout.WorkoutRepository
 import com.forgeflow.core.model.UserSettings
 import com.forgeflow.core.model.WorkoutDetails
 import com.forgeflow.core.model.WorkoutSet
+import com.forgeflow.core.model.calculateWorkoutStreakStats
 import com.forgeflow.core.model.gramsIn
+import com.forgeflow.core.model.nextScheduledWorkoutDate
 import com.forgeflow.core.model.personalRecordsAgainst
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Duration
@@ -29,13 +32,15 @@ class HomeViewModel @Inject constructor(
     routineRepository: RoutineRepository,
     workoutRepository: WorkoutRepository,
     settingsRepository: SettingsRepository,
+    profileRepository: ProfileRepository,
 ) : ViewModel() {
     val uiState = combine(
         routineRepository.observeRoutines(),
         workoutRepository.observeHistory(),
         workoutRepository.observeActiveWorkout(),
         settingsRepository.observeSettings(),
-    ) { routinesResult, historyResult, activeResult, settings ->
+        profileRepository.observeProfile(),
+    ) { routinesResult, historyResult, activeResult, settings, profile ->
         val routines = (routinesResult as? DataResult.Success)?.value.orEmpty()
         val history = (historyResult as? DataResult.Success)?.value.orEmpty()
         val active = (activeResult as? DataResult.Success)?.value
@@ -66,6 +71,7 @@ class HomeViewModel @Inject constructor(
         val totalMuscleSets = completedByMuscle.values.sum().coerceAtLeast(1)
         HomeUiState(
             isLoading = false,
+            displayName = profile.displayName,
             routineCount = routines.size,
             workoutsLastSevenDays = weeklyWorkouts.size,
             totalWorkoutCount = history.size,

@@ -142,11 +142,26 @@ private fun RoutinesContent(
                 )
             }
         }
+        item {
+            RoutineBrowserControls(state = state, onAction = onAction)
+        }
         if (state.routines.isEmpty()) {
             item {
                 ForgeFlowEmptyState(
-                    title = stringResource(R.string.routines_empty_title),
-                    message = stringResource(R.string.routines_empty_message),
+                    title = stringResource(
+                        if (state.searchQuery.isBlank()) {
+                            R.string.routines_empty_title
+                        } else {
+                            R.string.routines_search_empty_title
+                        },
+                    ),
+                    message = stringResource(
+                        if (state.searchQuery.isBlank()) {
+                            R.string.routines_empty_message
+                        } else {
+                            R.string.routines_search_empty_message
+                        },
+                    ),
                 )
             }
         } else {
@@ -162,7 +177,12 @@ private fun RoutinesContent(
                     )
                 }
             }
-            items(state.folders, key = RoutineFolderUiModel::id) { folder ->
+            items(
+                state.folders.filter {
+                    state.searchQuery.isBlank() || it.routineCount > 0
+                },
+                key = RoutineFolderUiModel::id,
+            ) { folder ->
                 RoutineFolderSection(
                     folder = folder,
                     routines = state.routines.filter { it.folderId == folder.id },

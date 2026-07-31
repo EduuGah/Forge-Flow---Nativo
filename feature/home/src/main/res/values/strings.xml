@@ -1,7 +1,8 @@
 <resources>
     <string name="home_loading">Carregando resumo</string>
     <string name="home_eyebrow">ForgeFlow</string>
-    <string name="home_title">Dashboard</string>
+    <string name="home_title">Seu treino</string>
+    <string name="home_title_named">Olá, %1$s</string>
     <string name="dashboard_empty_week">Sua semana começa no próximo treino.</string>
     <string name="dashboard_week_summary">%1$d treinos e %2$s %3$s de volume nos últimos 7 dias.</string>
     <string name="last_workout">Último treino: %1$s</string>
@@ -34,6 +35,9 @@
     <string name="metric_training">em treino</string>
     <string name="metric_personal_records">PRs</string>
     <string name="metric_pr_breakdown">%1$d peso • %2$d volume</string>
+    <string name="dashboard_week_volume">volume (%1$s)</string>
+    <string name="dashboard_calendar">Calendário</string>
+    <string name="dashboard_evolution_short">Evolução</string>
     <string name="volume_value">%1$d kg</string>
     <string name="open_exercise_library">Biblioteca de exercícios</string>
     <string name="latest_activity">Última atividade</string>
@@ -135,6 +139,13 @@
     <string name="evolution_volume_eyebrow">Carga de trabalho</string>
     <string name="evolution_volume_title">Volume ao longo do tempo</string>
     <string name="evolution_chart_hint">Toque no gráfico para consultar outro período.</string>
+    <string name="evolution_all_metrics_eyebrow">Evolução separada</string>
+    <string name="evolution_all_metrics_title">Indicadores ao longo do tempo</string>
+    <string name="evolution_metric_chart_workouts">Treinos</string>
+    <string name="evolution_metric_chart_volume">Volume</string>
+    <string name="evolution_metric_chart_weight">Peso corporal</string>
+    <string name="evolution_metric_chart_records">PRs</string>
+    <string name="evolution_metric_chart_empty">Ainda não há registros deste indicador no período.</string>
     <string name="evolution_consistency">Frequência</string>
     <string name="evolution_frequency_title">Treinos por dia da semana</string>
     <string name="evolution_balance">Equilíbrio</string>

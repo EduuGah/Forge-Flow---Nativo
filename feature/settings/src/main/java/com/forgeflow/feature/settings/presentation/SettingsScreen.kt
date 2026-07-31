@@ -17,6 +17,8 @@ fun SettingsScreen(
     state: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
     onRequestHealthPermissions: () -> Unit,
+    onSelectWorkoutCsv: () -> Unit,
+    onSelectMeasurementCsv: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -35,6 +37,17 @@ fun SettingsScreen(
                     eyebrow = stringResource(R.string.settings_eyebrow),
                     title = stringResource(R.string.settings_title),
                     description = stringResource(R.string.settings_description),
+                )
+            }
+            item {
+                DataProtectionSection()
+            }
+            item {
+                HevyImportSection(
+                    state = state,
+                    onAction = onAction,
+                    onSelectWorkoutCsv = onSelectWorkoutCsv,
+                    onSelectMeasurementCsv = onSelectMeasurementCsv,
                 )
             }
             item {

@@ -43,7 +43,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -160,13 +159,13 @@ private fun ExerciseDetailsHeader(
                 )
             }
             if (exercise.secondaryMuscles.isNotEmpty()) {
-                val context = LocalContext.current
+                val secondaryMuscleLabels = exercise.secondaryMuscles.map { muscle ->
+                    stringResource(muscle.detailsLabelResource())
+                }
                 Text(
                     text = stringResource(
                         R.string.secondary_muscles,
-                        exercise.secondaryMuscles.joinToString {
-                            context.getString(it.detailsLabelResource())
-                        },
+                        secondaryMuscleLabels.joinToString(),
                     ),
                     color = ForgeFlowDesign.colors.textSecondary,
                     style = MaterialTheme.typography.bodyMedium,
@@ -601,7 +600,9 @@ private fun PersonalRecordRow(
     record: ExercisePersonalRecordUiModel,
     isLatest: Boolean,
 ) {
-    val context = LocalContext.current
+    val recordTypeLabel = record.types
+        .map { type -> stringResource(type.labelResource()) }
+        .joinToString(" + ")
     val emphasisColor = if (isLatest) {
         ForgeFlowDesign.colors.warning
     } else {
@@ -619,9 +620,7 @@ private fun PersonalRecordRow(
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = record.types.joinToString(" + ") { type ->
-                    context.getString(type.labelResource())
-                },
+                text = recordTypeLabel,
                 color = if (isLatest) {
                     MaterialTheme.colorScheme.onSurface
                 } else {

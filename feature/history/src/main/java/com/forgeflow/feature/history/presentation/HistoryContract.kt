@@ -90,6 +90,7 @@ sealed interface HistoryAction {
     data class SearchChanged(val query: String) : HistoryAction
     data class DateFilterChanged(val filter: HistoryDateFilter) : HistoryAction
     data class OnlyWithLocationChanged(val enabled: Boolean) : HistoryAction
+    data object ClearFilters : HistoryAction
     data class DeleteRequested(val workoutId: String) : HistoryAction
     data object DeleteDismissed : HistoryAction
     data object DeleteConfirmed : HistoryAction

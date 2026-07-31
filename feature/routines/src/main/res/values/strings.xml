@@ -31,7 +31,15 @@
     <string name="selected_exercises">%1$d selecionados</string>
     <string name="save_routine">Salvar rotina</string>
     <string name="saved_workouts_title">Rotinas salvas</string>
-    <string name="saved_workouts_description">%1$d opções prontas para iniciar</string>
+    <plurals name="saved_workouts_description">
+        <item quantity="one">%1$d opção pronta para iniciar</item>
+        <item quantity="other">%1$d opções prontas para iniciar</item>
+    </plurals>
+    <string name="search_saved_routines">Buscar nas rotinas</string>
+    <string name="search_saved_routines_hint">Nome, exercício ou pasta</string>
+    <string name="clear_routine_search">Limpar busca de rotinas</string>
+    <string name="routines_search_empty_title">Nenhuma rotina encontrada</string>
+    <string name="routines_search_empty_message">Ajuste a busca para encontrar outros treinos.</string>
     <string name="summary_exercises">exercícios</string>
     <string name="summary_sets">séries planejadas</string>
     <string name="routine_composition">Composição do treino</string>

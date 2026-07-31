@@ -30,4 +30,10 @@ data object ExercisesRoute
 data class ExerciseDetailsRoute(val exerciseId: String)
 
 @Serializable
+data object ProfileRoute
+
+@Serializable
+data object ProgressPhotosRoute
+
+@Serializable
 data object SettingsRoute

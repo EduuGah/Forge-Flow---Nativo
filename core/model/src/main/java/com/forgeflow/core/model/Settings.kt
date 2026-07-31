@@ -26,6 +26,16 @@ enum class WeightUnit {
     POUND,
 }
 
+enum class HealthConnectDataType {
+    BODY_WEIGHT,
+    STEPS,
+    DISTANCE,
+    CALORIES,
+    HEART_RATE,
+    EXERCISE_SESSIONS,
+    SLEEP,
+}
+
 enum class TrainingDay {
     MONDAY,
     TUESDAY,
@@ -45,6 +55,11 @@ data class UserSettings(
     val trainingDays: Set<TrainingDay> = emptySet(),
     val preferredWorkoutTimeMinutes: Int = 18 * 60,
     val healthConnectSyncEnabled: Boolean = false,
+    val healthConnectReadDataTypes: Set<HealthConnectDataType> = setOf(
+        HealthConnectDataType.BODY_WEIGHT,
+        HealthConnectDataType.STEPS,
+        HealthConnectDataType.EXERCISE_SESSIONS,
+    ),
     val hasCompletedOnboarding: Boolean = false,
     val hasRequestedNotificationPermission: Boolean = false,
 )

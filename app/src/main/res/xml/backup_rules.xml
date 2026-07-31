@@ -9,4 +9,7 @@
     <include
         domain="file"
         path="progress_photos/" />
+    <include
+        domain="file"
+        path="profile/" />
 </full-backup-content>

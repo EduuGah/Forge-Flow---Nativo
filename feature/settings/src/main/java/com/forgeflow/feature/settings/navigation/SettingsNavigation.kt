@@ -8,12 +8,21 @@ import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import com.forgeflow.core.navigation.ProfileRoute
+import com.forgeflow.core.navigation.ProgressPhotosRoute
 import com.forgeflow.core.navigation.SettingsRoute
+import com.forgeflow.feature.settings.presentation.ProfileScreen
+import com.forgeflow.feature.settings.presentation.ProgressPhotosScreen
 import com.forgeflow.feature.settings.presentation.SettingsAction
 import com.forgeflow.feature.settings.presentation.SettingsScreen
 import com.forgeflow.feature.settings.presentation.SettingsViewModel
+
+fun NavController.navigateToProgressPhotos() {
+    navigate(ProgressPhotosRoute)
+}
 
 fun NavGraphBuilder.settingsScreen() {
     composable<SettingsRoute> {
@@ -22,24 +31,23 @@ fun NavGraphBuilder.settingsScreen() {
         val permissionContract = remember(viewModel) {
             viewModel.createHealthPermissionContract()
         }
-        val permissionLauncher = rememberLauncherForActivityResult(
-            contract = permissionContract,
-        ) { grantedPermissions ->
-            viewModel.onAction(
-                SettingsAction.HealthConnectPermissionsResult(grantedPermissions),
-            )
+        val permissionLauncher = rememberLauncherForActivityResult(permissionContract) { granted ->
+            viewModel.onAction(SettingsAction.HealthConnectPermissionsResult(granted))
         }
-        val photoPicker = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.PickVisualMedia(),
+        val workoutCsvPicker = rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            uri?.let { viewModel.onAction(SettingsAction.HevyWorkoutFileSelected(it.toString())) }
+        }
+        val measurementCsvPicker = rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument(),
         ) { uri ->
             uri?.let {
-                viewModel.onAction(SettingsAction.ImportProgressPhoto(it.toString()))
+                viewModel.onAction(SettingsAction.HevyMeasurementFileSelected(it.toString()))
             }
         }
         LifecycleResumeEffect(viewModel) {
-            viewModel.onAction(
-                SettingsAction.HealthConnectRefresh,
-            )
+            viewModel.onAction(SettingsAction.HealthConnectRefresh)
             onPauseOrDispose {}
         }
         SettingsScreen(
@@ -48,6 +56,51 @@ fun NavGraphBuilder.settingsScreen() {
             onRequestHealthPermissions = {
                 permissionLauncher.launch(viewModel.requiredHealthPermissions)
             },
+            onSelectWorkoutCsv = { workoutCsvPicker.launch(CSV_MIME_TYPES) },
+            onSelectMeasurementCsv = { measurementCsvPicker.launch(CSV_MIME_TYPES) },
+        )
+    }
+}
+
+fun NavGraphBuilder.profileScreen(
+    onOpenProgressPhotos: () -> Unit,
+) {
+    composable<ProfileRoute> {
+        val viewModel: SettingsViewModel = hiltViewModel()
+        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val avatarPicker = rememberLauncherForActivityResult(
+            ActivityResultContracts.PickVisualMedia(),
+        ) { uri ->
+            uri?.let { viewModel.onAction(SettingsAction.ImportProfilePhoto(it.toString())) }
+        }
+        ProfileScreen(
+            state = state,
+            onAction = viewModel::onAction,
+            onSelectAvatar = {
+                avatarPicker.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
+            },
+            onOpenProgressPhotos = onOpenProgressPhotos,
+        )
+    }
+}
+
+fun NavGraphBuilder.progressPhotosScreen(
+    onBack: () -> Unit,
+) {
+    composable<ProgressPhotosRoute> {
+        val viewModel: SettingsViewModel = hiltViewModel()
+        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val photoPicker = rememberLauncherForActivityResult(
+            ActivityResultContracts.PickVisualMedia(),
+        ) { uri ->
+            uri?.let { viewModel.onAction(SettingsAction.ImportProgressPhoto(it.toString())) }
+        }
+        ProgressPhotosScreen(
+            state = state,
+            onAction = viewModel::onAction,
+            onBack = onBack,
             onAddProgressPhoto = {
                 photoPicker.launch(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
@@ -56,3 +109,10 @@ fun NavGraphBuilder.settingsScreen() {
         )
     }
 }
+
+private val CSV_MIME_TYPES = arrayOf(
+    "text/csv",
+    "text/comma-separated-values",
+    "text/plain",
+    "application/csv",
+)

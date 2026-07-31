@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
@@ -47,6 +48,7 @@ import com.forgeflow.core.designsystem.component.ForgeFlowScaffold
 import com.forgeflow.core.designsystem.testing.ForgeFlowTestTags
 import com.forgeflow.core.navigation.HistoryRoute
 import com.forgeflow.core.navigation.HomeRoute
+import com.forgeflow.core.navigation.ProfileRoute
 import com.forgeflow.core.navigation.RoutinesRoute
 import com.forgeflow.core.navigation.SettingsRoute
 import com.forgeflow.feature.exercises.navigation.exerciseDetailsScreen
@@ -63,6 +65,9 @@ import com.forgeflow.feature.home.navigation.navigateToPlanner
 import com.forgeflow.feature.home.navigation.plannerScreen
 import com.forgeflow.feature.routines.navigation.routinesScreen
 import com.forgeflow.feature.settings.navigation.settingsScreen
+import com.forgeflow.feature.settings.navigation.profileScreen
+import com.forgeflow.feature.settings.navigation.progressPhotosScreen
+import com.forgeflow.feature.settings.navigation.navigateToProgressPhotos
 import com.forgeflow.feature.workout.navigation.activeWorkoutScreen
 import com.forgeflow.feature.workout.navigation.navigateToActiveWorkout
 import kotlinx.coroutines.delay
@@ -135,6 +140,8 @@ fun ForgeFlowApp(
                 onOpenTrainingMap = navController::navigateToTrainingMap,
             )
             trainingMapScreen(onBack = navController::popBackStack)
+            profileScreen(onOpenProgressPhotos = navController::navigateToProgressPhotos)
+            progressPhotosScreen(onBack = navController::popBackStack)
             settingsScreen()
             exercisesScreen(
                 onBack = navController::popBackStack,
@@ -271,6 +278,7 @@ private fun NavHostController.navigateToTopLevel(destination: MainDestination) {
         MainDestination.HOME -> navigateTopLevelRoute(HomeRoute)
         MainDestination.ROUTINES -> navigateTopLevelRoute(RoutinesRoute)
         MainDestination.HISTORY -> navigateTopLevelRoute(HistoryRoute)
+        MainDestination.PROFILE -> navigateTopLevelRoute(ProfileRoute)
         MainDestination.SETTINGS -> navigateTopLevelRoute(SettingsRoute)
     }
 }
@@ -301,9 +309,10 @@ private enum class MainDestination(
         RoutinesRoute::class.qualifiedName,
     ),
     HISTORY(R.string.navigation_history, Icons.Outlined.History, HistoryRoute::class.qualifiedName),
+    PROFILE(R.string.navigation_profile, Icons.Outlined.Person, ProfileRoute::class.qualifiedName),
     SETTINGS(
         R.string.navigation_settings,
-        Icons.Outlined.Person,
+        Icons.Outlined.Settings,
         SettingsRoute::class.qualifiedName,
     ),
 }

@@ -5,23 +5,37 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.forgeflow.core.designsystem.component.ForgeFlowPageHeader
 import com.forgeflow.core.designsystem.component.ForgeFlowScaffold
+import com.forgeflow.core.designsystem.component.ForgeFlowTopAppBar
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.feature.settings.R
 
 @Composable
-fun SettingsScreen(
+fun ProgressPhotosScreen(
     state: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
-    onRequestHealthPermissions: () -> Unit,
-    onSelectWorkoutCsv: () -> Unit,
-    onSelectMeasurementCsv: () -> Unit,
+    onBack: () -> Unit,
+    onAddProgressPhoto: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+    var pendingPhotoDeletion by remember { mutableStateOf<String?>(null) }
+    ForgeFlowScaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            ForgeFlowTopAppBar(
+                title = stringResource(R.string.progress_photos_top_bar),
+                onBack = onBack,
+                backContentDescription = stringResource(R.string.progress_photos_back),
+            )
+        },
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
@@ -34,38 +48,27 @@ fun SettingsScreen(
         ) {
             item {
                 ForgeFlowPageHeader(
-                    eyebrow = stringResource(R.string.settings_eyebrow),
-                    title = stringResource(R.string.settings_title),
-                    description = stringResource(R.string.settings_description),
+                    eyebrow = stringResource(R.string.progress_photos_eyebrow),
+                    title = stringResource(R.string.progress_photos_page_title),
+                    description = stringResource(R.string.progress_photos_page_description),
                 )
             }
             item {
-                DataProtectionSection()
-            }
-            item {
-                HevyImportSection(
+                ProgressPhotosSection(
                     state = state,
-                    onAction = onAction,
-                    onSelectWorkoutCsv = onSelectWorkoutCsv,
-                    onSelectMeasurementCsv = onSelectMeasurementCsv,
-                )
-            }
-            item {
-                AppearanceSection(state = state, onAction = onAction)
-            }
-            item {
-                LayoutSection(state = state, onAction = onAction)
-            }
-            item {
-                TrainingSection(state = state, onAction = onAction)
-            }
-            item {
-                HealthConnectSection(
-                    state = state,
-                    onAction = onAction,
-                    onRequestPermissions = onRequestHealthPermissions,
+                    onAddPhoto = onAddProgressPhoto,
+                    onDeletePhoto = { pendingPhotoDeletion = it },
                 )
             }
         }
+    }
+    pendingPhotoDeletion?.let { photoId ->
+        DeleteProgressPhotoDialog(
+            onConfirm = {
+                pendingPhotoDeletion = null
+                onAction(SettingsAction.DeleteProgressPhoto(photoId))
+            },
+            onDismiss = { pendingPhotoDeletion = null },
+        )
     }
 }

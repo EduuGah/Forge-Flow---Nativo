@@ -13,6 +13,8 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.forgeflow.core.common.di.IoDispatcher
 import com.forgeflow.core.common.result.AppError
 import com.forgeflow.core.common.result.DataResult
+import com.forgeflow.core.model.BodyWeightEntry
+import com.forgeflow.core.model.BodyWeightSource
 import com.forgeflow.core.model.ExperienceLevel
 import com.forgeflow.core.model.ProgressPhoto
 import com.forgeflow.core.model.TrainingGoal
@@ -54,6 +56,88 @@ class DataStoreProfileRepository @Inject constructor(
             preferences[TRAINING_GOAL] = profile.trainingGoal.name
             preferences[EXPERIENCE_LEVEL] = profile.experienceLevel.name
         }
+
+    override suspend fun importProfilePhoto(
+        sourceUri: String,
+    ): DataResult<Unit> = withContext(ioDispatcher) {
+        val photoDirectory = profileDirectory()
+        val source = Uri.parse(sourceUri)
+        val target = File(photoDirectory, "avatar.${source.imageExtension()}")
+        val temporary = File(photoDirectory, "avatar.tmp")
+        runCatching {
+            photoDirectory.mkdirs()
+            require(photoDirectory.isDirectory)
+            context.contentResolver.openInputStream(source).use { input ->
+                requireNotNull(input)
+                temporary.outputStream().use(input::copyTo)
+            }
+            require(temporary.length() > 0)
+            photoDirectory.listFiles()
+                .orEmpty()
+                .filter { it.name.startsWith("avatar.") && it != temporary }
+                .forEach(File::delete)
+            require(temporary.renameTo(target))
+            dataStore.edit { preferences ->
+                preferences[PROFILE_PHOTO_PATH] = target.absolutePath
+            }
+        }.fold(
+            onSuccess = { DataResult.Success(Unit) },
+            onFailure = {
+                temporary.delete()
+                DataResult.Failure(AppError.WriteFailed)
+            },
+        )
+    }
+
+    override suspend fun addBodyWeight(
+        weight: Weight,
+        measuredAt: Instant,
+        bodyFatPercent: Double?,
+    ): DataResult<Unit> {
+        return when (
+            mergeBodyWeightEntries(
+                listOf(
+                    BodyWeightEntry(
+                        id = UUID.randomUUID().toString(),
+                        weight = weight,
+                        measuredAt = measuredAt,
+                        bodyFatPercent = bodyFatPercent,
+                        source = BodyWeightSource.MANUAL,
+                    ),
+                ),
+            )
+        ) {
+            is DataResult.Success -> DataResult.Success(Unit)
+            is DataResult.Failure -> DataResult.Failure(AppError.WriteFailed)
+        }
+    }
+
+    override suspend fun mergeBodyWeightEntries(
+        entries: List<BodyWeightEntry>,
+    ): DataResult<Int> = withContext(ioDispatcher) {
+        var importedCount = 0
+        runCatching {
+            dataStore.edit { preferences ->
+                val current = preferences[BODY_WEIGHT_HISTORY]
+                    .orEmpty()
+                    .mapNotNull { encoded -> encoded.decodeWeightEntry() }
+                    .associateByTo(linkedMapOf(), BodyWeightEntry::id)
+                entries.forEach { entry ->
+                    if (entry.id !in current) importedCount += 1
+                    current[entry.id] = entry
+                }
+                val sorted = current.values.sortedBy(BodyWeightEntry::measuredAt)
+                preferences[BODY_WEIGHT_HISTORY] = sorted
+                    .mapTo(mutableSetOf()) { entry -> entry.encode() }
+                sorted.lastOrNull()?.let { latest ->
+                    preferences[BODY_WEIGHT_GRAMS] = latest.weight.grams
+                }
+            }
+        }.fold(
+            onSuccess = { DataResult.Success(importedCount) },
+            onFailure = { DataResult.Failure(AppError.WriteFailed) },
+        )
+    }
 
     override suspend fun importProgressPhoto(
         sourceUri: String,
@@ -133,6 +217,11 @@ class DataStoreProfileRepository @Inject constructor(
         experienceLevel = preferences[EXPERIENCE_LEVEL]
             ?.let { stored -> ExperienceLevel.entries.firstOrNull { it.name == stored } }
             ?: ExperienceLevel.INTERMEDIATE,
+        profilePhotoPath = preferences[PROFILE_PHOTO_PATH],
+        bodyWeightHistory = preferences[BODY_WEIGHT_HISTORY]
+            .orEmpty()
+            .mapNotNull { encoded -> encoded.decodeWeightEntry() }
+            .sortedBy(BodyWeightEntry::measuredAt),
         progressPhotos = preferences[PROGRESS_PHOTOS]
             .orEmpty()
             .mapNotNull { encoded -> encoded.decodePhoto() }
@@ -152,6 +241,27 @@ class DataStoreProfileRepository @Inject constructor(
         )
     }
 
+    private fun BodyWeightEntry.encode(): String = listOf(
+        id,
+        measuredAt.toEpochMilli().toString(),
+        weight.grams.toString(),
+        bodyFatPercent?.toString().orEmpty(),
+        source.name,
+    ).joinToString(WEIGHT_SEPARATOR.toString())
+
+    private fun String.decodeWeightEntry(): BodyWeightEntry? {
+        val fields = split(WEIGHT_SEPARATOR, limit = 5)
+        if (fields.size != 5) return null
+        return BodyWeightEntry(
+            id = fields[0],
+            measuredAt = fields[1].toLongOrNull()?.let(Instant::ofEpochMilli) ?: return null,
+            weight = fields[2].toLongOrNull()?.let(Weight::fromGrams) ?: return null,
+            bodyFatPercent = fields[3].toDoubleOrNull(),
+            source = BodyWeightSource.entries.firstOrNull { it.name == fields[4] }
+                ?: BodyWeightSource.MANUAL,
+        )
+    }
+
     private fun Uri.imageExtension(): String = when (context.contentResolver.getType(this)) {
         "image/png" -> "png"
         "image/webp" -> "webp"
@@ -162,6 +272,8 @@ class DataStoreProfileRepository @Inject constructor(
 
     private fun progressPhotoDirectory(): File =
         File(context.filesDir, PROGRESS_PHOTO_DIRECTORY)
+
+    private fun profileDirectory(): File = File(context.filesDir, PROFILE_DIRECTORY)
 
     private fun deletePrivatePhoto(path: String) {
         val directory = progressPhotoDirectory().canonicalFile
@@ -186,7 +298,11 @@ class DataStoreProfileRepository @Inject constructor(
         val TRAINING_GOAL = stringPreferencesKey("profile_training_goal")
         val EXPERIENCE_LEVEL = stringPreferencesKey("profile_experience_level")
         val PROGRESS_PHOTOS = stringSetPreferencesKey("profile_progress_photos")
+        val PROFILE_PHOTO_PATH = stringPreferencesKey("profile_photo_path")
+        val BODY_WEIGHT_HISTORY = stringSetPreferencesKey("profile_body_weight_history")
         const val PROGRESS_PHOTO_DIRECTORY = "progress_photos"
+        const val PROFILE_DIRECTORY = "profile"
         const val PHOTO_SEPARATOR = '\t'
+        const val WEIGHT_SEPARATOR = '\t'
     }
 }

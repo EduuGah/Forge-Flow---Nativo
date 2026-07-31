@@ -9,9 +9,19 @@ import androidx.core.net.toUri
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
+import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
+import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.request.AggregateRequest
+import androidx.health.connect.client.time.TimeRangeFilter
+import com.forgeflow.core.model.HealthConnectDataType
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.WorkoutDetails
 import com.forgeflow.core.model.WorkoutSessionStatus
@@ -19,20 +29,45 @@ import com.forgeflow.core.model.gramsIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Instant
 import java.time.ZoneId
 import javax.inject.Inject
 
 class AndroidHealthConnectManager @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : HealthConnectManager {
-    override val requiredPermissions: Set<String> = setOf(
+    override val writePermissions: Set<String> = setOf(
         HealthPermission.getWritePermission(ExerciseSessionRecord::class),
     )
+
+    override fun permissionsFor(dataTypes: Set<HealthConnectDataType>): Set<String> = buildSet {
+        addAll(writePermissions)
+        dataTypes.forEach { dataType ->
+            add(
+                when (dataType) {
+                    HealthConnectDataType.BODY_WEIGHT ->
+                        HealthPermission.getReadPermission(WeightRecord::class)
+                    HealthConnectDataType.STEPS ->
+                        HealthPermission.getReadPermission(StepsRecord::class)
+                    HealthConnectDataType.DISTANCE ->
+                        HealthPermission.getReadPermission(DistanceRecord::class)
+                    HealthConnectDataType.CALORIES ->
+                        HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class)
+                    HealthConnectDataType.HEART_RATE ->
+                        HealthPermission.getReadPermission(HeartRateRecord::class)
+                    HealthConnectDataType.EXERCISE_SESSIONS ->
+                        HealthPermission.getReadPermission(ExerciseSessionRecord::class)
+                    HealthConnectDataType.SLEEP ->
+                        HealthPermission.getReadPermission(SleepSessionRecord::class)
+                },
+            )
+        }
+    }
 
     override fun createPermissionRequestContract(): ActivityResultContract<Set<String>, Set<String>> =
         PermissionController.createRequestPermissionResultContract()
 
-    override suspend fun status(): HealthConnectStatus {
+    override suspend fun status(requiredPermissions: Set<String>): HealthConnectStatus {
         val availability = availability()
         if (availability != HealthConnectAvailability.AVAILABLE) {
             return HealthConnectStatus(availability = availability)
@@ -46,6 +81,102 @@ class AndroidHealthConnectManager @Inject constructor(
         )
     }
 
+    override suspend fun readData(
+        dataTypes: Set<HealthConnectDataType>,
+        startTime: Instant,
+        endTime: Instant,
+    ): HealthConnectReadResult? {
+        if (!endTime.isAfter(startTime)) return null
+        val permissions = permissionsFor(dataTypes)
+        if (!status(permissions).hasPermissions) return null
+        val client = client()
+        val filter = TimeRangeFilter.between(startTime, endTime)
+        return runCatching {
+            val weightSamples = if (HealthConnectDataType.BODY_WEIGHT in dataTypes) {
+                client.readRecords(
+                    ReadRecordsRequest(
+                        recordType = WeightRecord::class,
+                        timeRangeFilter = filter,
+                        ascendingOrder = true,
+                    ),
+                ).records.map { record ->
+                    HealthConnectWeightSample(
+                        recordId = record.metadata.id,
+                        kilograms = record.weight.inKilograms,
+                        measuredAt = record.time,
+                        sourcePackage = record.metadata.dataOrigin.packageName,
+                    )
+                }
+            } else {
+                emptyList()
+            }
+            HealthConnectReadResult(
+                startTime = startTime,
+                endTime = endTime,
+                steps = if (HealthConnectDataType.STEPS in dataTypes) {
+                    client.aggregate(
+                        AggregateRequest(setOf(StepsRecord.COUNT_TOTAL), filter),
+                    )[StepsRecord.COUNT_TOTAL]
+                } else {
+                    null
+                },
+                distanceMeters = if (HealthConnectDataType.DISTANCE in dataTypes) {
+                    client.aggregate(
+                        AggregateRequest(setOf(DistanceRecord.DISTANCE_TOTAL), filter),
+                    )[DistanceRecord.DISTANCE_TOTAL]?.inMeters
+                } else {
+                    null
+                },
+                caloriesKilocalories = if (HealthConnectDataType.CALORIES in dataTypes) {
+                    client.aggregate(
+                        AggregateRequest(setOf(TotalCaloriesBurnedRecord.ENERGY_TOTAL), filter),
+                    )[TotalCaloriesBurnedRecord.ENERGY_TOTAL]?.inKilocalories
+                } else {
+                    null
+                },
+                averageHeartRate = if (HealthConnectDataType.HEART_RATE in dataTypes) {
+                    client.aggregate(
+                        AggregateRequest(setOf(HeartRateRecord.BPM_AVG), filter),
+                    )[HeartRateRecord.BPM_AVG]
+                } else {
+                    null
+                },
+                exerciseSessionCount = if (
+                    HealthConnectDataType.EXERCISE_SESSIONS in dataTypes
+                ) {
+                    client.readRecords(
+                        ReadRecordsRequest(
+                            recordType = ExerciseSessionRecord::class,
+                            timeRangeFilter = filter,
+                        ),
+                    ).records.size
+                } else {
+                    null
+                },
+                exerciseDurationMinutes = if (
+                    HealthConnectDataType.EXERCISE_SESSIONS in dataTypes
+                ) {
+                    client.aggregate(
+                        AggregateRequest(
+                            setOf(ExerciseSessionRecord.EXERCISE_DURATION_TOTAL),
+                            filter,
+                        ),
+                    )[ExerciseSessionRecord.EXERCISE_DURATION_TOTAL]?.toMinutes()
+                } else {
+                    null
+                },
+                sleepMinutes = if (HealthConnectDataType.SLEEP in dataTypes) {
+                    client.aggregate(
+                        AggregateRequest(setOf(SleepSessionRecord.SLEEP_DURATION_TOTAL), filter),
+                    )[SleepSessionRecord.SLEEP_DURATION_TOTAL]?.toMinutes()
+                } else {
+                    null
+                },
+                weightSamples = weightSamples,
+            )
+        }.getOrNull()
+    }
+
     override suspend fun syncWorkout(
         workout: WorkoutDetails,
         weightUnit: WeightUnit,
@@ -55,7 +186,7 @@ class AndroidHealthConnectManager @Inject constructor(
         workouts: List<WorkoutDetails>,
         weightUnit: WeightUnit,
     ): HealthConnectSyncResult {
-        val currentStatus = status()
+        val currentStatus = status(writePermissions)
         if (
             currentStatus.availability != HealthConnectAvailability.AVAILABLE ||
             !currentStatus.hasPermissions
@@ -83,7 +214,7 @@ class AndroidHealthConnectManager @Inject constructor(
     }
 
     override suspend fun deleteWorkout(workoutId: String): Boolean {
-        val currentStatus = status()
+        val currentStatus = status(writePermissions)
         if (
             currentStatus.availability != HealthConnectAvailability.AVAILABLE ||
             !currentStatus.hasPermissions

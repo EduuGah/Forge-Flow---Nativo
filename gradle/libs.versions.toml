@@ -6,6 +6,7 @@ composeBom = "2026.06.01"
 core = "1.18.0"
 coroutines = "1.11.0"
 coil = "3.5.0"
+commonsCsv = "1.14.1"
 dataStore = "1.2.1"
 espresso = "3.7.0"
 hilt = "2.60.1"
@@ -57,6 +58,7 @@ coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-gif = { group = "io.coil-kt.coil3", name = "coil-gif", version.ref = "coil" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+commons-csv = { group = "org.apache.commons", name = "commons-csv", version.ref = "commonsCsv" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 hilt-gradle-plugin = { group = "com.google.dagger", name = "hilt-android-gradle-plugin", version.ref = "hilt" }

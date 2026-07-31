@@ -2,6 +2,7 @@ package com.forgeflow.core.data.settings
 
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.model.AccentColor
+import com.forgeflow.core.model.HealthConnectDataType
 import com.forgeflow.core.model.ThemePreference
 import com.forgeflow.core.model.TrainingDay
 import com.forgeflow.core.model.UserSettings
@@ -26,6 +27,10 @@ interface SettingsRepository {
     suspend fun setPreferredWorkoutTime(minutesFromMidnight: Int): DataResult<Unit>
 
     suspend fun setHealthConnectSyncEnabled(enabled: Boolean): DataResult<Unit>
+
+    suspend fun setHealthConnectReadDataTypes(
+        dataTypes: Set<HealthConnectDataType>,
+    ): DataResult<Unit>
 
     suspend fun setOnboardingCompleted(completed: Boolean): DataResult<Unit>
 

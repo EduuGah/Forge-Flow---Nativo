@@ -23,6 +23,7 @@
     <string name="repetitions_placeholder">0</string>
     <string name="add_set">Adicionar série</string>
     <string name="exercise_set_count">%1$d séries</string>
+    <string name="exercise_reorder_summary">%1$d séries • %2$d concluídas</string>
     <string name="discard_dialog_title">Descartar este treino?</string>
     <string name="discard_dialog_message">As séries registradas nesta sessão serão removidas.</string>
     <string name="discard_confirm">Descartar</string>

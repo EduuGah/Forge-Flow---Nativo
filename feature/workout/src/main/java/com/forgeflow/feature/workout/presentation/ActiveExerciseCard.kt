@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -34,10 +35,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
 import com.forgeflow.core.designsystem.component.ForgeFlowExerciseMedia
 import com.forgeflow.core.designsystem.component.ForgeFlowEyebrow
@@ -68,16 +71,33 @@ internal fun ActiveExerciseCard(
     ForgeFlowCard(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(if (isDragging) 0.58f else 1f),
+            .zIndex(if (isDragging) 1f else 0f)
+            .graphicsLayer {
+                translationY = if (isDragging) accumulatedDrag else 0f
+                scaleX = if (isDragging) 1.025f else 1f
+                scaleY = if (isDragging) 1.025f else 1f
+                shadowElevation = if (isDragging) 18.dp.toPx() else 0f
+            }
+            .alpha(if (isDragging) 0.82f else 1f),
+        contentPadding = if (detailsHidden) {
+            PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+        } else {
+            PaddingValues(ForgeFlowDesign.spacing.card)
+        },
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
+            horizontalArrangement = Arrangement.spacedBy(
+                if (detailsHidden) ForgeFlowDesign.spacing.extraSmall
+                else ForgeFlowDesign.spacing.medium,
+            ),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
             IconButton(
                 onClick = {},
-                modifier = Modifier.pointerInput(exercise.id) {
+                modifier = Modifier
+                    .size(if (detailsHidden) 40.dp else 48.dp)
+                    .pointerInput(exercise.id) {
                     detectDragGesturesAfterLongPress(
                         onDragStart = {
                             accumulatedDrag = 0f
@@ -94,14 +114,16 @@ internal fun ActiveExerciseCard(
                     ) { change, dragAmount ->
                         change.consume()
                         accumulatedDrag += dragAmount.y
-                        if (kotlin.math.abs(accumulatedDrag) >= 52.dp.toPx()) {
+                        val moveThreshold = 58.dp.toPx()
+                        if (kotlin.math.abs(accumulatedDrag) >= moveThreshold) {
+                            val direction = if (accumulatedDrag > 0) 1 else -1
                             onAction(
                                 ActiveWorkoutAction.MoveExercise(
                                     exercise.id,
-                                    if (accumulatedDrag > 0) 1 else -1,
+                                    direction,
                                 ),
                             )
-                            accumulatedDrag = 0f
+                            accumulatedDrag -= direction * moveThreshold
                         }
                     }
                 },
@@ -112,97 +134,124 @@ internal fun ActiveExerciseCard(
                     tint = ForgeFlowDesign.colors.textSecondary,
                 )
             }
-            ForgeFlowExerciseMedia(
-                mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
-                contentDescription = exercise.name,
-                modifier = Modifier
-                    .size(60.dp)
-                    .border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f),
-                        shape = CircleShape,
-                    ),
-                contentScale = ContentScale.Fit,
-                shape = CircleShape,
-                containerColor = Color.White,
-            )
+            if (!isReordering) {
+                ForgeFlowExerciseMedia(
+                    mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
+                    contentDescription = exercise.name,
+                    modifier = Modifier
+                        .size(if (collapsed) 38.dp else 60.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f),
+                            shape = CircleShape,
+                        ),
+                    contentScale = ContentScale.Fit,
+                    shape = CircleShape,
+                    containerColor = Color.White,
+                )
+            }
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraSmall),
             ) {
-                ForgeFlowEyebrow(
-                    text = stringResource(exercise.muscleGroup.labelResource()),
-                )
+                if (!detailsHidden) {
+                    ForgeFlowEyebrow(
+                        text = stringResource(exercise.muscleGroup.labelResource()),
+                    )
+                }
                 Text(
                     text = exercise.name,
                     modifier = Modifier.clickable {
                         exercise.exerciseId?.let(onOpenExercise)
                     },
-                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
+                    style = if (detailsHidden) MaterialTheme.typography.titleSmall
+                    else MaterialTheme.typography.titleLarge,
                 )
-                Text(
-                    text = exercise.lastPerformance?.let {
-                        stringResource(
-                            R.string.last_performance,
-                            it,
+                if (detailsHidden) {
+                    Text(
+                        text = stringResource(
+                            R.string.exercise_reorder_summary,
+                            exercise.sets.size,
+                            exercise.sets.count(ActiveSetUiModel::completed),
+                        ),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        maxLines = 1,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                } else {
+                    Text(
+                        text = exercise.lastPerformance?.let {
                             stringResource(
-                                if (weightUnit == WeightUnit.KILOGRAM) {
-                                    R.string.weight_header_kg
-                                } else {
-                                    R.string.weight_header_lb
-                                },
-                            ),
-                        )
-                    } ?: stringResource(R.string.no_previous_performance),
-                    color = ForgeFlowDesign.colors.textSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            IconButton(onClick = onToggleCollapsed) {
-                Icon(
-                    imageVector = if (detailsHidden) Icons.Outlined.ExpandMore
-                    else Icons.Outlined.ExpandLess,
-                    contentDescription = stringResource(
-                        if (detailsHidden) R.string.expand_exercise else R.string.collapse_exercise,
-                    ),
-                )
-            }
-            Box(modifier = Modifier.size(48.dp)) {
-                IconButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.Outlined.MoreVert,
-                        contentDescription = stringResource(R.string.exercise_options),
+                                R.string.last_performance,
+                                it,
+                                stringResource(
+                                    if (weightUnit == WeightUnit.KILOGRAM) {
+                                        R.string.weight_header_kg
+                                    } else {
+                                        R.string.weight_header_lb
+                                    },
+                                ),
+                            )
+                        } ?: stringResource(R.string.no_previous_performance),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
+            }
+            if (!isReordering) {
+                IconButton(
+                    onClick = onToggleCollapsed,
+                    modifier = Modifier.size(if (collapsed) 40.dp else 48.dp),
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.open_exercise_history)) },
-                        onClick = {
-                            menuExpanded = false
-                            exercise.exerciseId?.let(onOpenExercise)
-                        },
+                    Icon(
+                        imageVector = if (detailsHidden) Icons.Outlined.ExpandMore
+                        else Icons.Outlined.ExpandLess,
+                        contentDescription = stringResource(
+                            if (detailsHidden) R.string.expand_exercise
+                            else R.string.collapse_exercise,
+                        ),
                     )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.replace_exercise)) },
-                        leadingIcon = { Icon(Icons.Outlined.SwapHoriz, contentDescription = null) },
-                        onClick = {
-                            menuExpanded = false
-                            onReplaceExercise()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.remove_exercise)) },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.DeleteOutline, contentDescription = null)
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onAction(ActiveWorkoutAction.DeleteExercise(exercise.id))
-                        },
-                    )
+                }
+                Box(modifier = Modifier.size(if (collapsed) 40.dp else 48.dp)) {
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.Outlined.MoreVert,
+                            contentDescription = stringResource(R.string.exercise_options),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.open_exercise_history)) },
+                            onClick = {
+                                menuExpanded = false
+                                exercise.exerciseId?.let(onOpenExercise)
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.replace_exercise)) },
+                            leadingIcon = {
+                                Icon(Icons.Outlined.SwapHoriz, contentDescription = null)
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onReplaceExercise()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.remove_exercise)) },
+                            leadingIcon = {
+                                Icon(Icons.Outlined.DeleteOutline, contentDescription = null)
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onAction(ActiveWorkoutAction.DeleteExercise(exercise.id))
+                            },
+                        )
+                    }
                 }
             }
         }

@@ -22,6 +22,7 @@ fun ExercisesScreen(
     onAction: (ExercisesAction) -> Unit,
     onBack: () -> Unit,
     onOpenExercise: (String) -> Unit,
+    onSelectExercisePhoto: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -85,6 +86,7 @@ fun ExercisesScreen(
         ExerciseEditorSheet(
             editor = editor,
             isSaving = state.isSaving,
+            onSelectPhoto = onSelectExercisePhoto,
             onAction = onAction,
         )
     }

@@ -10,7 +10,9 @@ import com.forgeflow.core.data.exercise.DefaultExerciseRepository
 import com.forgeflow.core.data.backup.DefaultLocalDataExportRepository
 import com.forgeflow.core.data.backup.LocalDataExportRepository
 import com.forgeflow.core.data.exercise.ExerciseLocalDataSource
+import com.forgeflow.core.data.exercise.ExerciseMediaStore
 import com.forgeflow.core.data.exercise.ExerciseRepository
+import com.forgeflow.core.data.exercise.LocalExerciseMediaStore
 import com.forgeflow.core.data.exercise.RoomExerciseLocalDataSource
 import com.forgeflow.core.data.profile.DataStoreProfileRepository
 import com.forgeflow.core.data.profile.ProfileRepository
@@ -51,6 +53,12 @@ abstract class RepositoryModule {
     abstract fun bindExerciseRepository(
         implementation: DefaultExerciseRepository,
     ): ExerciseRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindExerciseMediaStore(
+        implementation: LocalExerciseMediaStore,
+    ): ExerciseMediaStore
 
     @Binds
     @Singleton

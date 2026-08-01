@@ -43,6 +43,9 @@ data class ExerciseEditorUiState(
     val muscleGroup: MuscleGroup = MuscleGroup.CHEST,
     val equipment: Equipment = Equipment.BARBELL,
     val instructions: String = "",
+    val mediaUri: String? = null,
+    val pendingMediaUri: String? = null,
+    val removeMedia: Boolean = false,
 )
 
 sealed interface ExercisesAction {
@@ -55,6 +58,8 @@ sealed interface ExercisesAction {
     data class EditorMuscleChanged(val value: MuscleGroup) : ExercisesAction
     data class EditorEquipmentChanged(val value: Equipment) : ExercisesAction
     data class EditorInstructionsChanged(val value: String) : ExercisesAction
+    data class EditorPhotoSelected(val uri: String) : ExercisesAction
+    data object RemoveEditorPhoto : ExercisesAction
     data object SaveExercise : ExercisesAction
     data class DeleteExercise(val id: String) : ExercisesAction
     data object Retry : ExercisesAction

@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.forgeflow.core.designsystem.component.ForgeFlowEmptyState
 import com.forgeflow.core.designsystem.component.ForgeFlowErrorState
@@ -240,7 +241,9 @@ private fun WorkoutContent(
             end = ForgeFlowDesign.spacing.screenHorizontal,
             bottom = contentPadding.calculateBottomPadding() + ForgeFlowDesign.spacing.large,
         ),
-        verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.section),
+        verticalArrangement = Arrangement.spacedBy(
+            if (reorderingExerciseId != null) 6.dp else ForgeFlowDesign.spacing.section,
+        ),
     ) {
         item {
             WorkoutHeader(workout = workout, onBack = onBack)

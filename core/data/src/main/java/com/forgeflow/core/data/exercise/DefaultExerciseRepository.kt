@@ -18,6 +18,7 @@ class DefaultExerciseRepository @Inject constructor(
     private val localDataSource: ExerciseLocalDataSource,
     private val clock: AppClock,
     private val catalogProvider: ExerciseCatalogProvider = ExerciseCatalogProvider.empty(),
+    private val mediaStore: ExerciseMediaStore = ExerciseMediaStore.None,
 ) : ExerciseRepository {
     override fun observeExercises(): Flow<DataResult<List<Exercise>>> =
         localDataSource.observeExercises()
@@ -49,11 +50,18 @@ class DefaultExerciseRepository @Inject constructor(
         muscleGroup: MuscleGroup,
         equipment: Equipment,
         instructions: String,
+        sourceMediaUri: String?,
+        removeMedia: Boolean,
     ): DataResult<ExerciseId> = runCatching {
         require(name.isNotBlank())
         val exerciseId = id ?: ExerciseId.create()
         val existing = localDataSource.getExercise(exerciseId.value)
         val now = clock.now()
+        val media = when {
+            removeMedia -> null
+            sourceMediaUri != null -> mediaStore.importPhoto(exerciseId, sourceMediaUri)
+            else -> existing?.asExternalModel()?.media
+        }
         Exercise(
             id = exerciseId,
             name = name.trim(),
@@ -61,11 +69,12 @@ class DefaultExerciseRepository @Inject constructor(
             secondaryMuscleGroups = emptySet(),
             equipment = equipment,
             instructions = instructions.trim(),
-            media = existing?.asExternalModel()?.media,
+            media = media,
             isCustom = true,
             createdAt = existing?.createdAtEpochMillis?.let(java.time.Instant::ofEpochMilli) ?: now,
             updatedAt = now,
         ).asEntity().also { localDataSource.upsertExercise(it) }
+        if (removeMedia) mediaStore.delete(exerciseId)
         exerciseId
     }.fold(
         onSuccess = { DataResult.Success(it) },
@@ -74,6 +83,7 @@ class DefaultExerciseRepository @Inject constructor(
 
     override suspend fun deleteCustomExercise(id: ExerciseId): DataResult<Unit> = runCatching {
         check(localDataSource.deleteCustomExercise(id.value))
+        mediaStore.delete(id)
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },

@@ -3,7 +3,6 @@ package com.forgeflow.feature.settings.presentation
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,6 +67,7 @@ import com.forgeflow.core.designsystem.component.ForgeFlowOutlinedButton
 import com.forgeflow.core.designsystem.component.ForgeFlowPageHeader
 import com.forgeflow.core.designsystem.component.ForgeFlowScaffold
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
+import com.forgeflow.core.designsystem.gesture.detectTwoFingerTransformGestures
 import com.forgeflow.core.model.ExperienceLevel
 import com.forgeflow.core.model.TrainingGoal
 import com.forgeflow.core.model.WeightUnit
@@ -297,7 +297,8 @@ private fun AvatarCropDialog(
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                         .pointerInput(sourceUri) {
                             viewportSize = size.width.toFloat()
-                            detectTransformGestures { _, drag, gestureZoom, gestureRotation ->
+                            detectTwoFingerTransformGestures {
+                                    _, drag, gestureZoom, gestureRotation ->
                                 zoom = (zoom * gestureZoom).coerceIn(1f, 4f)
                                 rotationDegrees = normalizeRotation(
                                     rotationDegrees + gestureRotation,

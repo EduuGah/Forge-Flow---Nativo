@@ -8,7 +8,7 @@
     <string name="profile_avatar_description">Foto do perfil</string>
     <string name="profile_change_avatar">Alterar foto do perfil</string>
     <string name="avatar_crop_title">Enquadrar foto</string>
-    <string name="avatar_crop_description">Arraste, aproxime com dois dedos ou gire para definir como a foto aparecerá no perfil.</string>
+    <string name="avatar_crop_description">Use dois dedos em pinça para mover, ampliar e girar a foto dentro do círculo.</string>
     <string name="avatar_crop_preview">Pré-visualização circular da foto</string>
     <string name="avatar_crop_zoom">Zoom</string>
     <string name="avatar_crop_rotate">Girar foto 90 graus</string>

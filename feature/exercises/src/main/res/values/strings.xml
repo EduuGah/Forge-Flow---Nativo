@@ -82,4 +82,9 @@
     <string name="record_set_volume">Recorde de volume</string>
     <string name="record_weight_helper">A maior carga concluída, independentemente das repetições.</string>
     <string name="record_set_volume_helper">A série com maior peso × repetições.</string>
+    <string name="exercise_photo">Foto do exercício</string>
+    <string name="exercise_photo_preview">Pré-visualização da foto do exercício</string>
+    <string name="exercise_photo_add">Adicionar foto</string>
+    <string name="exercise_photo_change">Trocar foto</string>
+    <string name="exercise_photo_remove">Remover foto</string>
 </resources>

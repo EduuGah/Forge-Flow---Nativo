@@ -2,7 +2,6 @@ package com.forgeflow.feature.history.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -70,6 +69,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
+import com.forgeflow.core.designsystem.gesture.detectTwoFingerTransformGestures
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.feature.history.R
 import kotlinx.coroutines.launch
@@ -328,7 +328,7 @@ private fun WorkoutStoryCanvas(
                     .fillMaxSize()
                     .background(palette.photoScrim)
                     .pointerInput(backgroundUri) {
-                        detectTransformGestures { _, pan, zoom, rotation ->
+                        detectTwoFingerTransformGestures { _, pan, zoom, rotation ->
                             onTransformPhoto(pan, zoom, rotation)
                         }
                     },

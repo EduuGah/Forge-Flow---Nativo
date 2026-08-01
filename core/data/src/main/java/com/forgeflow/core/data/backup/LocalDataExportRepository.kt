@@ -103,6 +103,11 @@ class DefaultLocalDataExportRepository @Inject constructor(
 
     private companion object {
         const val SETTINGS_FILE_NAME = "forgeflow_settings.preferences_pb"
-        val EXPORT_DIRECTORIES = listOf("profile", "progress_photos", "nutrition_photos")
+        val EXPORT_DIRECTORIES = listOf(
+            "profile",
+            "progress_photos",
+            "nutrition_photos",
+            "exercise_media",
+        )
     }
 }

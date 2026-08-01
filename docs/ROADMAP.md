@@ -49,6 +49,9 @@
 - [x] Métricas, gráficos e evolução por exercício
 - [x] Recordes de carga e volume
 - [x] Calendário, metas, horários e sequências
+- [x] Metas avançadas de carga por exercício, treinos, volume e duração
+- [x] Metas únicas, diárias, semanais e mensais com prazo opcional
+- [x] Progresso de metas calculado automaticamente pelo histórico real
 - [x] Mapa por treino e mapa geral de locais
 - [x] Perfil local, peso corporal e editor circular de avatar
 - [x] Avatar persistente com zoom, movimento e rotação por gesto ou botão
@@ -129,7 +132,7 @@
 
 ## Depois
 
-- [ ] Tutorial guiado
+- [x] Tutorial guiado
 - [ ] Wear OS
 - [ ] Ícone e splash finais
 - [ ] Assinatura e build de produção

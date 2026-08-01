@@ -16,7 +16,8 @@
     <string name="drawer_nutrition">Nutrição</string>
     <string name="drawer_health">Saúde e passos</string>
     <string name="drawer_map">Mapa de treinos</string>
-    <string name="drawer_planner">Agenda e metas</string>
+    <string name="drawer_goals">Metas</string>
+    <string name="drawer_planner">Agenda de treinos</string>
     <string name="drawer_exercises">Biblioteca de exercícios</string>
     <string name="active_workout_bar_label">Treino ativo</string>
     <string name="active_workout_bar_details">%1$d/%2$d séries • %3$s</string>

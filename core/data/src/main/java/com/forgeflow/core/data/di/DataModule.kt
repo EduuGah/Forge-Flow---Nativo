@@ -12,6 +12,8 @@ import com.forgeflow.core.data.backup.LocalDataExportRepository
 import com.forgeflow.core.data.exercise.ExerciseLocalDataSource
 import com.forgeflow.core.data.exercise.ExerciseMediaStore
 import com.forgeflow.core.data.exercise.ExerciseRepository
+import com.forgeflow.core.data.goals.DataStoreGoalRepository
+import com.forgeflow.core.data.goals.GoalRepository
 import com.forgeflow.core.data.exercise.LocalExerciseMediaStore
 import com.forgeflow.core.data.exercise.RoomExerciseLocalDataSource
 import com.forgeflow.core.data.profile.DataStoreProfileRepository
@@ -77,6 +79,12 @@ abstract class RepositoryModule {
     abstract fun bindNutritionRepository(
         implementation: DataStoreNutritionRepository,
     ): NutritionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindGoalRepository(
+        implementation: DataStoreGoalRepository,
+    ): GoalRepository
 
     @Binds
     @Singleton

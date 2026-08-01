@@ -8,11 +8,14 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.forgeflow.core.navigation.EvolutionRoute
 import com.forgeflow.core.navigation.HomeRoute
+import com.forgeflow.core.navigation.GoalsRoute
 import com.forgeflow.core.navigation.PlannerRoute
 import com.forgeflow.feature.home.presentation.EvolutionScreen
 import com.forgeflow.feature.home.presentation.EvolutionViewModel
 import com.forgeflow.feature.home.presentation.HomeScreen
 import com.forgeflow.feature.home.presentation.HomeViewModel
+import com.forgeflow.feature.home.presentation.GoalsScreen
+import com.forgeflow.feature.home.presentation.GoalsViewModel
 import com.forgeflow.feature.home.presentation.PlannerScreen
 import com.forgeflow.feature.home.presentation.PlannerViewModel
 
@@ -41,15 +44,35 @@ fun NavController.navigateToPlanner() {
     navigate(PlannerRoute)
 }
 
+fun NavController.navigateToGoals() {
+    navigate(GoalsRoute)
+}
+
 fun NavController.navigateToEvolution() {
     navigate(EvolutionRoute)
 }
 
-fun NavGraphBuilder.plannerScreen(onBack: () -> Unit) {
+fun NavGraphBuilder.plannerScreen(
+    onBack: () -> Unit,
+    onOpenGoals: () -> Unit,
+) {
     composable<PlannerRoute> {
         val viewModel: PlannerViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsStateWithLifecycle()
         PlannerScreen(
+            state = state,
+            onAction = viewModel::onAction,
+            onBack = onBack,
+            onOpenGoals = onOpenGoals,
+        )
+    }
+}
+
+fun NavGraphBuilder.goalsScreen(onBack: () -> Unit) {
+    composable<GoalsRoute> {
+        val viewModel: GoalsViewModel = hiltViewModel()
+        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        GoalsScreen(
             state = state,
             onAction = viewModel::onAction,
             onBack = onBack,

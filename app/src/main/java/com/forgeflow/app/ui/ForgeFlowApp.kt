@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.DrawerValue
@@ -67,6 +68,7 @@ import com.forgeflow.core.designsystem.testing.ForgeFlowTestTags
 import com.forgeflow.core.navigation.HistoryRoute
 import com.forgeflow.core.navigation.HealthDashboardRoute
 import com.forgeflow.core.navigation.HomeRoute
+import com.forgeflow.core.navigation.GoalsRoute
 import com.forgeflow.core.navigation.EvolutionRoute
 import com.forgeflow.core.navigation.ExercisesRoute
 import com.forgeflow.core.navigation.NutritionRoute
@@ -86,6 +88,8 @@ import com.forgeflow.feature.history.navigation.navigateToTrainingMap
 import com.forgeflow.feature.history.navigation.trainingMapScreen
 import com.forgeflow.feature.home.navigation.evolutionScreen
 import com.forgeflow.feature.home.navigation.homeScreen
+import com.forgeflow.feature.home.navigation.goalsScreen
+import com.forgeflow.feature.home.navigation.navigateToGoals
 import com.forgeflow.feature.home.navigation.navigateToEvolution
 import com.forgeflow.feature.home.navigation.navigateToPlanner
 import com.forgeflow.feature.home.navigation.plannerScreen
@@ -178,7 +182,11 @@ fun ForgeFlowApp(
                         onOpenPlanner = navController::navigateToPlanner,
                         onOpenEvolution = navController::navigateToEvolution,
                     )
-                    plannerScreen(onBack = navController::popBackStack)
+                    plannerScreen(
+                        onBack = navController::popBackStack,
+                        onOpenGoals = navController::navigateToGoals,
+                    )
+                    goalsScreen(onBack = navController::popBackStack)
                     evolutionScreen(
                         onBack = navController::popBackStack,
                         onOpenExercise = navController::navigateToExerciseDetails,
@@ -466,6 +474,7 @@ private fun NavHostController.navigateToDrawerDestination(destination: DrawerDes
         DrawerDestination.NUTRITION -> navigateDrawerRoute(NutritionRoute)
         DrawerDestination.HEALTH -> navigateDrawerRoute(HealthDashboardRoute)
         DrawerDestination.MAP -> navigateDrawerRoute(TrainingMapRoute)
+        DrawerDestination.GOALS -> navigateDrawerRoute(GoalsRoute)
         DrawerDestination.PLANNER -> navigateDrawerRoute(PlannerRoute)
         DrawerDestination.EXERCISES -> navigateDrawerRoute(ExercisesRoute)
         DrawerDestination.SETTINGS -> navigateDrawerRoute(SettingsRoute)
@@ -524,6 +533,7 @@ private enum class DrawerDestination(
         HealthDashboardRoute::class.qualifiedName,
     ),
     MAP(R.string.drawer_map, Icons.Outlined.Map, TrainingMapRoute::class.qualifiedName),
+    GOALS(R.string.drawer_goals, Icons.Outlined.Flag, GoalsRoute::class.qualifiedName),
     PLANNER(R.string.drawer_planner, Icons.Outlined.CalendarMonth, PlannerRoute::class.qualifiedName),
     EXERCISES(R.string.drawer_exercises, Icons.Outlined.FitnessCenter, ExercisesRoute::class.qualifiedName),
     SETTINGS(R.string.navigation_settings, Icons.Outlined.Settings, SettingsRoute::class.qualifiedName),

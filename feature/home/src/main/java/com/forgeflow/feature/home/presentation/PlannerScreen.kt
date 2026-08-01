@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
 import com.forgeflow.core.designsystem.component.ForgeFlowEyebrow
 import com.forgeflow.core.designsystem.component.ForgeFlowLoadingState
+import com.forgeflow.core.designsystem.component.ForgeFlowOutlinedButton
 import com.forgeflow.core.designsystem.component.ForgeFlowScaffold
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.core.model.TrainingDay
@@ -52,6 +54,7 @@ fun PlannerScreen(
     state: PlannerUiState,
     onAction: (PlannerAction) -> Unit,
     onBack: () -> Unit,
+    onOpenGoals: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -92,6 +95,9 @@ fun PlannerScreen(
                     )
                 }
                 item {
+                    PlannerAdvancedGoalsPanel(onOpenGoals = onOpenGoals)
+                }
+                item {
                     PlannerCalendar(
                         state = state,
                         onPreviousMonth = { onAction(PlannerAction.PreviousMonth) },
@@ -117,6 +123,29 @@ fun PlannerScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PlannerAdvancedGoalsPanel(onOpenGoals: () -> Unit) {
+    ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+        ForgeFlowEyebrow(text = stringResource(R.string.planner_goals_eyebrow))
+        Text(
+            text = stringResource(R.string.planner_goals_title),
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleLarge,
+        )
+        Text(
+            text = stringResource(R.string.planner_goals_description),
+            color = ForgeFlowDesign.colors.textSecondary,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        ForgeFlowOutlinedButton(
+            text = stringResource(R.string.planner_goals_open),
+            onClick = onOpenGoals,
+            modifier = Modifier.fillMaxWidth(),
+            icon = Icons.Outlined.Flag,
+        )
     }
 }
 

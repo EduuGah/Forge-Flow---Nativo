@@ -31,7 +31,26 @@ data class SettingsUiState(
     val healthSyncResult: HealthSyncUiResult? = null,
     val isReadingHealthData: Boolean = false,
     val healthReadResult: HealthReadUiResult? = null,
+    val isExportingData: Boolean = false,
+    val dataExportResult: DataExportUiResult? = null,
+    val account: AccountUiModel = AccountUiModel(),
 )
+
+@Immutable
+data class AccountUiModel(
+    val isConfigured: Boolean = false,
+    val isSignedIn: Boolean = false,
+    val displayName: String? = null,
+    val email: String? = null,
+    val photoUrl: String? = null,
+    val isSigningIn: Boolean = false,
+    val operationFailed: Boolean = false,
+)
+
+enum class DataExportUiResult {
+    SUCCESS,
+    FAILED,
+}
 
 @Immutable
 data class SettingsProfileUiModel(
@@ -97,6 +116,7 @@ data class HealthReadUiResult(
 @Immutable
 data class BodyWeightEditorUiState(
     val value: String = "",
+    val measuredAtEpochMillis: Long = 0L,
     val isSaving: Boolean = false,
 )
 
@@ -142,10 +162,12 @@ sealed interface SettingsAction {
         val zoom: Float,
         val horizontalOffset: Float,
         val verticalOffset: Float,
+        val rotationDegrees: Float,
     ) : SettingsAction
     data object OpenBodyWeightEditor : SettingsAction
     data object CloseBodyWeightEditor : SettingsAction
     data class BodyWeightChanged(val value: String) : SettingsAction
+    data class BodyWeightDateChanged(val epochMillis: Long) : SettingsAction
     data object SaveBodyWeight : SettingsAction
     data class ImportProgressPhoto(val sourceUri: String) : SettingsAction
     data class DeleteProgressPhoto(val photoId: String) : SettingsAction
@@ -170,4 +192,10 @@ sealed interface SettingsAction {
     data class HevyWorkoutFileSelected(val sourceUri: String) : SettingsAction
     data class HevyMeasurementFileSelected(val sourceUri: String) : SettingsAction
     data object ImportHevyData : SettingsAction
+    data class ExportData(val targetUri: String) : SettingsAction
+    data object DismissDataExportResult : SettingsAction
+    data class GoogleIdTokenReceived(val idToken: String) : SettingsAction
+    data object GoogleSignInFailed : SettingsAction
+    data object SignOut : SettingsAction
+    data object DismissAccountError : SettingsAction
 }

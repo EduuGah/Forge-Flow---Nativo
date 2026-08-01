@@ -287,9 +287,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.exerciseSummary(
             if (exercise.personalRecords.isNotEmpty()) {
                 HorizontalDivider(color = ForgeFlowDesign.colors.divider)
                 Text(
-                    text = stringResource(R.string.details_recent_records),
+                    text = stringResource(R.string.details_record_explanation),
                     color = ForgeFlowDesign.colors.textSecondary,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                 )
                 exercise.personalRecords.forEachIndexed { index, record ->
                     if (index > 0) {
@@ -297,10 +297,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.exerciseSummary(
                             color = ForgeFlowDesign.colors.divider.copy(alpha = 0.65f),
                         )
                     }
-                    PersonalRecordRow(
-                        record = record,
-                        isLatest = index == 0,
-                    )
+                    PersonalRecordSummary(record)
                 }
             }
         }
@@ -332,6 +329,18 @@ private fun androidx.compose.foundation.lazy.LazyListScope.exerciseHistory(
 private fun androidx.compose.foundation.lazy.LazyListScope.exerciseInstructions(
     exercise: ExerciseDetailsUiModel,
 ) {
+    val instructionLines = exercise.instructions
+        .lineSequence()
+        .map(String::trim)
+        .filter(String::isNotBlank)
+        .toList()
+    val mistakes = instructionLines
+        .filter { it.startsWith("Evite", ignoreCase = true) }
+        .map { it.substringAfter(':', it).removePrefix("Evite ") }
+        .ifEmpty { listOf(defaultExerciseMistake(exercise)) }
+    val executionSteps = instructionLines.filterNot {
+        it.startsWith("Evite", ignoreCase = true)
+    }
     item {
         Column(
             modifier = Modifier.padding(
@@ -343,15 +352,56 @@ private fun androidx.compose.foundation.lazy.LazyListScope.exerciseInstructions(
                 text = stringResource(R.string.details_execution),
                 style = MaterialTheme.typography.titleLarge,
             )
+            if (executionSteps.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.details_no_instructions),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            } else {
+                executionSteps.forEachIndexed { index, instruction ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        ForgeFlowPill(text = (index + 1).toString())
+                        Text(
+                            text = instruction,
+                            modifier = Modifier.weight(1f),
+                            color = ForgeFlowDesign.colors.textSecondary,
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+            }
             Text(
-                text = exercise.instructions.ifBlank {
-                    stringResource(R.string.details_no_instructions)
-                },
-                color = ForgeFlowDesign.colors.textSecondary,
-                style = MaterialTheme.typography.bodyLarge,
+                text = stringResource(R.string.details_avoid),
+                style = MaterialTheme.typography.titleMedium,
             )
+            mistakes.forEach { mistake ->
+                Text(
+                    text = "• $mistake",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
     }
+}
+
+private fun defaultExerciseMistake(exercise: ExerciseDetailsUiModel): String = when (
+    exercise.equipment
+) {
+    Equipment.BARBELL,
+    Equipment.DUMBBELL,
+    -> "Usar impulso, perder a postura para mover mais carga ou soltar o peso na volta."
+    Equipment.MACHINE,
+    Equipment.CABLE,
+    -> "Desalinhar as articulações, bater a pilha de pesos ou perder a tensão entre repetições."
+    Equipment.BODYWEIGHT ->
+        "Sacrificar o alinhamento e a amplitude para completar mais repetições."
+    Equipment.OTHER ->
+        "Acelerar a execução ou insistir em uma amplitude que provoque dor articular."
 }
 
 @Composable
@@ -596,57 +646,90 @@ private fun ExerciseSessionCard(
 }
 
 @Composable
-private fun PersonalRecordRow(
-    record: ExercisePersonalRecordUiModel,
-    isLatest: Boolean,
+private fun PersonalRecordSummary(
+    summary: ExerciseRecordSummaryUiModel,
 ) {
-    val recordTypeLabel = record.types
-        .map { type -> stringResource(type.labelResource()) }
-        .joinToString(" + ")
-    val emphasisColor = if (isLatest) {
-        ForgeFlowDesign.colors.warning
-    } else {
-        ForgeFlowDesign.colors.textSecondary
-    }
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
     ) {
-        Icon(
-            imageVector = Icons.Outlined.EmojiEvents,
-            contentDescription = null,
-            tint = emphasisColor,
-        )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = recordTypeLabel,
-                color = if (isLatest) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    ForgeFlowDesign.colors.textSecondary
-                },
-                style = MaterialTheme.typography.titleSmall,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.EmojiEvents,
+                contentDescription = null,
+                tint = ForgeFlowDesign.colors.warning,
             )
-            Text(
-                text = stringResource(
-                    if (isLatest) R.string.record_current else R.string.record_previous,
-                    record.workoutName,
-                    record.date,
-                ),
-                color = ForgeFlowDesign.colors.textSecondary,
-                style = MaterialTheme.typography.bodySmall,
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(summary.type.labelResource()),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = stringResource(summary.type.helperResource()),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
-        Text(
-            text = record.performance,
-            color = if (isLatest) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                ForgeFlowDesign.colors.textSecondary
-            },
-            style = MaterialTheme.typography.labelLarge,
+        PersonalRecordPerformance(
+            record = summary.current,
+            current = true,
         )
+        summary.previous.forEach { previous ->
+            PersonalRecordPerformance(record = previous, current = false)
+        }
+    }
+}
+
+@Composable
+private fun PersonalRecordPerformance(
+    record: ExercisePersonalRecordUiModel,
+    current: Boolean,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = if (current) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
+        },
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Row(
+            modifier = Modifier.padding(ForgeFlowDesign.spacing.small),
+            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(
+                        if (current) R.string.record_current else R.string.record_previous,
+                        record.workoutName,
+                        record.date,
+                    ),
+                    color = if (current) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        ForgeFlowDesign.colors.textSecondary
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    text = record.performance,
+                    color = if (current) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        ForgeFlowDesign.colors.textSecondary
+                    },
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
+        }
     }
 }
 
@@ -689,6 +772,12 @@ private fun PersonalRecordType.shortLabel(): String = when (this) {
 private fun PersonalRecordType.labelResource(): Int = when (this) {
     PersonalRecordType.WEIGHT -> R.string.record_weight
     PersonalRecordType.SET_VOLUME -> R.string.record_set_volume
+}
+
+@StringRes
+private fun PersonalRecordType.helperResource(): Int = when (this) {
+    PersonalRecordType.WEIGHT -> R.string.record_weight_helper
+    PersonalRecordType.SET_VOLUME -> R.string.record_set_volume_helper
 }
 
 @StringRes

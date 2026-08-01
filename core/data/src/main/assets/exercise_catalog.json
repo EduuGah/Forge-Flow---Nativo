@@ -644,6 +644,15 @@
     "mediaUri": "file:///android_asset/exercise-media/biceps/dumbbell-curl.gif"
   },
   {
+    "id": "71c3d5c8-8bde-5e8a-a6b1-51ae0a10d139",
+    "name": "Rosca alternada com halteres",
+    "primaryMuscleGroup": "BICEPS",
+    "secondaryMuscleGroups": [],
+    "equipment": "DUMBBELL",
+    "instructions": "Fique em pé com um halter em cada mão e as palmas voltadas para o corpo.\nMantenha o tronco estável e os cotovelos próximos às laterais.\nFlexione um cotovelo enquanto gira a palma para cima, sem avançar o ombro.\nDesça o halter com controle e alterne o braço.\nEvite balançar o tronco, tirar o cotovelo do lugar ou soltar a carga na descida.",
+    "mediaUri": "file:///android_asset/exercise-media/biceps/alternating-dumbbell-curl.gif"
+  },
+  {
     "id": "2d6b73d9-3beb-5aed-91cb-36ae5f453476",
     "name": "Rosca inclinada com halteres",
     "primaryMuscleGroup": "BICEPS",
@@ -1041,8 +1050,8 @@
       "CORE"
     ],
     "equipment": "BARBELL",
-    "instructions": "Apoie a parte superior das costas em um banco.\nPosicione a barra sobre o quadril.\nEleve o quadril até alinhar o tronco.\nDesça controlando.",
-    "mediaUri": null
+    "instructions": "Apoie as escápulas na borda de um banco firme e mantenha os pés inteiros no chão.\nProteja o quadril com uma almofada e estabilize a barra com as mãos.\nEleve o quadril contraindo os glúteos até alinhar joelhos, quadril e ombros.\nDesça com controle sem perder a posição dos pés.\nEvite hiperestender a lombar ou jogar a cabeça para trás no topo.",
+    "mediaUri": "file:///android_asset/exercise-media/legs/hip-thrust.gif"
   },
   {
     "id": "016ccbea-50a1-5865-ae38-0dc4f7be05aa",
@@ -1071,7 +1080,7 @@
       "CORE"
     ],
     "equipment": "DUMBBELL",
-    "instructions": "Segure um halter ou kettlebell próximo ao peito.\nAfaste os pés em uma largura confortável.\nDesça flexionando os joelhos e levando o quadril para baixo.\nSuba empurrando o chão e mantendo o tronco firme.",
+    "instructions": "Segure um halter verticalmente junto ao peito e mantenha os cotovelos apontados para baixo.\nAfaste os pés em uma largura confortável, com calcanhares totalmente apoiados.\nDesça levando o quadril entre as pernas enquanto os joelhos acompanham a direção dos pés.\nSuba empurrando o chão e contraindo os glúteos.\nEvite arredondar a lombar, levantar os calcanhares ou deixar os joelhos colapsarem para dentro.",
     "mediaUri": "file:///android_asset/exercise-media/legs/goblet-squat.gif"
   },
   {
@@ -1082,7 +1091,7 @@
       "GLUTES"
     ],
     "equipment": "MACHINE",
-    "instructions": "Posicione as costas no apoio da máquina.\nColoque os pés na plataforma em uma posição confortável.\nDesça flexionando os joelhos com controle.\nEmpurre a plataforma até voltar à posição inicial.",
+    "instructions": "Apoie completamente costas e ombros na máquina e posicione os pés na plataforma.\nLibere as travas apenas depois de firmar o corpo.\nDesça com controle até a amplitude em que a lombar permaneça apoiada.\nEmpurre a plataforma pelos pés sem travar os joelhos no topo.\nEvite retirar o quadril do encosto, encurtar a descida ou aproximar os joelhos para dentro.",
     "mediaUri": "file:///android_asset/exercise-media/legs/hack-squat.gif"
   },
   {
@@ -1130,7 +1139,7 @@
       "BACK"
     ],
     "equipment": "CABLE",
-    "instructions": "Ajuste a polia baixa com uma corda.\nFique de costas para a polia segurando a corda entre as pernas.\nLeve o quadril para trás mantendo a coluna neutra.\nEstenda o quadril contraindo os glúteos.",
+    "instructions": "Prenda a corda na polia baixa e dê alguns passos de costas para manter o cabo tensionado.\nSegure a corda entre as pernas, amoleça os joelhos e leve o quadril para trás.\nMantenha a coluna neutra e os braços apenas como ligação com o cabo.\nEstenda o quadril e contraia os glúteos ao ficar em pé.\nEvite transformar o movimento em agachamento, puxar com os braços ou hiperestender a lombar.",
     "mediaUri": "file:///android_asset/exercise-media/legs/cable-pull-through.gif"
   },
   {
@@ -1141,7 +1150,7 @@
       "CALVES"
     ],
     "equipment": "MACHINE",
-    "instructions": "Sente-se na máquina e ajuste os apoios nas pernas.\nMantenha as costas apoiadas.\nFlexione os joelhos puxando o apoio para baixo ou para trás.\nRetorne lentamente até alongar o posterior.",
+    "instructions": "Alinhe os joelhos ao eixo da máquina e ajuste o apoio sobre as coxas.\nPosicione o rolete atrás dos tornozelos e mantenha as costas no encosto.\nFlexione os joelhos levando os calcanhares para baixo e para trás.\nPause brevemente e retorne devagar até alongar os posteriores.\nEvite levantar o quadril do assento, usar impulso ou soltar o peso na volta.",
     "mediaUri": "file:///android_asset/exercise-media/legs/seated-leg-curl.gif"
   },
   {
@@ -1152,7 +1161,7 @@
       "CALVES"
     ],
     "equipment": "MACHINE",
-    "instructions": "Ajuste o apoio atrás do tornozelo.\nMantenha o corpo firme na máquina.\nFlexione o joelho levando o pé em direção ao glúteo.\nDesça lentamente até a posição inicial.",
+    "instructions": "Alinhe o joelho da perna de trabalho ao eixo da máquina e ajuste o rolete atrás do tornozelo.\nSegure os apoios e mantenha quadris e tronco estáveis.\nFlexione apenas o joelho, levando o calcanhar em direção ao glúteo.\nRetorne devagar sem perder a tensão no posterior.\nEvite inclinar o corpo, avançar o quadril ou balançar a perna para vencer a carga.",
     "mediaUri": "file:///android_asset/exercise-media/legs/standing-leg-curl.gif"
   },
   {
@@ -1231,8 +1240,8 @@
       "GLUTES"
     ],
     "equipment": "BODYWEIGHT",
-    "instructions": "Apoie os antebraços no chão.\nMantenha o corpo alinhado da cabeça aos pés.\nContraia abdômen e glúteos.\nSegure a posição pelo tempo planejado.",
-    "mediaUri": null
+    "instructions": "Apoie os antebraços paralelos e deixe os cotovelos diretamente abaixo dos ombros.\nEstenda as pernas, apoie as pontas dos pés e forme uma linha reta da cabeça aos calcanhares.\nContraia abdômen e glúteos enquanto respira normalmente.\nSegure a posição pelo tempo planejado sem perder o alinhamento.\nEvite deixar o quadril cair, elevar demais o quadril ou prender a respiração.",
+    "mediaUri": "file:///android_asset/exercise-media/core/plank.gif"
   },
   {
     "id": "b70b5d95-f782-5a13-832a-ed2277426dbe",
@@ -1243,8 +1252,8 @@
       "GLUTES"
     ],
     "equipment": "BODYWEIGHT",
-    "instructions": "Apoie um antebraço no chão.\nMantenha o corpo alinhado lateralmente.\nEleve o quadril e contraia o abdômen.\nSegure a posição pelo tempo planejado.",
-    "mediaUri": null
+    "instructions": "Apoie um antebraço com o cotovelo diretamente abaixo do ombro.\nEstenda e empilhe as pernas, apoiando a lateral dos pés.\nEleve o quadril até alinhar tornozelos, quadril e ombros.\nMantenha o abdômen ativo e respire normalmente durante o tempo planejado.\nEvite girar o tronco, deixar o quadril cair ou comprimir o ombro de apoio.",
+    "mediaUri": "file:///android_asset/exercise-media/core/side-plank.gif"
   },
   {
     "id": "db083e82-6360-5d91-aff1-83f4b62b6c7c",
@@ -1275,7 +1284,7 @@
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
     "equipment": "CABLE",
-    "instructions": "Ajuste a polia na posição alta com corda.\nAjoelhe-se segurando a corda próxima à cabeça.\nFlexione o tronco contraindo o abdômen.\nRetorne lentamente sem perder tensão.",
+    "instructions": "Ajuste a polia na posição alta com corda e fique em pé de costas para a máquina.\nSegure a corda ao lado da cabeça, mantenha os quadris quase imóveis e contraia o abdômen.\nAproxime as costelas da pelve flexionando a coluna, sem apenas dobrar o quadril.\nRetorne com controle sem perder a tensão do cabo.\nEvite puxar com os braços, agachar durante o movimento ou hiperestender a lombar.",
     "mediaUri": "file:///android_asset/exercise-media/core/cable-crunch.gif"
   },
   {
@@ -1305,7 +1314,7 @@
     "primaryMuscleGroup": "CORE",
     "secondaryMuscleGroups": [],
     "equipment": "CABLE",
-    "instructions": "Ajuste a polia alta com corda.\nAjoelhe-se segurando a corda próxima à cabeça.\nFlexione o tronco levando os cotovelos em direção ao chão.\nRetorne lentamente sem perder tensão no abdômen.",
+    "instructions": "Ajuste a polia alta com corda e ajoelhe-se de frente para a máquina.\nSegure a corda ao lado da cabeça e estabilize os quadris sobre os joelhos.\nAproxime as costelas da pelve flexionando a coluna e levando os cotovelos em direção às coxas.\nRetorne devagar até alongar o abdômen sem perder a tensão.\nEvite sentar sobre os calcanhares, puxar com os braços ou transformar o movimento em flexão de quadril.",
     "mediaUri": "file:///android_asset/exercise-media/core/kneeling-cable-crunch.gif"
   },
   {
@@ -1355,7 +1364,7 @@
       "BACK"
     ],
     "equipment": "CABLE",
-    "instructions": "Ajuste a polia na altura desejada.\nSegure a alça com as duas mãos.\nGire o tronco levando o cabo em diagonal pelo corpo.\nRetorne lentamente controlando a rotação.",
+    "instructions": "Ajuste a polia acima do ombro e fique de lado para a torre.\nSegure a alça com as duas mãos e mantenha os braços firmes, sem travar os cotovelos.\nGire o tronco e leve o cabo em diagonal até o quadril oposto.\nRetorne lentamente, resistindo à rotação do cabo.\nEvite puxar apenas com os braços, perder o apoio dos pés ou girar a lombar sem controle.",
     "mediaUri": "file:///android_asset/exercise-media/core/wood-chop.gif"
   }
 ]

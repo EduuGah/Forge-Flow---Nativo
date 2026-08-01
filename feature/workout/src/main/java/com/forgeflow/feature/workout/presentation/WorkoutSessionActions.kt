@@ -1,5 +1,6 @@
 package com.forgeflow.feature.workout.presentation
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,6 +23,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -108,14 +110,68 @@ internal fun DiscardWorkoutDialog(
 }
 
 @Composable
+internal fun FinishWorkoutConfirmationDialog(
+    workoutName: String,
+    includeLocation: Boolean,
+    locationLabel: String,
+    hasRoutine: Boolean,
+    routineAction: RoutineFinishAction,
+    onConfirm: () -> Unit,
+    onReview: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.finish_confirmation_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
+                Text(stringResource(R.string.finish_confirmation_workout, workoutName))
+                if (includeLocation) {
+                    Text(
+                        stringResource(
+                            R.string.finish_confirmation_location,
+                            locationLabel.ifBlank {
+                                stringResource(R.string.finish_confirmation_location_unnamed)
+                            },
+                        ),
+                    )
+                }
+                if (hasRoutine) {
+                    Text(
+                        text = stringResource(
+                            R.string.finish_confirmation_routine,
+                            stringResource(routineAction.titleResource()),
+                        ),
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.finish_confirmation_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onReview) {
+                Text(stringResource(R.string.finish_confirmation_review))
+            }
+        },
+    )
+}
+
+@Composable
 @OptIn(ExperimentalMaterial3Api::class)
 internal fun FinishWorkoutSheet(
     includeLocation: Boolean,
     locationLabel: String,
     locationPermissionDenied: Boolean,
     isFinishing: Boolean,
+    hasRoutine: Boolean,
+    routineAction: RoutineFinishAction,
     onIncludeLocationChanged: (Boolean) -> Unit,
     onLocationLabelChanged: (String) -> Unit,
+    onRoutineActionChanged: (RoutineFinishAction) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -201,6 +257,36 @@ internal fun FinishWorkoutSheet(
                     singleLine = true,
                 )
             }
+            if (hasRoutine) {
+                Text(
+                    text = stringResource(R.string.routine_after_workout_title),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                RoutineFinishAction.entries.forEach { action ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onRoutineActionChanged(action) },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = routineAction == action,
+                            onClick = { onRoutineActionChanged(action) },
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(action.titleResource()),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            Text(
+                                text = stringResource(action.descriptionResource()),
+                                color = ForgeFlowDesign.colors.textSecondary,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                }
+            }
             ForgeFlowButton(
                 text = if (isFinishing) {
                     stringResource(R.string.capturing_workout_location)
@@ -213,4 +299,16 @@ internal fun FinishWorkoutSheet(
             )
         }
     }
+}
+
+private fun RoutineFinishAction.titleResource(): Int = when (this) {
+    RoutineFinishAction.KEEP_ORIGINAL -> R.string.routine_keep_original
+    RoutineFinishAction.UPDATE_ORIGINAL -> R.string.routine_update_original
+    RoutineFinishAction.SAVE_COPY -> R.string.routine_save_copy
+}
+
+private fun RoutineFinishAction.descriptionResource(): Int = when (this) {
+    RoutineFinishAction.KEEP_ORIGINAL -> R.string.routine_keep_original_description
+    RoutineFinishAction.UPDATE_ORIGINAL -> R.string.routine_update_original_description
+    RoutineFinishAction.SAVE_COPY -> R.string.routine_save_copy_description
 }

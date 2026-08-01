@@ -16,6 +16,9 @@ private fun SettingsScreenPreview() {
             onRequestHealthPermissions = {},
             onSelectWorkoutCsv = {},
             onSelectMeasurementCsv = {},
+            onOpenHealthDashboard = {},
+            onOpenTutorial = {},
+            onCreateDataExport = {},
         )
     }
 }

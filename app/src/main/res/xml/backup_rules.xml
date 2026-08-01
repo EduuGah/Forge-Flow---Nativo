@@ -15,4 +15,7 @@
     <include
         domain="file"
         path="nutrition_photos/" />
+    <include
+        domain="file"
+        path="exercise_media/" />
 </full-backup-content>

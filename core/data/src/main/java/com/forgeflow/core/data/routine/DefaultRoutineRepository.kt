@@ -14,6 +14,7 @@ import com.forgeflow.core.model.RoutineExerciseId
 import com.forgeflow.core.model.RoutineFolder
 import com.forgeflow.core.model.RoutineFolderId
 import com.forgeflow.core.model.RoutineId
+import com.forgeflow.core.model.RoutineExerciseDraft
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -60,6 +61,9 @@ class DefaultRoutineRepository @Inject constructor(
             folderId = draft.folderId?.value,
             name = draft.name.trim(),
             description = draft.description.trim(),
+            position = existing?.routine?.position
+                ?: routineDao.getLastRoutinePosition(draft.folderId?.value) + 1,
+            compareHistoryWithinFolder = draft.compareHistoryWithinFolder,
             createdAtEpochMillis = existing?.routine?.createdAtEpochMillis ?: now,
             updatedAtEpochMillis = now,
             archivedAtEpochMillis = null,
@@ -75,6 +79,7 @@ class DefaultRoutineRepository @Inject constructor(
                 plannedRepetitionsMinimum = item.plannedRepetitions.minimum,
                 plannedRepetitionsMaximum = item.plannedRepetitions.maximum,
                 plannedSets = item.plannedSets.coerceIn(1, 12),
+                plannedWarmUpSets = item.plannedWarmUpSets.coerceIn(0, 6),
             )
         }
         routineDao.replace(routine, exercises)
@@ -117,6 +122,75 @@ class DefaultRoutineRepository @Inject constructor(
 
     override suspend fun deleteFolder(id: RoutineFolderId): DataResult<Unit> = runCatching {
         routineDao.deleteFolder(id.value)
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun copyRoutine(
+        id: RoutineId,
+        targetFolderId: RoutineFolderId?,
+    ): DataResult<RoutineId> {
+        val source = when (val result = getRoutine(id)) {
+            is DataResult.Success -> result.value
+            is DataResult.Failure -> return result
+        }
+        return saveRoutine(
+            RoutineDraft(
+                folderId = targetFolderId ?: source.routine.folderId,
+                name = "${source.routine.name} - cópia",
+                description = source.routine.description,
+                compareHistoryWithinFolder = source.routine.compareHistoryWithinFolder,
+                exercises = source.exercises.map { details ->
+                    RoutineExerciseDraft(
+                        exerciseId = details.exercise.id,
+                        plannedSets = details.routineExercise.plannedSets,
+                        plannedWarmUpSets = details.routineExercise.plannedWarmUpSets,
+                        plannedRepetitions = details.routineExercise.plannedRepetitions
+                            ?: com.forgeflow.core.model.RepetitionRange(8, 12),
+                        restSeconds = details.routineExercise.defaultRestSeconds,
+                        notes = details.routineExercise.notes,
+                    )
+                },
+            ),
+        )
+    }
+
+    override suspend fun copyFolder(id: RoutineFolderId): DataResult<RoutineFolderId> = runCatching {
+        val source = requireNotNull(routineDao.getFolderById(id.value))
+        val target = when (val result = saveFolder(null, "${source.name} - cópia")) {
+            is DataResult.Success -> result.value
+            is DataResult.Failure -> error("Unable to copy folder")
+        }
+        routineDao.getActiveInFolder(id.value).forEach { record ->
+            check(copyRoutine(RoutineId(record.routine.id), target) is DataResult.Success)
+        }
+        target
+    }.fold(
+        onSuccess = { DataResult.Success(it) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun reorderFolders(
+        orderedIds: List<RoutineFolderId>,
+    ): DataResult<Unit> = runCatching {
+        orderedIds.forEachIndexed { position, id ->
+            routineDao.updateFolderPosition(id.value, position)
+        }
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun reorderRoutines(
+        folderId: RoutineFolderId?,
+        orderedIds: List<RoutineId>,
+    ): DataResult<Unit> = runCatching {
+        val allowed = routineDao.getActiveInFolder(folderId?.value).map { it.routine.id }.toSet()
+        require(orderedIds.all { it.value in allowed })
+        orderedIds.forEachIndexed { position, id ->
+            routineDao.updateRoutinePosition(id.value, position)
+        }
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },

@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.HealthAndSafety
 import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.ViewCompact
 import androidx.compose.material3.Button
@@ -53,6 +54,27 @@ import com.forgeflow.core.model.ThemePreference
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.platform.health.HealthConnectAvailability
 import com.forgeflow.feature.settings.R
+
+@Composable
+internal fun TutorialSection(onOpenTutorial: () -> Unit) {
+    SettingsSection(
+        eyebrow = stringResource(R.string.tutorial_settings_eyebrow),
+        title = stringResource(R.string.tutorial_settings_title),
+        description = stringResource(R.string.tutorial_settings_description),
+        icon = Icons.Outlined.School,
+    ) {
+        FilledTonalButton(
+            onClick = onOpenTutorial,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(imageVector = Icons.Outlined.School, contentDescription = null)
+            Text(
+                text = stringResource(R.string.tutorial_settings_action),
+                modifier = Modifier.padding(start = ForgeFlowDesign.spacing.small),
+            )
+        }
+    }
+}
 
 @Composable
 internal fun AppearanceSection(
@@ -131,6 +153,7 @@ internal fun HealthConnectSection(
     state: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
     onRequestPermissions: () -> Unit,
+    onOpenDashboard: () -> Unit,
 ) {
     SettingsSection(
         eyebrow = stringResource(R.string.health_connect_eyebrow),
@@ -138,6 +161,16 @@ internal fun HealthConnectSection(
         description = stringResource(R.string.health_connect_description),
         icon = Icons.Outlined.HealthAndSafety,
     ) {
+        FilledTonalButton(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onOpenDashboard,
+        ) {
+            Icon(Icons.Outlined.HealthAndSafety, contentDescription = null)
+            Text(
+                text = stringResource(R.string.health_dashboard_open),
+                modifier = Modifier.padding(start = ForgeFlowDesign.spacing.small),
+            )
+        }
         HealthConnectStatus(state = state)
         Text(
             text = stringResource(R.string.health_connect_samsung_description),

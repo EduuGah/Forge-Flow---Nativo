@@ -1,15 +1,21 @@
 package com.forgeflow.feature.settings.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -26,12 +32,17 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Compare
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,11 +52,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
@@ -56,8 +74,13 @@ import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.feature.settings.R
 import java.io.File
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Locale
+import kotlin.math.roundToInt
 
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ProgressPhotosScreen(
     state: SettingsUiState,
@@ -70,12 +93,25 @@ fun ProgressPhotosScreen(
     var selectedIds by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var filter by rememberSaveable { mutableStateOf(ProgressPhotoDateFilter.ALL) }
     var showComparison by rememberSaveable { mutableStateOf(false) }
+    var openedPhoto by remember { mutableStateOf<ProgressPhotoUiModel?>(null) }
+    var showDateRangePicker by rememberSaveable { mutableStateOf(false) }
+    var customStartMillis by rememberSaveable { mutableStateOf<Long?>(null) }
+    var customEndMillis by rememberSaveable { mutableStateOf<Long?>(null) }
     val cutoff = filter.days?.let { days ->
         Instant.now().minus(days, ChronoUnit.DAYS).toEpochMilli()
     }
     val photos = state.profile.photos
         .asReversed()
-        .filter { photo -> cutoff == null || photo.capturedAtEpochMillis >= cutoff }
+        .filter { photo ->
+            when (filter) {
+                ProgressPhotoDateFilter.CUSTOM -> {
+                    val start = customStartMillis
+                    val end = customEndMillis?.plus(MILLIS_PER_DAY - 1)
+                    start != null && end != null && photo.capturedAtEpochMillis in start..end
+                }
+                else -> cutoff == null || photo.capturedAtEpochMillis >= cutoff
+            }
+        }
     val selectedPhotos = selectedIds.mapNotNull { id ->
         state.profile.photos.firstOrNull { it.id == id }
     }
@@ -114,7 +150,15 @@ fun ProgressPhotosScreen(
                 PhotoGalleryControls(
                     selectedFilter = filter,
                     selectedCount = selectedIds.size,
+                    customRangeLabel = if (
+                        customStartMillis != null && customEndMillis != null
+                    ) {
+                        "${customStartMillis!!.asShortDate()} – ${customEndMillis!!.asShortDate()}"
+                    } else {
+                        null
+                    },
                     onFilterSelected = { filter = it },
+                    onSelectCustomRange = { showDateRangePicker = true },
                     onClearSelection = { selectedIds = emptyList() },
                     onCompare = { showComparison = selectedIds.size == 2 },
                     modifier = Modifier.padding(bottom = ForgeFlowDesign.spacing.medium),
@@ -155,7 +199,8 @@ fun ProgressPhotosScreen(
                     ProgressPhotoGalleryItem(
                         photo = photo,
                         selectionIndex = selectedIds.indexOf(photo.id).takeIf { it >= 0 },
-                        onClick = {
+                        onClick = { openedPhoto = photo },
+                        onLongClick = {
                             selectedIds = when {
                                 photo.id in selectedIds -> selectedIds - photo.id
                                 selectedIds.size < 2 -> selectedIds + photo.id
@@ -185,13 +230,111 @@ fun ProgressPhotosScreen(
             onDismiss = { showComparison = false },
         )
     }
+    openedPhoto?.let { photo ->
+        ProgressPhotoDetailsDialog(
+            photo = photo,
+            selected = photo.id in selectedIds,
+            onToggleSelection = {
+                selectedIds = when {
+                    photo.id in selectedIds -> selectedIds - photo.id
+                    selectedIds.size < 2 -> selectedIds + photo.id
+                    else -> selectedIds.drop(1) + photo.id
+                }
+            },
+            onDismiss = { openedPhoto = null },
+        )
+    }
+    if (showDateRangePicker) {
+        val rangeState = rememberDateRangePickerState(
+            initialSelectedStartDateMillis = customStartMillis,
+            initialSelectedEndDateMillis = customEndMillis,
+        )
+        Dialog(
+            onDismissRequest = { showDateRangePicker = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.94f)
+                    .padding(horizontal = 12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Column {
+                    DateRangePicker(
+                        state = rangeState,
+                        modifier = Modifier.weight(1f),
+                        title = {
+                            Text(
+                                text = stringResource(R.string.progress_photos_exact_period),
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                        },
+                        headline = {
+                            Text(
+                                text = when {
+                                    rangeState.selectedStartDateMillis == null -> {
+                                        stringResource(R.string.progress_photos_select_start)
+                                    }
+                                    rangeState.selectedEndDateMillis == null -> {
+                                        stringResource(
+                                            R.string.progress_photos_select_end,
+                                            rangeState.selectedStartDateMillis!!.asShortDate(),
+                                        )
+                                    }
+                                    else -> {
+                                        stringResource(
+                                            R.string.progress_photos_selected_range,
+                                            rangeState.selectedStartDateMillis!!.asShortDate(),
+                                            rangeState.selectedEndDateMillis!!.asShortDate(),
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                maxLines = 2,
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        },
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        TextButton(onClick = { showDateRangePicker = false }) {
+                            Text(stringResource(R.string.profile_cancel))
+                        }
+                        TextButton(
+                            onClick = {
+                                customStartMillis = rangeState.selectedStartDateMillis
+                                customEndMillis = rangeState.selectedEndDateMillis
+                                    ?: rangeState.selectedStartDateMillis
+                                if (customStartMillis != null && customEndMillis != null) {
+                                    filter = ProgressPhotoDateFilter.CUSTOM
+                                }
+                                showDateRangePicker = false
+                            },
+                            enabled = rangeState.selectedStartDateMillis != null,
+                        ) {
+                            Text(stringResource(R.string.progress_photos_apply_filter))
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
 private fun PhotoGalleryControls(
     selectedFilter: ProgressPhotoDateFilter,
     selectedCount: Int,
+    customRangeLabel: String?,
     onFilterSelected: (ProgressPhotoDateFilter) -> Unit,
+    onSelectCustomRange: () -> Unit,
     onClearSelection: () -> Unit,
     onCompare: () -> Unit,
     modifier: Modifier = Modifier,
@@ -205,8 +348,29 @@ private fun PhotoGalleryControls(
                 val item = ProgressPhotoDateFilter.entries[index]
                 FilterChip(
                     selected = selectedFilter == item,
-                    onClick = { onFilterSelected(item) },
-                    label = { Text(stringResource(item.labelResource)) },
+                    onClick = {
+                        if (item == ProgressPhotoDateFilter.CUSTOM) {
+                            onSelectCustomRange()
+                        } else {
+                            onFilterSelected(item)
+                        }
+                    },
+                    leadingIcon = if (item == ProgressPhotoDateFilter.CUSTOM) {
+                        { Icon(Icons.Outlined.DateRange, contentDescription = null) }
+                    } else {
+                        null
+                    },
+                    label = {
+                        Text(
+                            text = if (
+                                item == ProgressPhotoDateFilter.CUSTOM && customRangeLabel != null
+                            ) {
+                                customRangeLabel
+                            } else {
+                                stringResource(item.labelResource)
+                            },
+                        )
+                    },
                 )
             }
         }
@@ -263,13 +427,14 @@ private fun ProgressPhotoGalleryItem(
     photo: ProgressPhotoUiModel,
     selectionIndex: Int?,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(8.dp),
         border = selectionIndex?.let {
@@ -345,6 +510,7 @@ private fun ProgressPhotoComparisonDialog(
     photos: List<ProgressPhotoUiModel>,
     onDismiss: () -> Unit,
 ) {
+    var revealFraction by remember { mutableStateOf(0.5f) }
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -378,45 +544,153 @@ private fun ProgressPhotoComparisonDialog(
                         )
                     }
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(0.72f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clipToBounds()
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                 ) {
-                    photos.forEachIndexed { index, photo ->
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                    val comparisonWidthPx = with(LocalDensity.current) { maxWidth.toPx() }
+                    val handleHalfWidthPx = with(LocalDensity.current) { 22.dp.roundToPx() }
+                    AsyncImage(
+                        model = File(photos[1].filePath),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                    AsyncImage(
+                        model = File(photos[0].filePath),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .drawWithContent {
+                                val contentScope = this
+                                clipRect(right = size.width * revealFraction) {
+                                    contentScope.drawContent()
+                                }
+                            },
+                        contentScale = ContentScale.Crop,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .offset {
+                                IntOffset(
+                                    (comparisonWidthPx * revealFraction).roundToInt() -
+                                        handleHalfWidthPx,
+                                    0,
+                                )
+                            }
+                            .size(width = 44.dp, height = 320.dp)
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    revealFraction = (
+                                        revealFraction + dragAmount.x / comparisonWidthPx
+                                        ).coerceIn(0.05f, 0.95f)
+                                }
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .size(width = 2.dp, height = 320.dp)
+                                .background(MaterialTheme.colorScheme.onSurface),
+                        )
+                        Surface(
+                            modifier = Modifier.size(38.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            shape = CircleShape,
                         ) {
-                            Text(
-                                text = stringResource(
-                                    if (index == 0) {
-                                        R.string.progress_photos_before
-                                    } else {
-                                        R.string.progress_photos_after
-                                    },
-                                ).uppercase(),
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.ExtraBold,
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                            AsyncImage(
-                                model = File(photo.filePath),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .aspectRatio(0.72f)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                                contentScale = ContentScale.Crop,
-                            )
-                            Text(
-                                text = photo.dateLabel,
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.labelMedium,
-                            )
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Outlined.Compare, contentDescription = null)
+                            }
                         }
                     }
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(photos[0].dateLabel, fontWeight = FontWeight.Bold)
+                    Text(photos[1].dateLabel, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProgressPhotoDetailsDialog(
+    photo: ProgressPhotoUiModel,
+    selected: Boolean,
+    onToggleSelection: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val file = remember(photo.filePath) { File(photo.filePath) }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(8.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(ForgeFlowDesign.spacing.medium),
+                verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text(
+                            text = stringResource(R.string.progress_photo_details_title),
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                        Text(
+                            text = photo.dateLabel,
+                            color = ForgeFlowDesign.colors.textSecondary,
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Outlined.Close, contentDescription = null)
+                    }
+                }
+                AsyncImage(
+                    model = file,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(0.78f)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop,
+                )
+                Text(
+                    text = stringResource(
+                        R.string.progress_photo_file_size,
+                        (file.length() / 1024L).coerceAtLeast(1),
+                    ),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                ForgeFlowButton(
+                    text = stringResource(
+                        if (selected) {
+                            R.string.progress_photo_remove_comparison
+                        } else {
+                            R.string.progress_photo_add_comparison
+                        },
+                    ),
+                    onClick = onToggleSelection,
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = Icons.Outlined.Compare,
+                    iconContentDescription = null,
+                )
             }
         }
     }
@@ -430,4 +704,16 @@ private enum class ProgressPhotoDateFilter(
     THIRTY_DAYS(30, R.string.progress_photos_filter_30_days),
     THREE_MONTHS(90, R.string.progress_photos_filter_3_months),
     ONE_YEAR(365, R.string.progress_photos_filter_one_year),
+    CUSTOM(null, R.string.progress_photos_filter_custom),
 }
+
+private fun Long.asShortDate(): String = PHOTO_FILTER_FORMATTER.format(
+    Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate(),
+)
+
+private val PHOTO_FILTER_FORMATTER = DateTimeFormatter.ofPattern(
+    "dd/MM/yyyy",
+    Locale.forLanguageTag("pt-BR"),
+)
+
+private const val MILLIS_PER_DAY = 86_400_000L

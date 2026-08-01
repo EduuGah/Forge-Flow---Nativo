@@ -6,7 +6,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +18,8 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Search
@@ -32,9 +36,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
 import com.forgeflow.core.designsystem.component.ForgeFlowPill
@@ -103,6 +110,9 @@ internal fun RoutineFolderSection(
     onAction: (RoutinesAction) -> Unit,
     onDeleteRoutine: (RoutineUiModel) -> Unit,
     onDeleteFolder: (RoutineFolderUiModel) -> Unit,
+    reorderTarget: RoutineReorderTarget?,
+    onReorderStarted: (RoutineReorderTarget) -> Unit,
+    onReorderStopped: () -> Unit,
 ) {
     var expanded by rememberSaveable(folder?.id ?: "unfiled") { mutableStateOf(true) }
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
@@ -110,10 +120,28 @@ internal fun RoutineFolderSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .alpha(
+                    if ((reorderTarget as? RoutineReorderTarget.Folder)?.id == folder?.id) {
+                        0.58f
+                    } else {
+                        1f
+                    },
+                )
                 .clickable { expanded = !expanded },
             horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (folder != null) {
+                ReorderHandle(
+                    onDragStarted = {
+                        onReorderStarted(RoutineReorderTarget.Folder(folder.id))
+                    },
+                    onDragStopped = onReorderStopped,
+                    onMove = { direction ->
+                        onAction(RoutinesAction.MoveFolder(folder.id, direction))
+                    },
+                )
+            }
             Icon(
                 imageVector = if (expanded) {
                     Icons.Outlined.ExpandLess
@@ -132,39 +160,51 @@ internal fun RoutineFolderSection(
                 text = stringResource(R.string.folder_routine_count, routines.size),
             )
             if (folder != null) {
-                IconButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        Icons.Outlined.MoreVert,
-                        contentDescription = stringResource(R.string.folder_options),
-                    )
-                }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.rename_folder)) },
-                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
-                        onClick = {
-                            menuExpanded = false
-                            onAction(RoutinesAction.EditFolder(folder.id))
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.delete_folder)) },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.DeleteOutline, contentDescription = null)
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onDeleteFolder(folder)
-                        },
-                    )
+                Box {
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            Icons.Outlined.MoreVert,
+                            contentDescription = stringResource(R.string.folder_options),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.copy_folder)) },
+                            leadingIcon = {
+                                Icon(Icons.Outlined.ContentCopy, contentDescription = null)
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onAction(RoutinesAction.CopyFolder(folder.id))
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.rename_folder)) },
+                            leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                            onClick = {
+                                menuExpanded = false
+                                onAction(RoutinesAction.EditFolder(folder.id))
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.delete_folder)) },
+                            leadingIcon = {
+                                Icon(Icons.Outlined.DeleteOutline, contentDescription = null)
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onDeleteFolder(folder)
+                            },
+                        )
+                    }
                 }
             }
         }
         AnimatedVisibility(
-            visible = expanded,
+            visible = expanded && reorderTarget !is RoutineReorderTarget.Folder,
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically(),
         ) {
@@ -174,6 +214,12 @@ internal fun RoutineFolderSection(
                         routine = routine,
                         onAction = onAction,
                         onDelete = { onDeleteRoutine(routine) },
+                        compact = reorderTarget is RoutineReorderTarget.Routine,
+                        isDragging = (reorderTarget as? RoutineReorderTarget.Routine)?.id == routine.id,
+                        onDragStarted = {
+                            onReorderStarted(RoutineReorderTarget.Routine(routine.id))
+                        },
+                        onDragStopped = onReorderStopped,
                     )
                 }
                 if (routines.isEmpty()) {
@@ -193,14 +239,35 @@ private fun RoutineCard(
     routine: RoutineUiModel,
     onAction: (RoutinesAction) -> Unit,
     onDelete: () -> Unit,
+    compact: Boolean,
+    isDragging: Boolean,
+    onDragStarted: () -> Unit,
+    onDragStopped: () -> Unit,
 ) {
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
-    ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+    ForgeFlowCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (isDragging) 0.58f else 1f),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            ReorderHandle(
+                onDragStarted = onDragStarted,
+                onDragStopped = onDragStopped,
+                onMove = { direction ->
+                    onAction(
+                        RoutinesAction.MoveRoutine(
+                            id = routine.id,
+                            folderId = routine.folderId,
+                            direction = direction,
+                        ),
+                    )
+                },
+            )
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraSmall),
@@ -219,51 +286,106 @@ private fun RoutineCard(
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            IconButton(onClick = { menuExpanded = true }) {
-                Icon(
-                    Icons.Outlined.MoreVert,
-                    contentDescription = stringResource(R.string.routine_options),
-                )
-            }
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false },
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.edit_routine)) },
-                    leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
-                    onClick = {
-                        menuExpanded = false
-                        onAction(RoutinesAction.EditRoutine(routine.id))
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.delete_routine)) },
-                    leadingIcon = {
-                        Icon(Icons.Outlined.DeleteOutline, contentDescription = null)
-                    },
-                    onClick = {
-                        menuExpanded = false
-                        onDelete()
-                    },
-                )
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        Icons.Outlined.MoreVert,
+                        contentDescription = stringResource(R.string.routine_options),
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.copy_routine)) },
+                        leadingIcon = {
+                            Icon(Icons.Outlined.ContentCopy, contentDescription = null)
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onAction(RoutinesAction.CopyRoutine(routine.id))
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.edit_routine)) },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                        onClick = {
+                            menuExpanded = false
+                            onAction(RoutinesAction.EditRoutine(routine.id))
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.delete_routine)) },
+                        leadingIcon = {
+                            Icon(Icons.Outlined.DeleteOutline, contentDescription = null)
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onDelete()
+                        },
+                    )
+                }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
-            ForgeFlowPill(
-                text = stringResource(
-                    R.string.compact_exercise_count,
-                    routine.exerciseNames.size,
-                ),
+        if (!compact) {
+            Row(horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
+                ForgeFlowPill(
+                    text = stringResource(
+                        R.string.compact_exercise_count,
+                        routine.exerciseNames.size,
+                    ),
+                )
+                ForgeFlowPill(text = stringResource(R.string.compact_set_count, routine.totalSets))
+            }
+            ForgeFlowButton(
+                text = stringResource(R.string.start_routine),
+                onClick = { onAction(RoutinesAction.StartRoutine(routine.id)) },
+                modifier = Modifier.fillMaxWidth(),
+                icon = Icons.Outlined.PlayArrow,
+                iconContentDescription = null,
             )
-            ForgeFlowPill(text = stringResource(R.string.compact_set_count, routine.totalSets))
         }
-        ForgeFlowButton(
-            text = stringResource(R.string.start_routine),
-            onClick = { onAction(RoutinesAction.StartRoutine(routine.id)) },
-            modifier = Modifier.fillMaxWidth(),
-            icon = Icons.Outlined.PlayArrow,
-            iconContentDescription = null,
+    }
+}
+
+@Composable
+private fun ReorderHandle(
+    onMove: (Int) -> Unit,
+    onDragStarted: () -> Unit,
+    onDragStopped: () -> Unit,
+) {
+    var accumulatedDrag by rememberSaveable { mutableStateOf(0f) }
+    IconButton(
+        onClick = {},
+        modifier = Modifier.pointerInput(Unit) {
+            detectDragGesturesAfterLongPress(
+                onDragStart = {
+                    accumulatedDrag = 0f
+                    onDragStarted()
+                },
+                onDragEnd = {
+                    accumulatedDrag = 0f
+                    onDragStopped()
+                },
+                onDragCancel = {
+                    accumulatedDrag = 0f
+                    onDragStopped()
+                },
+            ) { change, dragAmount ->
+                change.consume()
+                accumulatedDrag += dragAmount.y
+                if (kotlin.math.abs(accumulatedDrag) >= 52.dp.toPx()) {
+                    onMove(if (accumulatedDrag > 0) 1 else -1)
+                    accumulatedDrag = 0f
+                }
+            }
+        },
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.DragHandle,
+            contentDescription = stringResource(R.string.drag_to_reorder),
+            tint = ForgeFlowDesign.colors.textSecondary,
         )
     }
 }

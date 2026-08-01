@@ -1,6 +1,7 @@
 package com.forgeflow.core.designsystem.component
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -41,6 +42,7 @@ fun ForgeFlowTopAppBar(
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     backContentDescription: String? = null,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
         modifier = modifier,
@@ -64,5 +66,6 @@ fun ForgeFlowTopAppBar(
                 }
             }
         },
+        actions = actions,
     )
 }

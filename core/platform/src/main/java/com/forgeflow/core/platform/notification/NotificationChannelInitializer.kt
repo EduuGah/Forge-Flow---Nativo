@@ -44,6 +44,12 @@ class NotificationChannelInitializer @Inject constructor(
                     description = R.string.notification_channel_updates_description,
                     importance = NotificationManager.IMPORTANCE_LOW,
                 ),
+                channel(
+                    id = ForgeFlowNotificationChannels.WELLNESS,
+                    name = R.string.notification_channel_wellness,
+                    description = R.string.notification_channel_wellness_description,
+                    importance = NotificationManager.IMPORTANCE_DEFAULT,
+                ),
             ),
         )
     }

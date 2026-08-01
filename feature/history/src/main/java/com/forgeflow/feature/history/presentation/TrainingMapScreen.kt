@@ -153,6 +153,7 @@ private fun TrainingMapContent(
                 TrainingPlacesPanel(
                     places = state.places,
                     selectedPlaceId = state.selectedPlaceId,
+                    weightUnitLabel = state.weightUnit.symbol,
                     onPlaceSelected = onPlaceSelected,
                 )
             }
@@ -388,6 +389,7 @@ private fun PlaceSummary(
 private fun TrainingPlacesPanel(
     places: List<TrainingPlaceUiModel>,
     selectedPlaceId: String?,
+    weightUnitLabel: String,
     onPlaceSelected: (String) -> Unit,
 ) {
     ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
@@ -447,12 +449,19 @@ private fun TrainingPlacesPanel(
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                Text(
-                    text = place.totalVolume.asDisplayValue(),
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.labelLarge,
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${place.totalVolume.asDisplayValue()} $weightUnitLabel",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    Text(
+                        text = stringResource(R.string.training_map_place_total_volume),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
             }
         }
     }

@@ -4,12 +4,14 @@ import com.forgeflow.core.common.result.AppError
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.common.time.AppClock
 import com.forgeflow.core.database.routine.RoutineDao
+import com.forgeflow.core.database.exercise.ExerciseDao
 import com.forgeflow.core.database.workout.WorkoutDao
 import com.forgeflow.core.database.workout.WorkoutSessionEntity
 import com.forgeflow.core.database.workout.WorkoutSessionExerciseEntity
 import com.forgeflow.core.database.workout.WorkoutSetEntity
 import com.forgeflow.core.database.workout.asExternalModel
 import com.forgeflow.core.model.Repetitions
+import com.forgeflow.core.model.ExerciseId
 import com.forgeflow.core.model.RoutineId
 import com.forgeflow.core.model.SessionExerciseId
 import com.forgeflow.core.model.Weight
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.map
 
 class DefaultWorkoutRepository @Inject constructor(
     private val routineDao: RoutineDao,
+    private val exerciseDao: ExerciseDao,
     private val workoutDao: WorkoutDao,
     private val clock: AppClock,
 ) : WorkoutRepository {
@@ -83,12 +86,18 @@ class DefaultWorkoutRepository @Inject constructor(
                     position = position,
                     notes = routineExercise.item.notes,
                 )
-                repeat(routineExercise.item.plannedSets.coerceIn(1, 12)) { setPosition ->
+                val warmUpSets = routineExercise.item.plannedWarmUpSets.coerceIn(0, 6)
+                val normalSets = routineExercise.item.plannedSets.coerceIn(1, 12)
+                repeat(warmUpSets + normalSets) { setPosition ->
                     sets += WorkoutSetEntity(
                         id = WorkoutSetId.create().value,
                         sessionExerciseId = sessionExerciseId.value,
                         position = setPosition,
-                        setType = WorkoutSetType.NORMAL.name,
+                        setType = if (setPosition < warmUpSets) {
+                            WorkoutSetType.WARM_UP.name
+                        } else {
+                            WorkoutSetType.NORMAL.name
+                        },
                         weightGrams = 0,
                         repetitions = 0,
                         rpe = null,
@@ -170,6 +179,111 @@ class DefaultWorkoutRepository @Inject constructor(
     override suspend fun deleteSet(setId: WorkoutSetId): DataResult<Unit> = runCatching {
         requireNotNull(workoutDao.getSet(setId.value))
         workoutDao.deleteSet(setId.value)
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun updateExerciseNotes(
+        sessionExerciseId: SessionExerciseId,
+        notes: String,
+    ): DataResult<Unit> = runCatching {
+        val sessionExercise = requireNotNull(
+            workoutDao.getSessionExercise(sessionExerciseId.value),
+        )
+        val trimmedNotes = notes.trim()
+        workoutDao.updateExerciseNotes(sessionExerciseId.value, trimmedNotes)
+        val routineId = workoutDao.getActive()?.session?.routineId
+        val exerciseId = sessionExercise.exerciseId
+        if (routineId != null && exerciseId != null) {
+            routineDao.updateExerciseNotes(
+                routineId = routineId,
+                exerciseId = exerciseId,
+                notes = trimmedNotes,
+            )
+        }
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun addExercise(
+        sessionId: WorkoutSessionId,
+        exerciseId: ExerciseId,
+    ): DataResult<Unit> = runCatching {
+        val exercise = requireNotNull(exerciseDao.getById(exerciseId.value))
+        val timestamp = clock.now().toEpochMilli()
+        val sessionExerciseId = SessionExerciseId.create()
+        workoutDao.insertExercise(
+            WorkoutSessionExerciseEntity(
+                id = sessionExerciseId.value,
+                sessionId = sessionId.value,
+                exerciseId = exercise.id,
+                exerciseNameSnapshot = exercise.name,
+                muscleGroupSnapshot = exercise.primaryMuscleGroup,
+                mediaUriSnapshot = exercise.mediaUri,
+                mediaTypeSnapshot = exercise.mediaType,
+                mediaThumbnailUriSnapshot = exercise.mediaThumbnailUri,
+                position = workoutDao.getLastExercisePosition(sessionId.value) + 1,
+                notes = "",
+            ),
+        )
+        workoutDao.insertSets(
+            List(3) { position ->
+                WorkoutSetEntity(
+                    id = WorkoutSetId.create().value,
+                    sessionExerciseId = sessionExerciseId.value,
+                    position = position,
+                    setType = WorkoutSetType.NORMAL.name,
+                    weightGrams = 0,
+                    repetitions = 0,
+                    rpe = null,
+                    isCompleted = false,
+                    completedAtEpochMillis = null,
+                    createdAtEpochMillis = timestamp,
+                    updatedAtEpochMillis = timestamp,
+                )
+            },
+        )
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun replaceExercise(
+        sessionExerciseId: SessionExerciseId,
+        exerciseId: ExerciseId,
+    ): DataResult<Unit> = runCatching {
+        requireNotNull(workoutDao.getSessionExercise(sessionExerciseId.value))
+        val exercise = requireNotNull(exerciseDao.getById(exerciseId.value))
+        workoutDao.replaceExercise(
+            id = sessionExerciseId.value,
+            exerciseId = exercise.id,
+            name = exercise.name,
+            muscleGroup = exercise.primaryMuscleGroup,
+            mediaUri = exercise.mediaUri,
+            mediaType = exercise.mediaType,
+            mediaThumbnailUri = exercise.mediaThumbnailUri,
+        )
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun deleteExercise(
+        sessionExerciseId: SessionExerciseId,
+    ): DataResult<Unit> = runCatching {
+        workoutDao.deleteExercise(sessionExerciseId.value)
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun moveExercise(
+        sessionExerciseId: SessionExerciseId,
+        direction: Int,
+    ): DataResult<Unit> = runCatching {
+        workoutDao.moveExercise(sessionExerciseId.value, direction.coerceIn(-1, 1))
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },

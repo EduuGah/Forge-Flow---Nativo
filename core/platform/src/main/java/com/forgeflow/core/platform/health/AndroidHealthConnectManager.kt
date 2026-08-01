@@ -177,6 +177,70 @@ class AndroidHealthConnectManager @Inject constructor(
         }.getOrNull()
     }
 
+    override suspend fun readDataOrigins(
+        dataTypes: Set<HealthConnectDataType>,
+        startTime: Instant,
+        endTime: Instant,
+    ): Set<String> {
+        if (!endTime.isAfter(startTime)) return emptySet()
+        if (!status(permissionsFor(dataTypes)).hasPermissions) return emptySet()
+        val client = client()
+        val filter = TimeRangeFilter.between(startTime, endTime)
+        return runCatching {
+            buildSet {
+                if (HealthConnectDataType.STEPS in dataTypes) {
+                    addAll(
+                        client.readRecords(
+                            ReadRecordsRequest(StepsRecord::class, filter),
+                        ).records.map { it.metadata.dataOrigin.packageName },
+                    )
+                }
+                if (HealthConnectDataType.DISTANCE in dataTypes) {
+                    addAll(
+                        client.readRecords(
+                            ReadRecordsRequest(DistanceRecord::class, filter),
+                        ).records.map { it.metadata.dataOrigin.packageName },
+                    )
+                }
+                if (HealthConnectDataType.CALORIES in dataTypes) {
+                    addAll(
+                        client.readRecords(
+                            ReadRecordsRequest(TotalCaloriesBurnedRecord::class, filter),
+                        ).records.map { it.metadata.dataOrigin.packageName },
+                    )
+                }
+                if (HealthConnectDataType.HEART_RATE in dataTypes) {
+                    addAll(
+                        client.readRecords(
+                            ReadRecordsRequest(HeartRateRecord::class, filter),
+                        ).records.map { it.metadata.dataOrigin.packageName },
+                    )
+                }
+                if (HealthConnectDataType.EXERCISE_SESSIONS in dataTypes) {
+                    addAll(
+                        client.readRecords(
+                            ReadRecordsRequest(ExerciseSessionRecord::class, filter),
+                        ).records.map { it.metadata.dataOrigin.packageName },
+                    )
+                }
+                if (HealthConnectDataType.SLEEP in dataTypes) {
+                    addAll(
+                        client.readRecords(
+                            ReadRecordsRequest(SleepSessionRecord::class, filter),
+                        ).records.map { it.metadata.dataOrigin.packageName },
+                    )
+                }
+                if (HealthConnectDataType.BODY_WEIGHT in dataTypes) {
+                    addAll(
+                        client.readRecords(
+                            ReadRecordsRequest(WeightRecord::class, filter),
+                        ).records.map { it.metadata.dataOrigin.packageName },
+                    )
+                }
+            }
+        }.getOrDefault(emptySet())
+    }
+
     override suspend fun syncWorkout(
         workout: WorkoutDetails,
         weightUnit: WeightUnit,

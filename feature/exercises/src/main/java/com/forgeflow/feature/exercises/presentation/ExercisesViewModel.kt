@@ -7,6 +7,7 @@ import com.forgeflow.core.data.exercise.ExerciseRepository
 import com.forgeflow.core.model.Exercise
 import com.forgeflow.core.model.ExerciseId
 import com.forgeflow.core.model.MuscleGroup
+import com.forgeflow.core.model.matchesSearch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -70,6 +71,20 @@ class ExercisesViewModel @Inject constructor(
             is ExercisesAction.EditorInstructionsChanged -> updateEditor {
                 copy(instructions = action.value)
             }
+            is ExercisesAction.EditorPhotoSelected -> updateEditor {
+                copy(
+                    mediaUri = action.uri,
+                    pendingMediaUri = action.uri,
+                    removeMedia = false,
+                )
+            }
+            ExercisesAction.RemoveEditorPhoto -> updateEditor {
+                copy(
+                    mediaUri = null,
+                    pendingMediaUri = null,
+                    removeMedia = true,
+                )
+            }
             ExercisesAction.SaveExercise -> saveExercise()
             is ExercisesAction.DeleteExercise -> deleteExercise(action.id)
             ExercisesAction.Retry -> retrySignal.update { it + 1 }
@@ -98,8 +113,7 @@ class ExercisesViewModel @Inject constructor(
                 exercises = value
                     .asSequence()
                     .filter { exercise ->
-                        currentQuery.isBlank() ||
-                            exercise.name.contains(currentQuery.trim(), ignoreCase = true)
+                        exercise.matchesSearch(currentQuery)
                     }
                     .filter { exercise ->
                         muscleGroup == null || exercise.primaryMuscleGroup == muscleGroup
@@ -124,6 +138,7 @@ class ExercisesViewModel @Inject constructor(
             muscleGroup = exercise.primaryMuscleGroup,
             equipment = exercise.equipment,
             instructions = exercise.instructions,
+            mediaUri = exercise.media?.thumbnailUri ?: exercise.media?.uri,
         )
     }
 
@@ -141,6 +156,8 @@ class ExercisesViewModel @Inject constructor(
                 muscleGroup = current.muscleGroup,
                 equipment = current.equipment,
                 instructions = current.instructions,
+                sourceMediaUri = current.pendingMediaUri,
+                removeMedia = current.removeMedia,
             )
             operation.value = OperationState(
                 error = if (result is DataResult.Failure) ExercisesError.SAVE_FAILED else null,

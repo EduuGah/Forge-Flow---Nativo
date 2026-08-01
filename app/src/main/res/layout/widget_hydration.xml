@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/hydration_widget_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/hydration_widget_brand"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:text="@string/hydration_widget_title"
+        android:textAllCaps="true"
+        android:textColor="@color/widget_accent"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/hydration_widget_value"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:text="@string/hydration_widget_preview_value"
+        android:textColor="@color/widget_text_primary"
+        android:textSize="17sp" />
+
+    <ProgressBar
+        android:id="@+id/hydration_widget_progress"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginTop="8dp"
+        android:max="100"
+        android:progress="60"
+        android:progressBackgroundTint="@color/widget_progress_track"
+        android:progressTint="@color/widget_accent" />
+
+    <TextView
+        android:id="@+id/hydration_widget_add"
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/widget_action_background"
+        android:contentDescription="@string/hydration_widget_add_description"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:text="@string/hydration_widget_add"
+        android:textAllCaps="true"
+        android:textColor="@color/widget_accent"
+        android:textSize="11sp" />
+</LinearLayout>

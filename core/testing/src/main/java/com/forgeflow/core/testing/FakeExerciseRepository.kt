@@ -6,6 +6,8 @@ import com.forgeflow.core.data.exercise.ExerciseRepository
 import com.forgeflow.core.model.Equipment
 import com.forgeflow.core.model.Exercise
 import com.forgeflow.core.model.ExerciseId
+import com.forgeflow.core.model.ExerciseMedia
+import com.forgeflow.core.model.ExerciseMediaType
 import com.forgeflow.core.model.MuscleGroup
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +30,8 @@ class FakeExerciseRepository(
         muscleGroup: MuscleGroup,
         equipment: Equipment,
         instructions: String,
+        sourceMediaUri: String?,
+        removeMedia: Boolean,
     ): DataResult<ExerciseId> {
         val exerciseId = id ?: ExerciseId.create()
         val current = (result.value as? DataResult.Success)?.value.orEmpty()
@@ -39,6 +43,14 @@ class FakeExerciseRepository(
             secondaryMuscleGroups = emptySet(),
             equipment = equipment,
             instructions = instructions,
+            media = when {
+                removeMedia -> null
+                sourceMediaUri != null -> ExerciseMedia(
+                    sourceMediaUri,
+                    ExerciseMediaType.IMAGE,
+                )
+                else -> existing?.media
+            },
             isCustom = true,
             createdAt = existing?.createdAt ?: Instant.EPOCH,
             updatedAt = Instant.EPOCH,

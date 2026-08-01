@@ -26,6 +26,7 @@ data class RoutineUiModel(
     val description: String,
     val exerciseNames: List<String>,
     val totalSets: Int,
+    val position: Int = 0,
 )
 
 @Immutable
@@ -33,6 +34,7 @@ data class RoutineFolderUiModel(
     val id: String,
     val name: String,
     val routineCount: Int,
+    val position: Int = 0,
 )
 
 @Immutable
@@ -44,6 +46,7 @@ data class RoutineExercisePickerModel(
     val mediaUri: String? = null,
     val mediaType: ExerciseMediaType? = null,
     val mediaThumbnailUri: String? = null,
+    val searchTerms: String = name,
 )
 
 @Immutable
@@ -55,6 +58,19 @@ data class RoutineEditorUiState(
     val query: String = "",
     val selectedMuscleGroup: MuscleGroup? = null,
     val selectedExerciseIds: List<String> = emptyList(),
+    val exercisePlans: List<RoutineExercisePlanUiModel> = emptyList(),
+    val compareHistoryWithinFolder: Boolean = false,
+)
+
+@Immutable
+data class RoutineExercisePlanUiModel(
+    val exerciseId: String,
+    val plannedSets: Int = 3,
+    val warmUpSets: Int = 0,
+    val repetitionsMinimum: Int = 8,
+    val repetitionsMaximum: Int = 12,
+    val restSeconds: Int = 90,
+    val notes: String = "",
 )
 
 @Immutable
@@ -86,11 +102,20 @@ sealed interface RoutinesAction {
     data class FolderChanged(val id: String?) : RoutinesAction
     data class FolderNameChanged(val value: String) : RoutinesAction
     data class ExerciseToggled(val id: String) : RoutinesAction
+    data class SelectedExerciseMoved(val id: String, val direction: Int) : RoutinesAction
+    data class PlannedSetsChanged(val id: String, val value: Int) : RoutinesAction
+    data class WarmUpSetsChanged(val id: String, val value: Int) : RoutinesAction
+    data class ExerciseNotesChanged(val id: String, val value: String) : RoutinesAction
+    data class CompareHistoryWithinFolderChanged(val enabled: Boolean) : RoutinesAction
     data object SaveRoutine : RoutinesAction
     data object SaveFolder : RoutinesAction
     data class ArchiveRoutine(val id: String) : RoutinesAction
     data class DeleteFolder(val id: String) : RoutinesAction
     data class StartRoutine(val id: String) : RoutinesAction
+    data class CopyRoutine(val id: String) : RoutinesAction
+    data class CopyFolder(val id: String) : RoutinesAction
+    data class MoveRoutine(val id: String, val folderId: String?, val direction: Int) : RoutinesAction
+    data class MoveFolder(val id: String, val direction: Int) : RoutinesAction
     data object DismissError : RoutinesAction
 }
 

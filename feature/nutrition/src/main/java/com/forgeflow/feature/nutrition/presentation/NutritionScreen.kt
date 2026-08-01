@@ -1,6 +1,7 @@
 package com.forgeflow.feature.nutrition.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,9 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.AlertDialog
@@ -38,6 +42,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.drawscope.Stroke
 import coil3.compose.AsyncImage
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
@@ -72,6 +78,7 @@ fun NutritionScreen(
     onBack: () -> Unit,
     onPickMealPhoto: () -> Unit,
     onTakeMealPhoto: () -> Unit,
+    onWellnessReminderChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var pendingDeletion by remember { mutableStateOf<String?>(null) }
@@ -96,6 +103,13 @@ fun NutritionScreen(
                 NutritionDailySummary(state = state, onEditGoals = {
                     onAction(NutritionAction.OpenGoalsEditor)
                 })
+            }
+            item {
+                HydrationSection(
+                    state = state,
+                    onAction = onAction,
+                    onReminderChanged = onWellnessReminderChanged,
+                )
             }
             item {
                 ForgeFlowButton(
@@ -253,28 +267,7 @@ private fun NutritionDailySummary(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
-                ForgeFlowEyebrow(text = stringResource(R.string.nutrition_daily_goal))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.LocalFireDepartment,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = stringResource(
-                            R.string.nutrition_calorie_value,
-                            state.calories,
-                            state.calorieGoal,
-                        ),
-                        fontWeight = FontWeight.ExtraBold,
-                        style = MaterialTheme.typography.headlineSmall,
-                    )
-                }
-            }
+            ForgeFlowEyebrow(text = stringResource(R.string.nutrition_daily_goal))
             IconButton(onClick = onEditGoals) {
                 Icon(
                     imageVector = Icons.Outlined.Edit,
@@ -282,12 +275,25 @@ private fun NutritionDailySummary(
                 )
             }
         }
-        LinearProgressIndicator(
-            progress = {
-                (state.calories.toFloat() / state.calorieGoal.coerceAtLeast(1)).coerceIn(0f, 1f)
-            },
+        Row(
             modifier = Modifier.fillMaxWidth(),
-        )
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            CircularNutritionGoal(
+                label = stringResource(R.string.nutrition_calories),
+                value = state.calories,
+                goal = state.calorieGoal,
+                unit = "kcal",
+                icon = Icons.Outlined.LocalFireDepartment,
+            )
+            CircularNutritionGoal(
+                label = stringResource(R.string.nutrition_water),
+                value = state.waterMilliliters,
+                goal = state.waterGoalMilliliters,
+                unit = "ml",
+                icon = Icons.Outlined.WaterDrop,
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
@@ -310,6 +316,152 @@ private fun NutritionDailySummary(
                 goal = state.fatGoalGrams,
                 modifier = Modifier.weight(1f),
             )
+        }
+    }
+}
+
+@Composable
+private fun CircularNutritionGoal(
+    label: String,
+    value: Int,
+    goal: Int,
+    unit: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+) {
+    val progress = (value.toFloat() / goal.coerceAtLeast(1)).coerceIn(0f, 1f)
+    val progressColor = MaterialTheme.colorScheme.primary
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(modifier = Modifier.size(126.dp), contentAlignment = Alignment.Center) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawArc(
+                    color = trackColor,
+                    startAngle = -90f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    style = Stroke(width = 10.dp.toPx()),
+                )
+                drawArc(
+                    color = progressColor,
+                    startAngle = -90f,
+                    sweepAngle = progress * 360f,
+                    useCenter = false,
+                    style = Stroke(width = 10.dp.toPx()),
+                )
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(icon, contentDescription = null, tint = progressColor)
+                Text(
+                    text = NumberFormat.getIntegerInstance().format(value),
+                    fontWeight = FontWeight.ExtraBold,
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Text(
+                    text = "$unit / ${NumberFormat.getIntegerInstance().format(goal)}",
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+        }
+        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable
+private fun HydrationSection(
+    state: NutritionUiState,
+    onAction: (NutritionAction) -> Unit,
+    onReminderChanged: (Boolean) -> Unit,
+) {
+    ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Outlined.WaterDrop,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.nutrition_hydration_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = stringResource(
+                        R.string.nutrition_hydration_value,
+                        state.waterMilliliters,
+                        state.waterGoalMilliliters,
+                    ),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ForgeFlowOutlinedButton(
+                text = "+250 ml",
+                onClick = { onAction(NutritionAction.AddWater(250)) },
+                modifier = Modifier.weight(1f),
+            )
+            ForgeFlowOutlinedButton(
+                text = "+500 ml",
+                onClick = { onAction(NutritionAction.AddWater(500)) },
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(
+                onClick = { onAction(NutritionAction.RemoveLastWater) },
+                enabled = state.lastHydrationEntryId != null,
+            ) {
+                Icon(
+                    Icons.Outlined.Undo,
+                    contentDescription = stringResource(R.string.nutrition_water_undo),
+                )
+            }
+        }
+        HorizontalDivider(color = ForgeFlowDesign.colors.divider)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Outlined.NotificationsActive, contentDescription = null)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.nutrition_reminders_title),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = stringResource(R.string.nutrition_reminders_description),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Switch(
+                checked = state.wellnessRemindersEnabled,
+                onCheckedChange = onReminderChanged,
+            )
+        }
+        if (state.wellnessRemindersEnabled) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(4) { index ->
+                    val hours = index + 1
+                    FilterChip(
+                        selected = state.wellnessReminderIntervalHours == hours,
+                        onClick = {
+                            onAction(NutritionAction.WellnessReminderIntervalChanged(hours))
+                        },
+                        label = {
+                            Text(stringResource(R.string.nutrition_reminder_interval, hours))
+                        },
+                    )
+                }
+            }
         }
     }
 }
@@ -610,6 +762,12 @@ private fun NutritionGoalsDialog(
                     onValueChange = { onAction(NutritionAction.GoalFatChanged(it)) },
                     label = stringResource(R.string.nutrition_fat),
                     suffix = "g",
+                )
+                NutritionGoalField(
+                    value = editor.waterMilliliters,
+                    onValueChange = { onAction(NutritionAction.GoalWaterChanged(it)) },
+                    label = stringResource(R.string.nutrition_water_goal),
+                    suffix = "ml",
                 )
             }
         },

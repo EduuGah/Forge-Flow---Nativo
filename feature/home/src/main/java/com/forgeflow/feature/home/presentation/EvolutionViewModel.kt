@@ -16,6 +16,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -226,8 +227,14 @@ private fun List<WorkoutDetails>.bucketedChart(
         if (index in values.indices) values[index] += valueOf(workout)
     }
     return values.mapIndexed { index, value ->
+        val bucketStart = startDate.plusDays(index * bucketSizeDays)
         EvolutionChartPointUiModel(
-            label = CHART_DATE_FORMATTER.format(startDate.plusDays(index * bucketSizeDays)),
+            label = bucketStart.asBucketLabel(
+                end = minOf(
+                    bucketStart.plusDays(bucketSizeDays - 1),
+                    now.atZone(zone).toLocalDate(),
+                ),
+            ),
             value = value,
         )
     }
@@ -254,7 +261,12 @@ private fun List<WorkoutDetails>.volumeChart(
     return volumeByBucket.mapIndexed { index, volume ->
         val bucketStart = startDate.plusDays(index * bucketSizeDays)
         EvolutionChartPointUiModel(
-            label = CHART_DATE_FORMATTER.format(bucketStart),
+            label = bucketStart.asBucketLabel(
+                end = minOf(
+                    bucketStart.plusDays(bucketSizeDays - 1),
+                    now.atZone(zone).toLocalDate(),
+                ),
+            ),
             value = volume,
         )
     }
@@ -308,5 +320,11 @@ private val CHART_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPatter
     "dd/MM",
     Locale.forLanguageTag("pt-BR"),
 )
+
+private fun LocalDate.asBucketLabel(end: LocalDate): String = if (this == end) {
+    CHART_DATE_FORMATTER.format(this)
+} else {
+    "${CHART_DATE_FORMATTER.format(this)}–${CHART_DATE_FORMATTER.format(end)}"
+}
 
 private const val MAX_BODY_WEIGHT_POINTS = 14

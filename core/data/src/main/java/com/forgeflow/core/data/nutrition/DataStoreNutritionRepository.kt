@@ -13,6 +13,8 @@ import com.forgeflow.core.model.NutritionGoals
 import com.forgeflow.core.model.NutritionJournal
 import com.forgeflow.core.model.NutritionMeal
 import com.forgeflow.core.model.NutritionMealType
+import com.forgeflow.core.model.HydrationEntry
+import com.forgeflow.core.model.NutritionReminderSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.IOException
@@ -60,6 +62,22 @@ class DataStoreNutritionRepository @Inject constructor(
                         }.getOrNull()
                     }
                     ?: NutritionGoals(),
+                hydration = preferences[HYDRATION]
+                    ?.let { encoded ->
+                        runCatching {
+                            json.decodeFromString<List<HydrationEntryDto>>(encoded)
+                                .map(HydrationEntryDto::asModel)
+                                .sortedByDescending(HydrationEntry::consumedAt)
+                        }.getOrDefault(emptyList())
+                    }
+                    .orEmpty(),
+                reminders = preferences[REMINDERS]
+                    ?.let { encoded ->
+                        runCatching {
+                            json.decodeFromString<NutritionReminderSettingsDto>(encoded).asModel()
+                        }.getOrNull()
+                    }
+                    ?: NutritionReminderSettings(),
             )
         }
 
@@ -127,6 +145,54 @@ class DataStoreNutritionRepository @Inject constructor(
             onFailure = { DataResult.Failure(AppError.WriteFailed) },
         )
 
+    override suspend fun addHydration(entry: HydrationEntry): DataResult<Unit> = runCatching {
+        dataStore.edit { preferences ->
+            val entries = preferences[HYDRATION]
+                ?.let { encoded ->
+                    runCatching {
+                        json.decodeFromString<List<HydrationEntryDto>>(encoded).toMutableList()
+                    }.getOrDefault(mutableListOf())
+                }
+                ?: mutableListOf()
+            entries.removeAll { it.id == entry.id }
+            entries += HydrationEntryDto.from(entry)
+            preferences[HYDRATION] = json.encodeToString(entries)
+        }
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun removeHydration(entryId: String): DataResult<Unit> = runCatching {
+        dataStore.edit { preferences ->
+            val entries = preferences[HYDRATION]
+                ?.let { encoded ->
+                    runCatching {
+                        json.decodeFromString<List<HydrationEntryDto>>(encoded).toMutableList()
+                    }.getOrDefault(mutableListOf())
+                }
+                ?: mutableListOf()
+            entries.removeAll { it.id == entryId }
+            preferences[HYDRATION] = json.encodeToString(entries)
+        }
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
+    override suspend fun saveReminderSettings(
+        settings: NutritionReminderSettings,
+    ): DataResult<Unit> = runCatching {
+        dataStore.edit { preferences ->
+            preferences[REMINDERS] = json.encodeToString(
+                NutritionReminderSettingsDto.from(settings),
+            )
+        }
+    }.fold(
+        onSuccess = { DataResult.Success(Unit) },
+        onFailure = { DataResult.Failure(AppError.WriteFailed) },
+    )
+
     private fun importPhoto(mealId: String, sourceUri: Uri): String {
         val directory = nutritionPhotoDirectory().apply { mkdirs() }
         require(directory.isDirectory)
@@ -155,6 +221,8 @@ class DataStoreNutritionRepository @Inject constructor(
     private companion object {
         val MEALS = stringPreferencesKey("nutrition_meals_json")
         val GOALS = stringPreferencesKey("nutrition_goals_json")
+        val HYDRATION = stringPreferencesKey("nutrition_hydration_json")
+        val REMINDERS = stringPreferencesKey("nutrition_reminders_json")
         const val PHOTO_DIRECTORY = "nutrition_photos"
     }
 }
@@ -208,12 +276,14 @@ private data class NutritionGoalsDto(
     val proteinGrams: Double,
     val carbohydrateGrams: Double,
     val fatGrams: Double,
+    val waterMilliliters: Int = 2_500,
 ) {
     fun asModel(): NutritionGoals = NutritionGoals(
         calories = calories,
         proteinGrams = proteinGrams,
         carbohydrateGrams = carbohydrateGrams,
         fatGrams = fatGrams,
+        waterMilliliters = waterMilliliters,
     )
 
     companion object {
@@ -222,6 +292,47 @@ private data class NutritionGoalsDto(
             proteinGrams = goals.proteinGrams,
             carbohydrateGrams = goals.carbohydrateGrams,
             fatGrams = goals.fatGrams,
+            waterMilliliters = goals.waterMilliliters,
         )
+    }
+}
+
+@Serializable
+private data class HydrationEntryDto(
+    val id: String,
+    val milliliters: Int,
+    val consumedAtEpochMillis: Long,
+) {
+    fun asModel(): HydrationEntry = HydrationEntry(
+        id = id,
+        milliliters = milliliters,
+        consumedAt = Instant.ofEpochMilli(consumedAtEpochMillis),
+    )
+
+    companion object {
+        fun from(entry: HydrationEntry): HydrationEntryDto = HydrationEntryDto(
+            id = entry.id,
+            milliliters = entry.milliliters,
+            consumedAtEpochMillis = entry.consumedAt.toEpochMilli(),
+        )
+    }
+}
+
+@Serializable
+private data class NutritionReminderSettingsDto(
+    val enabled: Boolean = false,
+    val intervalHours: Int = 2,
+) {
+    fun asModel(): NutritionReminderSettings = NutritionReminderSettings(
+        enabled = enabled,
+        intervalHours = intervalHours,
+    )
+
+    companion object {
+        fun from(settings: NutritionReminderSettings): NutritionReminderSettingsDto =
+            NutritionReminderSettingsDto(
+                enabled = settings.enabled,
+                intervalHours = settings.intervalHours,
+            )
     }
 }

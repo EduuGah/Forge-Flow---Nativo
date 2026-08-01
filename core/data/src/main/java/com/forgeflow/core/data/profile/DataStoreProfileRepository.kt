@@ -35,6 +35,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -68,16 +69,19 @@ class DataStoreProfileRepository @Inject constructor(
         zoom: Float,
         horizontalOffset: Float,
         verticalOffset: Float,
+        rotationDegrees: Float,
     ): DataResult<Unit> = withContext(ioDispatcher) {
         val photoDirectory = profileDirectory()
         val source = Uri.parse(sourceUri)
-        val target = File(photoDirectory, "avatar.jpg")
-        val temporary = File(photoDirectory, "avatar.tmp.jpg")
+        val version = System.currentTimeMillis()
+        val target = File(photoDirectory, "avatar_$version.jpg")
+        val temporary = File(photoDirectory, ".avatar_$version.tmp")
         runCatching {
             photoDirectory.mkdirs()
             require(photoDirectory.isDirectory)
             val sourceBitmap = decodeBitmap(source)
-            val croppedBitmap = sourceBitmap.cropSquare(
+            val rotatedBitmap = sourceBitmap.rotate(rotationDegrees)
+            val croppedBitmap = rotatedBitmap.cropSquare(
                 outputSize = AVATAR_OUTPUT_SIZE,
                 zoom = zoom.coerceIn(MIN_AVATAR_ZOOM, MAX_AVATAR_ZOOM),
                 horizontalOffset = horizontalOffset.coerceIn(-1f, 1f),
@@ -86,17 +90,25 @@ class DataStoreProfileRepository @Inject constructor(
             temporary.outputStream().use { output ->
                 check(croppedBitmap.compress(Bitmap.CompressFormat.JPEG, AVATAR_JPEG_QUALITY, output))
             }
-            if (croppedBitmap !== sourceBitmap) croppedBitmap.recycle()
+            if (croppedBitmap !== rotatedBitmap) croppedBitmap.recycle()
+            if (rotatedBitmap !== sourceBitmap) rotatedBitmap.recycle()
             sourceBitmap.recycle()
             require(temporary.length() > 0)
-            photoDirectory.listFiles()
-                .orEmpty()
-                .filter { it.name.startsWith("avatar.") && it != temporary }
-                .forEach(File::delete)
             require(temporary.renameTo(target))
+            val previousPhotoPath = dataStore.data.first()[PROFILE_PHOTO_PATH]
             dataStore.edit { preferences ->
                 preferences[PROFILE_PHOTO_PATH] = target.absolutePath
             }
+            photoDirectory.listFiles()
+                .orEmpty()
+                .filter { file ->
+                    file != target &&
+                        (file.name == "avatar.jpg" || file.name.startsWith("avatar_"))
+                }
+                .forEach(File::delete)
+            previousPhotoPath
+                ?.takeIf { it != target.absolutePath }
+                ?.let(::deleteProfilePhoto)
         }.fold(
             onSuccess = { DataResult.Success(Unit) },
             onFailure = {
@@ -153,6 +165,13 @@ class DataStoreProfileRepository @Inject constructor(
         }
         Canvas(output).drawBitmap(this, matrix, null)
         return output
+    }
+
+    private fun Bitmap.rotate(rotationDegrees: Float): Bitmap {
+        val normalized = ((rotationDegrees % 360f) + 360f) % 360f
+        if (normalized < 0.1f || normalized > 359.9f) return this
+        val matrix = Matrix().apply { postRotate(normalized) }
+        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
 
     override suspend fun addBodyWeight(
@@ -340,6 +359,12 @@ class DataStoreProfileRepository @Inject constructor(
         File(context.filesDir, PROGRESS_PHOTO_DIRECTORY)
 
     private fun profileDirectory(): File = File(context.filesDir, PROFILE_DIRECTORY)
+
+    private fun deleteProfilePhoto(path: String) {
+        val directory = profileDirectory().canonicalFile
+        val photo = File(path).canonicalFile
+        if (photo.parentFile == directory) photo.delete()
+    }
 
     private fun deletePrivatePhoto(path: String) {
         val directory = progressPhotoDirectory().canonicalFile

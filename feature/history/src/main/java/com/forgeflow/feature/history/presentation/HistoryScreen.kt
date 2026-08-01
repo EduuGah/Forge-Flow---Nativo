@@ -1,5 +1,8 @@
 package com.forgeflow.feature.history.presentation
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,6 +17,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
@@ -30,9 +38,17 @@ fun HistoryScreen(
     state: HistoryUiState,
     onOpenExercise: (String) -> Unit,
     onOpenTrainingMap: () -> Unit,
+    onShareStory: (ImageBitmap) -> Unit,
     onAction: (HistoryAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var storyWorkout by remember { mutableStateOf<HistoryWorkoutUiModel?>(null) }
+    var storyPhotoUri by remember { mutableStateOf<String?>(null) }
+    val storyPhotoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        if (uri != null) storyPhotoUri = uri.toString()
+    }
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         if (state.isLoading) {
             ForgeFlowLoadingState(
@@ -45,6 +61,10 @@ fun HistoryScreen(
                 onOpenExercise = onOpenExercise,
                 onOpenTrainingMap = onOpenTrainingMap,
                 onAction = onAction,
+                onShareWorkout = { workout ->
+                    storyWorkout = workout
+                    storyPhotoUri = null
+                },
             )
         }
     }
@@ -56,6 +76,24 @@ fun HistoryScreen(
             onDismiss = { onAction(HistoryAction.DeleteDismissed) },
         )
     }
+    storyWorkout?.let { workout ->
+        WorkoutStoryEditor(
+            workout = workout,
+            weightUnit = state.weightUnit,
+            backgroundUri = storyPhotoUri,
+            onChoosePhoto = {
+                storyPhotoPicker.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
+            },
+            onRemovePhoto = { storyPhotoUri = null },
+            onShare = onShareStory,
+            onDismiss = {
+                storyWorkout = null
+                storyPhotoUri = null
+            },
+        )
+    }
 }
 
 @Composable
@@ -65,6 +103,7 @@ private fun HistoryContent(
     onOpenExercise: (String) -> Unit,
     onOpenTrainingMap: () -> Unit,
     onAction: (HistoryAction) -> Unit,
+    onShareWorkout: (HistoryWorkoutUiModel) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -185,6 +224,7 @@ private fun HistoryContent(
                         workout = workout,
                         weightUnit = state.weightUnit,
                         onOpenExercise = onOpenExercise,
+                        onShare = { onShareWorkout(workout) },
                         onDelete = {
                             onAction(HistoryAction.DeleteRequested(workout.id))
                         },

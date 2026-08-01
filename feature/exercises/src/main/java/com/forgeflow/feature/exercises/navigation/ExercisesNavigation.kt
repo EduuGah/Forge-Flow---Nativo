@@ -1,5 +1,8 @@
 package com.forgeflow.feature.exercises.navigation
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -10,6 +13,7 @@ import com.forgeflow.core.navigation.ExerciseDetailsRoute
 import com.forgeflow.core.navigation.ExercisesRoute
 import com.forgeflow.feature.exercises.presentation.ExerciseDetailsScreen
 import com.forgeflow.feature.exercises.presentation.ExerciseDetailsViewModel
+import com.forgeflow.feature.exercises.presentation.ExercisesAction
 import com.forgeflow.feature.exercises.presentation.ExercisesScreen
 import com.forgeflow.feature.exercises.presentation.ExercisesViewModel
 
@@ -28,12 +32,24 @@ fun NavGraphBuilder.exercisesScreen(
     composable<ExercisesRoute> {
         val viewModel: ExercisesViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val photoPicker = rememberLauncherForActivityResult(
+            ActivityResultContracts.PickVisualMedia(),
+        ) { uri ->
+            uri?.let {
+                viewModel.onAction(ExercisesAction.EditorPhotoSelected(it.toString()))
+            }
+        }
 
         ExercisesScreen(
             state = state,
             onAction = viewModel::onAction,
             onBack = onBack,
             onOpenExercise = onOpenExercise,
+            onSelectExercisePhoto = {
+                photoPicker.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
+            },
         )
     }
 }

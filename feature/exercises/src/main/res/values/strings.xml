@@ -70,12 +70,21 @@
     <string name="details_no_history">Conclua uma série deste exercício para iniciar o histórico.</string>
     <string name="details_execution">Como executar</string>
     <string name="details_no_instructions">As instruções deste exercício ainda não foram adicionadas.</string>
+    <string name="details_avoid">O que evitar</string>
     <string name="details_progress">Evolução</string>
     <string name="details_max_weight_over_time">Maior peso por treino (%1$s)</string>
     <string name="personal_record">Recorde pessoal</string>
     <string name="details_recent_records">PRs RECENTES</string>
+    <string name="details_record_explanation">Cada recorde mostra a série exata, o treino e a data em que foi alcançado.</string>
     <string name="record_current">ATUAL • %1$s • %2$s</string>
     <string name="record_previous">ANTERIOR • %1$s • %2$s</string>
     <string name="record_weight">Recorde de peso</string>
     <string name="record_set_volume">Recorde de volume</string>
+    <string name="record_weight_helper">A maior carga concluída, independentemente das repetições.</string>
+    <string name="record_set_volume_helper">A série com maior peso × repetições.</string>
+    <string name="exercise_photo">Foto do exercício</string>
+    <string name="exercise_photo_preview">Pré-visualização da foto do exercício</string>
+    <string name="exercise_photo_add">Adicionar foto</string>
+    <string name="exercise_photo_change">Trocar foto</string>
+    <string name="exercise_photo_remove">Remover foto</string>
 </resources>

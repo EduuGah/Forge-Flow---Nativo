@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.forgeflow.core.designsystem.component.ForgeFlowEmptyState
 import com.forgeflow.core.designsystem.component.ForgeFlowErrorState
@@ -35,6 +37,7 @@ fun ActiveWorkoutScreen(
     state: ActiveWorkoutUiState,
     onAction: (ActiveWorkoutAction) -> Unit,
     onBack: () -> Unit,
+    onOpenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showDiscardDialog by remember { mutableStateOf(false) }
@@ -43,6 +46,9 @@ fun ActiveWorkoutScreen(
     var includeLocation by remember { mutableStateOf(false) }
     var locationLabel by remember { mutableStateOf("") }
     var locationPermissionDenied by remember { mutableStateOf(false) }
+    var routineAction by remember { mutableStateOf(RoutineFinishAction.KEEP_ORIGINAL) }
+    var pendingFinish by remember { mutableStateOf<PendingWorkoutFinish?>(null) }
+    var pickerTarget by remember { mutableStateOf<ExercisePickerTarget?>(null) }
     val context = LocalContext.current
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -51,13 +57,19 @@ fun ActiveWorkoutScreen(
             permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         locationPermissionDenied = !granted
         if (granted) {
-            showFinishSheet = false
-            onAction(
-                ActiveWorkoutAction.Finish(
-                    includeLocation = true,
-                    locationLabel = locationLabel,
-                ),
-            )
+            pendingFinish?.let { pending ->
+                onAction(
+                    ActiveWorkoutAction.Finish(
+                        includeLocation = true,
+                        locationLabel = pending.locationLabel,
+                        routineAction = pending.routineAction,
+                    ),
+                )
+            }
+            pendingFinish = null
+        } else {
+            pendingFinish = null
+            showFinishSheet = true
         }
     }
     ForgeFlowScaffold(
@@ -97,6 +109,8 @@ fun ActiveWorkoutScreen(
                 workout = state.workout,
                 onAction = onAction,
                 onBack = onBack,
+                onOpenExercise = onOpenExercise,
+                onShowExercisePicker = { pickerTarget = it },
                 contentPadding = innerPadding,
             )
         }
@@ -121,28 +135,51 @@ fun ActiveWorkoutScreen(
             locationLabel = locationLabel,
             locationPermissionDenied = locationPermissionDenied,
             isFinishing = state.isCapturingLocation,
+            hasRoutine = state.workout?.routineId != null,
+            routineAction = routineAction,
             onIncludeLocationChanged = {
                 includeLocation = it
                 locationPermissionDenied = false
             },
             onLocationLabelChanged = { locationLabel = it },
+            onRoutineActionChanged = { routineAction = it },
+            onConfirm = {
+                pendingFinish = PendingWorkoutFinish(
+                    includeLocation = includeLocation,
+                    locationLabel = locationLabel,
+                    routineAction = routineAction,
+                )
+                showFinishSheet = false
+            },
+            onDismiss = { showFinishSheet = false },
+        )
+    }
+    pendingFinish?.let { pending ->
+        FinishWorkoutConfirmationDialog(
+            workoutName = state.workout?.name.orEmpty(),
+            includeLocation = pending.includeLocation,
+            locationLabel = pending.locationLabel,
+            hasRoutine = state.workout?.routineId != null,
+            routineAction = pending.routineAction,
             onConfirm = {
                 when {
-                    !includeLocation -> {
-                        showFinishSheet = false
+                    !pending.includeLocation -> {
+                        pendingFinish = null
                         onAction(
                             ActiveWorkoutAction.Finish(
                                 includeLocation = false,
                                 locationLabel = "",
+                                routineAction = pending.routineAction,
                             ),
                         )
                     }
                     context.hasLocationPermission() -> {
-                        showFinishSheet = false
+                        pendingFinish = null
                         onAction(
                             ActiveWorkoutAction.Finish(
                                 includeLocation = true,
-                                locationLabel = locationLabel,
+                                locationLabel = pending.locationLabel,
+                                routineAction = pending.routineAction,
                             ),
                         )
                     }
@@ -154,7 +191,33 @@ fun ActiveWorkoutScreen(
                     )
                 }
             },
-            onDismiss = { showFinishSheet = false },
+            onReview = {
+                pendingFinish = null
+                showFinishSheet = true
+            },
+            onDismiss = { pendingFinish = null },
+        )
+    }
+    pickerTarget?.let { target ->
+        ActiveExercisePickerSheet(
+            exercises = state.availableExercises,
+            onSelect = { exerciseId ->
+                when (target) {
+                    ExercisePickerTarget.Add -> {
+                        onAction(ActiveWorkoutAction.AddExercise(exerciseId))
+                    }
+                    is ExercisePickerTarget.Replace -> {
+                        onAction(
+                            ActiveWorkoutAction.ReplaceExercise(
+                                target.sessionExerciseId,
+                                exerciseId,
+                            ),
+                        )
+                    }
+                }
+                pickerTarget = null
+            },
+            onDismiss = { pickerTarget = null },
         )
     }
 }
@@ -164,8 +227,12 @@ private fun WorkoutContent(
     workout: ActiveWorkoutUiModel,
     onAction: (ActiveWorkoutAction) -> Unit,
     onBack: () -> Unit,
+    onOpenExercise: (String) -> Unit,
+    onShowExercisePicker: (ExercisePickerTarget) -> Unit,
     contentPadding: PaddingValues,
 ) {
+    var collapsedExerciseIds by remember { mutableStateOf(emptySet<String>()) }
+    var reorderingExerciseId by remember { mutableStateOf<String?>(null) }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -174,7 +241,9 @@ private fun WorkoutContent(
             end = ForgeFlowDesign.spacing.screenHorizontal,
             bottom = contentPadding.calculateBottomPadding() + ForgeFlowDesign.spacing.large,
         ),
-        verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.section),
+        verticalArrangement = Arrangement.spacedBy(
+            if (reorderingExerciseId != null) 6.dp else ForgeFlowDesign.spacing.section,
+        ),
     ) {
         item {
             WorkoutHeader(workout = workout, onBack = onBack)
@@ -199,11 +268,45 @@ private fun WorkoutContent(
             ActiveExerciseCard(
                 exercise = exercise,
                 weightUnit = workout.weightUnit,
+                collapsed = exercise.id in collapsedExerciseIds,
+                isReordering = reorderingExerciseId != null,
+                isDragging = reorderingExerciseId == exercise.id,
+                onToggleCollapsed = {
+                    collapsedExerciseIds = if (exercise.id in collapsedExerciseIds) {
+                        collapsedExerciseIds - exercise.id
+                    } else {
+                        collapsedExerciseIds + exercise.id
+                    }
+                },
+                onDragStarted = { reorderingExerciseId = exercise.id },
+                onDragStopped = { reorderingExerciseId = null },
                 onAction = onAction,
+                onOpenExercise = onOpenExercise,
+                onReplaceExercise = {
+                    onShowExercisePicker(ExercisePickerTarget.Replace(exercise.id))
+                },
+            )
+        }
+        item {
+            com.forgeflow.core.designsystem.component.ForgeFlowOutlinedButton(
+                text = stringResource(R.string.add_exercise),
+                onClick = { onShowExercisePicker(ExercisePickerTarget.Add) },
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
 }
+
+internal sealed interface ExercisePickerTarget {
+    data object Add : ExercisePickerTarget
+    data class Replace(val sessionExerciseId: String) : ExercisePickerTarget
+}
+
+private data class PendingWorkoutFinish(
+    val includeLocation: Boolean,
+    val locationLabel: String,
+    val routineAction: RoutineFinishAction,
+)
 
 private fun android.content.Context.hasLocationPermission(): Boolean {
     val fine = ContextCompat.checkSelfPermission(

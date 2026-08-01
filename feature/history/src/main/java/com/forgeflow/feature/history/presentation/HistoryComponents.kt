@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +50,7 @@ internal fun HistoryWorkoutCard(
     workout: HistoryWorkoutUiModel,
     weightUnit: WeightUnit,
     onOpenExercise: (String) -> Unit,
+    onShare: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var expanded by rememberSaveable(workout.id) { mutableStateOf(false) }
@@ -111,6 +113,13 @@ internal fun HistoryWorkoutCard(
                 ),
                 tint = ForgeFlowDesign.colors.textSecondary,
             )
+            IconButton(onClick = onShare) {
+                Icon(
+                    imageVector = Icons.Outlined.Share,
+                    contentDescription = stringResource(R.string.share_workout_action),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Outlined.DeleteOutline,

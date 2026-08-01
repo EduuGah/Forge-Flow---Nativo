@@ -9,6 +9,16 @@
     <string name="notification_channel_progress_description">Resumo de metas, consistência e recordes.</string>
     <string name="notification_channel_updates">Atualizações do aplicativo</string>
     <string name="notification_channel_updates_description">Avisos importantes sobre o ForgeFlow.</string>
+    <string name="notification_channel_wellness">Bem-estar</string>
+    <string name="notification_channel_wellness_description">Lembretes opcionais de água, movimento e recuperação.</string>
+    <string name="wellness_notification_title">Pausa rápida</string>
+    <string-array name="wellness_notification_messages">
+        <item>Bebeu água? Um copo agora já conta para sua meta.</item>
+        <item>Como está sua energia? Faça uma pausa curta e respire.</item>
+        <item>Hora de levantar, alongar e movimentar o corpo por alguns minutos.</item>
+        <item>Confira sua meta de água e registre o próximo copo.</item>
+        <item>Recuperação também faz parte do treino. Como está seu descanso?</item>
+    </string-array>
     <plurals name="active_workout_notification_progress">
         <item quantity="one">%1$d de %2$d série concluída</item>
         <item quantity="other">%1$d de %2$d séries concluídas</item>

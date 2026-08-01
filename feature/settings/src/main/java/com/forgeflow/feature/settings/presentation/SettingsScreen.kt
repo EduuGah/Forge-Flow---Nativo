@@ -19,6 +19,9 @@ fun SettingsScreen(
     onRequestHealthPermissions: () -> Unit,
     onSelectWorkoutCsv: () -> Unit,
     onSelectMeasurementCsv: () -> Unit,
+    onOpenHealthDashboard: () -> Unit,
+    onOpenTutorial: () -> Unit,
+    onCreateDataExport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -40,7 +43,16 @@ fun SettingsScreen(
                 )
             }
             item {
-                DataProtectionSection()
+                TutorialSection(onOpenTutorial = onOpenTutorial)
+            }
+            item {
+                DataProtectionSection(
+                    state = state,
+                    onExport = onCreateDataExport,
+                    onDismissResult = {
+                        onAction(SettingsAction.DismissDataExportResult)
+                    },
+                )
             }
             item {
                 HevyImportSection(
@@ -64,6 +76,7 @@ fun SettingsScreen(
                     state = state,
                     onAction = onAction,
                     onRequestPermissions = onRequestHealthPermissions,
+                    onOpenDashboard = onOpenHealthDashboard,
                 )
             }
         }

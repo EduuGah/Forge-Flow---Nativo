@@ -17,6 +17,7 @@ interface ProfileRepository {
         zoom: Float,
         horizontalOffset: Float,
         verticalOffset: Float,
+        rotationDegrees: Float,
     ): DataResult<Unit>
 
     suspend fun addBodyWeight(

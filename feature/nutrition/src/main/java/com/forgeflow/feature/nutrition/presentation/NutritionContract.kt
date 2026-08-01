@@ -16,6 +16,11 @@ data class NutritionUiState(
     val carbohydrateGoalGrams: Double = 250.0,
     val fatGrams: Double = 0.0,
     val fatGoalGrams: Double = 70.0,
+    val waterMilliliters: Int = 0,
+    val waterGoalMilliliters: Int = 2_500,
+    val lastHydrationEntryId: String? = null,
+    val wellnessRemindersEnabled: Boolean = false,
+    val wellnessReminderIntervalHours: Int = 2,
     val meals: List<NutritionMealUiModel> = emptyList(),
     val mealEditor: NutritionMealEditorUiState? = null,
     val goalsEditor: NutritionGoalsEditorUiState? = null,
@@ -54,6 +59,7 @@ data class NutritionGoalsEditorUiState(
     val proteinGrams: String = "",
     val carbohydrateGrams: String = "",
     val fatGrams: String = "",
+    val waterMilliliters: String = "",
     val isSaving: Boolean = false,
 )
 
@@ -80,6 +86,11 @@ sealed interface NutritionAction {
     data class GoalProteinChanged(val value: String) : NutritionAction
     data class GoalCarbohydrateChanged(val value: String) : NutritionAction
     data class GoalFatChanged(val value: String) : NutritionAction
+    data class GoalWaterChanged(val value: String) : NutritionAction
     data object SaveGoals : NutritionAction
+    data class AddWater(val milliliters: Int) : NutritionAction
+    data object RemoveLastWater : NutritionAction
+    data class WellnessRemindersChanged(val enabled: Boolean) : NutritionAction
+    data class WellnessReminderIntervalChanged(val hours: Int) : NutritionAction
     data object DismissError : NutritionAction
 }

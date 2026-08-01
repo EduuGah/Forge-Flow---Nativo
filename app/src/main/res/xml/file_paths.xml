@@ -3,4 +3,7 @@
     <cache-path
         name="nutrition_camera"
         path="nutrition_camera/" />
+    <cache-path
+        name="workout_shares"
+        path="workout_shares/" />
 </paths>

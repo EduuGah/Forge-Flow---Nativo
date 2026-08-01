@@ -21,6 +21,9 @@ data class RoutineEntity(
     val folderId: String? = null,
     val name: String,
     val description: String,
+    val position: Int = 0,
+    @ColumnInfo(name = "compare_history_within_folder")
+    val compareHistoryWithinFolder: Boolean = false,
     @ColumnInfo(name = "created_at_epoch_millis")
     val createdAtEpochMillis: Long,
     @ColumnInfo(name = "updated_at_epoch_millis")
@@ -82,4 +85,6 @@ data class RoutineExerciseEntity(
     val plannedRepetitionsMaximum: Int?,
     @ColumnInfo(name = "planned_sets")
     val plannedSets: Int,
+    @ColumnInfo(name = "planned_warm_up_sets")
+    val plannedWarmUpSets: Int = 0,
 )

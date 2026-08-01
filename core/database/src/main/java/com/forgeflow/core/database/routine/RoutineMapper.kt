@@ -18,6 +18,8 @@ fun RoutineRecord.asExternalModel(): RoutineDetails = RoutineDetails(
         folderId = routine.folderId?.let(::RoutineFolderId),
         name = routine.name,
         description = routine.description,
+        position = routine.position,
+        compareHistoryWithinFolder = routine.compareHistoryWithinFolder,
         createdAt = Instant.ofEpochMilli(routine.createdAtEpochMillis),
         updatedAt = Instant.ofEpochMilli(routine.updatedAtEpochMillis),
         archivedAt = routine.archivedAtEpochMillis?.let(Instant::ofEpochMilli),
@@ -41,6 +43,7 @@ fun RoutineRecord.asExternalModel(): RoutineDetails = RoutineDetails(
                         null
                     },
                     plannedSets = record.item.plannedSets,
+                    plannedWarmUpSets = record.item.plannedWarmUpSets,
                 ),
                 exercise = record.exercise.asExternalModel(),
             )

@@ -21,6 +21,8 @@ import com.forgeflow.core.model.WorkoutDetails
 import com.forgeflow.core.model.calculateWorkoutStreakStats
 import com.forgeflow.core.model.nextScheduledWorkoutDate
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.text.NumberFormat
+import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -91,6 +93,7 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
             trainingDays = settings.trainingDays,
             completedDates = workoutDates,
         )
+        val latestWorkout = history.maxByOrNull { it.session.startedAt }
         return ForgeFlowWidgetState(
             weeklyWorkoutCount = streak.currentWeekCount,
             weeklyGoal = settings.weeklyWorkoutGoal.coerceAtLeast(1),
@@ -104,7 +107,16 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
             activeTotalSets = activeWorkout?.totalSetCount ?: 0,
             activeExerciseCount = activeWorkout?.exercises?.size ?: 0,
             activeStartedAtEpochMillis = activeWorkout?.session?.startedAt?.toEpochMilli(),
-            latestWorkoutName = history.firstOrNull()?.session?.name,
+            latestWorkoutName = latestWorkout?.session?.name,
+            latestWorkoutDurationMinutes = latestWorkout?.let { workout ->
+                Duration.between(
+                    workout.session.startedAt,
+                    workout.session.finishedAt ?: workout.session.startedAt,
+                ).toMinutes().coerceAtLeast(0)
+            },
+            latestWorkoutVolume = latestWorkout?.totalVolumeGrams
+                ?.div(settings.weightUnit.gramsPerDisplayUnit),
+            weightUnitSymbol = settings.weightUnit.symbol,
             accentColor = settings.accentColor,
         )
     }
@@ -138,7 +150,10 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_forgeflow)
         val isActive = state.activeWorkoutName != null
-        val isCompact = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT) in 1..129
+        val maxHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+        val maxWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
+        val isCompact = maxHeight in 1..149
+        val isNarrow = maxWidth in 1..279
         val accent = state.accentColor.toArgb()
         val progress = (
             state.weeklyWorkoutCount.toFloat() / state.weeklyGoal * WIDGET_PROGRESS_MAX
@@ -158,7 +173,6 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
             progress,
             false,
         )
-        views.setTextColor(R.id.widget_brand, accent)
         views.setTextColor(R.id.widget_primary_action, accent)
         views.setInt(R.id.widget_history_action, "setColorFilter", accent)
 
@@ -209,7 +223,13 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
             views.setTextViewText(
                 R.id.widget_supporting,
                 state.latestWorkoutName?.let { latest ->
-                    context.getString(R.string.widget_latest_workout, latest)
+                    context.getString(
+                        R.string.widget_latest_workout_details,
+                        latest,
+                        state.latestWorkoutDurationMinutes.toWidgetDuration(),
+                        state.latestWorkoutVolume.toWidgetVolume(),
+                        state.weightUnitSymbol,
+                    )
                 } ?: context.getString(R.string.widget_first_workout),
             )
             views.setTextViewText(
@@ -233,7 +253,11 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
         )
         views.setViewVisibility(
             R.id.widget_streak,
-            if (isCompact) View.GONE else View.VISIBLE,
+            if (isCompact || isNarrow) View.GONE else View.VISIBLE,
+        )
+        views.setViewVisibility(
+            R.id.widget_history_action,
+            if (isNarrow) View.GONE else View.VISIBLE,
         )
 
         val primaryDestination = if (isActive) {
@@ -313,6 +337,23 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
         AccentColor.INDIGO -> 0xFF626ED4.toInt()
     }
 
+    private fun Long?.toWidgetDuration(): String {
+        val minutes = this ?: 0
+        return if (minutes < 60) {
+            context.getString(R.string.widget_duration_minutes, minutes)
+        } else {
+            context.getString(
+                R.string.widget_duration_hours,
+                minutes / 60,
+                minutes % 60,
+            )
+        }
+    }
+
+    private fun Double?.toWidgetVolume(): String = NumberFormat.getNumberInstance(
+        Locale.forLanguageTag("pt-BR"),
+    ).apply { maximumFractionDigits = 1 }.format(this ?: 0.0)
+
     private companion object {
         const val WIDGET_PROGRESS_MAX = 100
         const val REQUEST_CODE_MULTIPLIER = 10
@@ -335,5 +376,20 @@ private data class ForgeFlowWidgetState(
     val activeExerciseCount: Int,
     val activeStartedAtEpochMillis: Long?,
     val latestWorkoutName: String?,
+    val latestWorkoutDurationMinutes: Long?,
+    val latestWorkoutVolume: Double?,
+    val weightUnitSymbol: String,
     val accentColor: AccentColor,
 )
+
+private val com.forgeflow.core.model.WeightUnit.gramsPerDisplayUnit: Double
+    get() = when (this) {
+        com.forgeflow.core.model.WeightUnit.KILOGRAM -> 1_000.0
+        com.forgeflow.core.model.WeightUnit.POUND -> 453.59237
+    }
+
+private val com.forgeflow.core.model.WeightUnit.symbol: String
+    get() = when (this) {
+        com.forgeflow.core.model.WeightUnit.KILOGRAM -> "kg"
+        com.forgeflow.core.model.WeightUnit.POUND -> "lb"
+    }

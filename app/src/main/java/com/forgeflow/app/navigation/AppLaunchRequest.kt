@@ -9,6 +9,7 @@ enum class AppLaunchDestination(val value: String) {
     ROUTINES("routines"),
     HISTORY("history"),
     ACTIVE_WORKOUT("active_workout"),
+    NUTRITION("nutrition"),
 }
 
 data class AppLaunchRequest(

@@ -14,6 +14,7 @@ private fun ActiveWorkoutScreenPreview() {
             state = ActiveWorkoutUiState(isLoading = false),
             onAction = {},
             onBack = {},
+            onOpenExercise = {},
         )
     }
 }

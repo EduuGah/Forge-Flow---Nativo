@@ -79,11 +79,26 @@ object MigrationRegistry {
         }
     }
 
+    private val migration5To6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `routines` ADD COLUMN `position` INTEGER NOT NULL DEFAULT 0")
+            db.execSQL(
+                "ALTER TABLE `routines` ADD COLUMN " +
+                    "`compare_history_within_folder` INTEGER NOT NULL DEFAULT 0",
+            )
+            db.execSQL(
+                "ALTER TABLE `routine_exercises` ADD COLUMN " +
+                    "`planned_warm_up_sets` INTEGER NOT NULL DEFAULT 0",
+            )
+        }
+    }
+
     val all: Array<Migration> = arrayOf(
         migration1To2,
         migration2To3,
         migration3To4,
         migration4To5,
+        migration5To6,
     )
 
     private fun updateDefaultExerciseMedia(database: SupportSQLiteDatabase) {

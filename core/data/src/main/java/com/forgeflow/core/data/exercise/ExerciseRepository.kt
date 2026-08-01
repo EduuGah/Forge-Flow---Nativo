@@ -18,6 +18,8 @@ interface ExerciseRepository {
         muscleGroup: MuscleGroup,
         equipment: Equipment,
         instructions: String,
+        sourceMediaUri: String? = null,
+        removeMedia: Boolean = false,
     ): DataResult<ExerciseId>
 
     suspend fun deleteCustomExercise(id: ExerciseId): DataResult<Unit>

@@ -14,6 +14,7 @@ private fun HistoryScreenPreview() {
             state = HistoryUiState(isLoading = false),
             onOpenExercise = {},
             onOpenTrainingMap = {},
+            onShareStory = {},
             onAction = {},
         )
     }

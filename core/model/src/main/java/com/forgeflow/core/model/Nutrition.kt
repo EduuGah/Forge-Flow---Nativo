@@ -30,9 +30,23 @@ data class NutritionGoals(
     val proteinGrams: Double = 160.0,
     val carbohydrateGrams: Double = 250.0,
     val fatGrams: Double = 70.0,
+    val waterMilliliters: Int = 2_500,
+)
+
+data class HydrationEntry(
+    val id: String,
+    val milliliters: Int,
+    val consumedAt: Instant,
+)
+
+data class NutritionReminderSettings(
+    val enabled: Boolean = false,
+    val intervalHours: Int = 2,
 )
 
 data class NutritionJournal(
     val meals: List<NutritionMeal> = emptyList(),
     val goals: NutritionGoals = NutritionGoals(),
+    val hydration: List<HydrationEntry> = emptyList(),
+    val reminders: NutritionReminderSettings = NutritionReminderSettings(),
 )

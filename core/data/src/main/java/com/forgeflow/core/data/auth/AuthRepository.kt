@@ -5,6 +5,8 @@ import com.forgeflow.core.model.AccountSession
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
+    fun isConfigured(): Boolean
+
     fun observeSession(): Flow<AccountSession?>
 
     suspend fun signInWithGoogleIdToken(idToken: String): DataResult<AccountSession>

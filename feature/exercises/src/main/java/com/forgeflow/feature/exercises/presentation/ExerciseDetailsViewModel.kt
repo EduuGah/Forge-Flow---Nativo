@@ -12,6 +12,7 @@ import com.forgeflow.core.model.Exercise
 import com.forgeflow.core.model.UserSettings
 import com.forgeflow.core.model.WorkoutDetails
 import com.forgeflow.core.model.WorkoutSet
+import com.forgeflow.core.model.PersonalRecordType
 import com.forgeflow.core.model.estimatedOneRepMaxGrams
 import com.forgeflow.core.model.gramsIn
 import com.forgeflow.core.model.personalRecordsAgainst
@@ -77,16 +78,28 @@ class ExerciseDetailsViewModel @Inject constructor(
                 .firstOrNull { it.sessionExercise.exerciseId == id }
                 ?.let { workout to it }
         }
-        val personalRecordsBySet = mutableMapOf<String, Set<com.forgeflow.core.model.PersonalRecordType>>()
+        val chronologicalSessions = matchingSessions.sortedBy { it.first.session.startedAt }
+        val personalRecordsBySet = mutableMapOf<String, Set<PersonalRecordType>>()
+        val recordEvents = mutableListOf<ExercisePersonalRecordUiModel>()
         val previousSets = mutableListOf<WorkoutSet>()
-        matchingSessions.asReversed().forEach { (_, exerciseDetails) ->
+        chronologicalSessions.forEach { (workout, exerciseDetails) ->
             exerciseDetails.sets
-                .filter(WorkoutSet::isCompleted)
+                .filter { it.isCompleted && it.repetitions.count > 0 }
                 .sortedBy(WorkoutSet::position)
                 .forEach { set ->
                     val records = set.personalRecordsAgainst(previousSets)
                     if (records.isNotEmpty()) {
                         personalRecordsBySet[set.id.value] = records
+                        records.forEach { type ->
+                            recordEvents += ExercisePersonalRecordUiModel(
+                                type = type,
+                                workoutName = workout.session.name,
+                                date = DATE_FORMATTER.format(
+                                    workout.session.startedAt.atZone(ZoneId.systemDefault()),
+                                ),
+                                performance = set.recordPerformance(type, settings),
+                            )
+                        }
                     }
                     previousSets += set
                 }
@@ -94,7 +107,10 @@ class ExerciseDetailsViewModel @Inject constructor(
         val completedSets = matchingSessions
             .flatMap { it.second.sets }
             .filter { it.isCompleted && it.repetitions.count > 0 }
-        val bestWeight = completedSets.maxByOrNull { it.weight.grams }
+        val bestWeight = completedSets.maxWithOrNull(
+            compareBy<WorkoutSet> { it.weight.grams }
+                .thenBy { it.repetitions.count },
+        )
         val bestOneRepMax = completedSets.maxOfOrNull(WorkoutSet::estimatedOneRepMaxGrams)
             ?.toLong()
             ?: 0L
@@ -114,29 +130,16 @@ class ExerciseDetailsViewModel @Inject constructor(
                     )
                 }
         }
-        val personalRecordTimeline = matchingSessions.flatMap { (workout, details) ->
-            details.sets
-                .filter { it.isCompleted && it.repetitions.count > 0 }
-                .mapNotNull { set ->
-                    val recordTypes = personalRecordsBySet[set.id.value].orEmpty()
-                    if (recordTypes.isEmpty()) {
-                        null
-                    } else {
-                        ExercisePersonalRecordUiModel(
-                            types = recordTypes,
-                            workoutName = workout.session.name,
-                            date = DATE_FORMATTER.format(
-                                workout.session.startedAt.atZone(
-                                    ZoneId.systemDefault(),
-                                ),
-                            ),
-                            performance = "${
-                                set.weight.valueIn(settings.weightUnit).toCleanString()
-                            } × ${set.repetitions.count} ${settings.weightUnit.shortLabel()}",
-                        )
-                    }
-                }
-        }.take(3)
+        val recordSummaries = PersonalRecordType.entries.mapNotNull { type ->
+            val records = recordEvents.filter { it.type == type }
+            records.lastOrNull()?.let { current ->
+                ExerciseRecordSummaryUiModel(
+                    type = type,
+                    current = current,
+                    previous = records.dropLast(1).takeLast(2).asReversed(),
+                )
+            }
+        }
         return ExerciseDetailsUiModel(
             id = id.value,
             name = name,
@@ -171,7 +174,7 @@ class ExerciseDetailsViewModel @Inject constructor(
                 .flatten()
                 .distinct()
                 .size,
-            personalRecords = personalRecordTimeline,
+            personalRecords = recordSummaries,
             chartPoints = chart,
             sessions = matchingSessions.map { (workout, details) ->
                 ExerciseSessionUiModel(
@@ -200,6 +203,23 @@ class ExerciseDetailsViewModel @Inject constructor(
 
     private fun Double.toCleanString(): String =
         if (this % 1.0 == 0.0) toLong().toString() else "%.1f".format(this)
+
+    private fun WorkoutSet.recordPerformance(
+        type: PersonalRecordType,
+        settings: UserSettings,
+    ): String {
+        val weightValue = weight.valueIn(settings.weightUnit).toCleanString()
+        val set = "$weightValue ${settings.weightUnit.shortLabel()} × ${repetitions.count}"
+        return when (type) {
+            PersonalRecordType.WEIGHT -> set
+            PersonalRecordType.SET_VOLUME -> {
+                val volume = (weight.grams * repetitions.count)
+                    .gramsIn(settings.weightUnit)
+                    .toCleanString()
+                "$set = $volume ${settings.weightUnit.shortLabel()}"
+            }
+        }
+    }
 
     private fun com.forgeflow.core.model.WeightUnit.shortLabel(): String =
         if (this == com.forgeflow.core.model.WeightUnit.KILOGRAM) "kg" else "lb"

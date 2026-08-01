@@ -38,6 +38,8 @@ Prioridades:
 - [ ] Salvar nome, nascimento, altura, peso, objetivo e experiência
 - [ ] Alternar entre kg e lb sem alterar o valor real
 - [ ] Adicionar uma foto pelo seletor do Android
+- [ ] Ampliar, mover e girar o avatar com dois dedos; testar também o botão de giro
+- [ ] Fechar e reabrir o aplicativo para confirmar o novo avatar salvo
 - [ ] Comparar duas ou mais fotos
 - [ ] Abrir detalhes com toque, selecionar com pressão longa e filtrar período exato
 - [ ] Arrastar a divisória entre duas fotos na comparação
@@ -78,6 +80,9 @@ Prioridades:
 - [ ] Limpar todos os filtros
 - [ ] Expandir treino e conferir séries, volume e PRs
 - [ ] Excluir treino com confirmação
+- [ ] Compartilhar treino com e sem foto, testar os três temas e ocultar informações
+- [ ] Ampliar, mover e girar a foto do story; arrastar o painel de informações
+- [ ] Compartilhar a imagem final para outro aplicativo
 - [ ] Abrir mapa do treino e mapa geral
 - [ ] Tocar nos gráficos e conferir o valor selecionado
 
@@ -89,7 +94,11 @@ Prioridades:
 - [ ] Conectar, sincronizar e revogar Health Connect
 - [ ] Conferir origem Samsung Health e histórico de passos em 7 e 30 dias
 - [ ] Registrar água e validar lembretes de bem-estar
-- [ ] Testar widget e atalhos
+- [ ] Conferir sequência, último treino, duração e volume no widget de treino
+- [ ] Adicionar widgets de nutrição e hidratação à tela inicial
+- [ ] Registrar 250 ml pelo widget e conferir o diário de hidratação
+- [ ] Abrir nutrição diretamente pelos dois novos widgets
+- [ ] Testar atalhos do sistema
 - [ ] Reiniciar o aparelho com treino ou cronômetro ativo
 
 ## Resultado da rodada

@@ -119,6 +119,7 @@ fun ForgeFlowApp(
             AppLaunchDestination.ROUTINES -> navController.navigateTopLevelRoute(RoutinesRoute)
             AppLaunchDestination.HISTORY -> navController.navigateTopLevelRoute(HistoryRoute)
             AppLaunchDestination.ACTIVE_WORKOUT -> navController.navigateToActiveWorkout()
+            AppLaunchDestination.NUTRITION -> navController.navigateTopLevelRoute(NutritionRoute)
             null -> Unit
         }
     }

@@ -51,6 +51,7 @@
 - [x] Calendário, metas, horários e sequências
 - [x] Mapa por treino e mapa geral de locais
 - [x] Perfil local, peso corporal e editor circular de avatar
+- [x] Avatar persistente com zoom, movimento e rotação por gesto ou botão
 - [x] Peso corporal com data editável e bloqueio de datas futuras
 - [x] Galeria de fotos com toque para detalhes, seleção por pressão longa e período exato
 - [x] Comparação de fotos com divisória arrastável
@@ -63,6 +64,8 @@
 - [x] Health Connect
 - [x] Painel Health Connect com origem Samsung Health, passos e gráfico de 7/30 dias
 - [x] Widget e atalhos do sistema
+- [x] Compartilhamento de treino em formato story com foto, temas e dados editáveis
+- [x] Widgets de treino, nutrição e hidratação com ação rápida de água
 - [x] Backup criptografado e transferência entre dispositivos elegíveis
 - [x] Ícone adaptativo com variações de cor sem reinicialização imediata
 - [x] Barra inferior compacta e menu lateral para áreas secundárias

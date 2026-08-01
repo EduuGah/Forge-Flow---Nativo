@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.RotateRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Edit
@@ -84,7 +85,12 @@ fun ProfileScreen(
     onAction: (SettingsAction) -> Unit,
     onSelectAvatar: () -> Unit,
     pendingAvatarUri: String?,
-    onConfirmAvatarCrop: (zoom: Float, horizontalOffset: Float, verticalOffset: Float) -> Unit,
+    onConfirmAvatarCrop: (
+        zoom: Float,
+        horizontalOffset: Float,
+        verticalOffset: Float,
+        rotationDegrees: Float,
+    ) -> Unit,
     onDismissAvatarCrop: () -> Unit,
     onOpenProgressPhotos: () -> Unit,
     modifier: Modifier = Modifier,
@@ -251,10 +257,16 @@ private fun ProfileHero(
 private fun AvatarCropDialog(
     sourceUri: String,
     isSaving: Boolean,
-    onConfirm: (zoom: Float, horizontalOffset: Float, verticalOffset: Float) -> Unit,
+    onConfirm: (
+        zoom: Float,
+        horizontalOffset: Float,
+        verticalOffset: Float,
+        rotationDegrees: Float,
+    ) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var zoom by remember(sourceUri) { mutableFloatStateOf(1f) }
+    var rotationDegrees by remember(sourceUri) { mutableFloatStateOf(0f) }
     var pan by remember(sourceUri) { mutableStateOf(Offset.Zero) }
     var viewportSize by remember(sourceUri) { mutableFloatStateOf(1f) }
     val maxPan = (viewportSize * (0.25f + (zoom - 1f) / 2f)).coerceAtLeast(1f)
@@ -275,10 +287,13 @@ private fun AvatarCropDialog(
                         .aspectRatio(1f)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .pointerInput(sourceUri, zoom) {
+                        .pointerInput(sourceUri) {
                             viewportSize = size.width.toFloat()
-                            detectTransformGestures { _, drag, gestureZoom, _ ->
+                            detectTransformGestures { _, drag, gestureZoom, gestureRotation ->
                                 zoom = (zoom * gestureZoom).coerceIn(1f, 4f)
+                                rotationDegrees = normalizeRotation(
+                                    rotationDegrees + gestureRotation,
+                                )
                                 val limit = (
                                     size.width * (0.25f + (zoom - 1f) / 2f)
                                     ).coerceAtLeast(1f)
@@ -300,6 +315,7 @@ private fun AvatarCropDialog(
                                 scaleY = zoom,
                                 translationX = pan.x,
                                 translationY = pan.y,
+                                rotationZ = rotationDegrees,
                             ),
                         contentScale = ContentScale.Crop,
                     )
@@ -330,8 +346,19 @@ private fun AvatarCropDialog(
                     )
                     IconButton(
                         onClick = {
+                            rotationDegrees = normalizeRotation(rotationDegrees + 90f)
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.RotateRight,
+                            contentDescription = stringResource(R.string.avatar_crop_rotate),
+                        )
+                    }
+                    IconButton(
+                        onClick = {
                             zoom = 1f
                             pan = Offset.Zero
+                            rotationDegrees = 0f
                         },
                     ) {
                         Icon(
@@ -349,6 +376,7 @@ private fun AvatarCropDialog(
                         zoom,
                         (pan.x / maxPan).coerceIn(-1f, 1f),
                         (pan.y / maxPan).coerceIn(-1f, 1f),
+                        rotationDegrees,
                     )
                 },
                 enabled = !isSaving,
@@ -363,6 +391,8 @@ private fun AvatarCropDialog(
         },
     )
 }
+
+private fun normalizeRotation(value: Float): Float = ((value + 180f) % 360f + 360f) % 360f - 180f
 
 @Composable
 private fun ProfileMetric(value: String, label: String) {

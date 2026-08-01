@@ -143,6 +143,7 @@ sealed interface SettingsAction {
         val zoom: Float,
         val horizontalOffset: Float,
         val verticalOffset: Float,
+        val rotationDegrees: Float,
     ) : SettingsAction
     data object OpenBodyWeightEditor : SettingsAction
     data object CloseBodyWeightEditor : SettingsAction

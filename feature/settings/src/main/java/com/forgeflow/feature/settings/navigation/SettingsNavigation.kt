@@ -119,7 +119,7 @@ fun NavGraphBuilder.profileScreen(
                 )
             },
             pendingAvatarUri = pendingAvatarUri,
-            onConfirmAvatarCrop = { zoom, horizontalOffset, verticalOffset ->
+            onConfirmAvatarCrop = { zoom, horizontalOffset, verticalOffset, rotationDegrees ->
                 pendingAvatarUri?.let { sourceUri ->
                     viewModel.onAction(
                         SettingsAction.ImportProfilePhoto(
@@ -127,6 +127,7 @@ fun NavGraphBuilder.profileScreen(
                             zoom = zoom,
                             horizontalOffset = horizontalOffset,
                             verticalOffset = verticalOffset,
+                            rotationDegrees = rotationDegrees,
                         ),
                     )
                     pendingAvatarUri = null

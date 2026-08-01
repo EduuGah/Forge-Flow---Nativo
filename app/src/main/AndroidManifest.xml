@@ -259,6 +259,30 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/forgeflow_widget_info" />
         </receiver>
+
+        <receiver
+            android:name=".widget.NutritionWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/nutrition_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.HydrationWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hydration_widget_info" />
+        </receiver>
     </application>
 
 </manifest>

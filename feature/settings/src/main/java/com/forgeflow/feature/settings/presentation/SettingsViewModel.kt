@@ -309,6 +309,7 @@ class SettingsViewModel @Inject constructor(
                 zoom = action.zoom,
                 horizontalOffset = action.horizontalOffset,
                 verticalOffset = action.verticalOffset,
+                rotationDegrees = action.rotationDegrees,
             )
             operation.update {
                 it.copy(

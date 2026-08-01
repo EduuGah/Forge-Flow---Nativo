@@ -89,12 +89,11 @@ class ActiveWorkoutViewModel @Inject constructor(
         WorkoutEditorState(currentDrafts, currentNotes, currentOperation)
     }
 
-    val uiState = combine(
+    private val baseUiState = combine(
         workoutSources,
         editorState,
-        ticker,
         settingsRepository.observeSettings(),
-    ) { sources, editor, now, settings ->
+    ) { sources, editor, settings ->
         currentWeightUnit = settings.weightUnit
         healthConnectSyncEnabled = settings.healthConnectSyncEnabled
         when (val result = sources.active) {
@@ -114,7 +113,6 @@ class ActiveWorkoutViewModel @Inject constructor(
                     workout = result.value?.toUiModel(
                         currentDrafts = editor.setDrafts,
                         currentNotes = editor.exerciseNotes,
-                        now = now,
                         weightUnit = settings.weightUnit,
                         history = scopedHistory,
                     ),
@@ -125,6 +123,10 @@ class ActiveWorkoutViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    val uiState = combine(baseUiState, ticker) { state, now ->
+        state.withElapsedTime(now)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -332,7 +334,6 @@ class ActiveWorkoutViewModel @Inject constructor(
     private fun WorkoutDetails.toUiModel(
         currentDrafts: Map<String, SetDraft>,
         currentNotes: Map<String, String>,
-        now: Instant,
         weightUnit: WeightUnit,
         history: List<WorkoutDetails>,
     ): ActiveWorkoutUiModel {
@@ -412,7 +413,8 @@ class ActiveWorkoutViewModel @Inject constructor(
             id = session.id.value,
             routineId = session.routineId?.value,
             name = session.name,
-            elapsedSeconds = Duration.between(session.startedAt, now).seconds.coerceAtLeast(0),
+            startedAtEpochMillis = session.startedAt.toEpochMilli(),
+            elapsedSeconds = 0,
             completedSets = completedUiSets.size,
             totalSets = totalSetCount,
             totalVolume = volumeGrams.gramsIn(weightUnit).toCleanString(),
@@ -421,6 +423,17 @@ class ActiveWorkoutViewModel @Inject constructor(
             exercises = uiExercises,
         )
     }
+
+    private fun ActiveWorkoutUiState.withElapsedTime(now: Instant): ActiveWorkoutUiState = copy(
+        workout = workout?.let { activeWorkout ->
+            activeWorkout.copy(
+                elapsedSeconds = Duration.between(
+                    Instant.ofEpochMilli(activeWorkout.startedAtEpochMillis),
+                    now,
+                ).seconds.coerceAtLeast(0),
+            )
+        },
+    )
 
     private fun WorkoutDetails.asCompletedSnapshot(
         completedAt: Instant,

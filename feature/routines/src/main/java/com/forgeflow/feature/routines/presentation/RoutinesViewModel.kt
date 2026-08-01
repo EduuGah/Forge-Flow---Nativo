@@ -19,31 +19,35 @@ import com.forgeflow.core.model.normalizedSearchText
 import com.forgeflow.core.model.searchTerms
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class RoutinesViewModel @Inject constructor(
     private val routineRepository: RoutineRepository,
     private val workoutRepository: WorkoutRepository,
-    exerciseRepository: ExerciseRepository,
+    private val exerciseRepository: ExerciseRepository,
 ) : ViewModel() {
     private val editors = MutableStateFlow(EditorsState())
     private val operationState = MutableStateFlow(OperationState())
+    private val retrySignal = MutableStateFlow(0)
     private var routineDetails: List<RoutineDetails> = emptyList()
     private var routineFolders: List<RoutineFolder> = emptyList()
 
     val events = MutableSharedFlow<RoutinesEvent>()
 
     val uiState = combine(
-        routineRepository.observeRoutines(),
-        routineRepository.observeFolders(),
-        exerciseRepository.observeExercises(),
+        retrySignal.flatMapLatest { routineRepository.observeRoutines() },
+        retrySignal.flatMapLatest { routineRepository.observeFolders() },
+        retrySignal.flatMapLatest { exerciseRepository.observeExercises() },
         editors,
         operationState,
     ) { routinesResult, foldersResult, exercisesResult, currentEditors, operation ->
@@ -79,6 +83,10 @@ class RoutinesViewModel @Inject constructor(
             RoutinesAction.CloseEditor -> editors.update { it.copy(routine = null) }
             RoutinesAction.CloseFolderEditor -> editors.update { it.copy(folder = null) }
             RoutinesAction.DismissError -> operationState.update { it.copy(error = null) }
+            RoutinesAction.Retry -> {
+                operationState.update { it.copy(error = null) }
+                retrySignal.update { it + 1 }
+            }
             is RoutinesAction.DescriptionChanged -> updateEditor { copy(description = action.value) }
             is RoutinesAction.NameChanged -> updateEditor { copy(name = action.value) }
             is RoutinesAction.SearchChanged -> updateEditor { copy(query = action.value) }
@@ -151,9 +159,7 @@ class RoutinesViewModel @Inject constructor(
                     .contains(normalizedQuery)
         }
         return RoutinesUiState(
-            isLoading = routinesResult !is DataResult.Success ||
-                foldersResult !is DataResult.Success ||
-                exercisesResult !is DataResult.Success,
+            isLoading = false,
             searchQuery = currentEditors.routineSearch,
             routines = visibleRoutines.map { details ->
                 RoutineUiModel(
@@ -340,19 +346,21 @@ class RoutinesViewModel @Inject constructor(
                         folder = null,
                     )
                 }
+            } else {
+                operationState.update { it.copy(error = RoutinesError.OPERATION_FAILED) }
             }
         }
     }
 
     private fun deleteFolder(id: String) {
         viewModelScope.launch {
-            routineRepository.deleteFolder(RoutineFolderId(id))
+            reportOperationFailure(routineRepository.deleteFolder(RoutineFolderId(id)))
         }
     }
 
     private fun archiveRoutine(id: String) {
         viewModelScope.launch {
-            routineRepository.archiveRoutine(RoutineId(id))
+            reportOperationFailure(routineRepository.archiveRoutine(RoutineId(id)))
         }
     }
 
@@ -368,11 +376,15 @@ class RoutinesViewModel @Inject constructor(
     }
 
     private fun copyRoutine(id: String) {
-        viewModelScope.launch { routineRepository.copyRoutine(RoutineId(id)) }
+        viewModelScope.launch {
+            reportOperationFailure(routineRepository.copyRoutine(RoutineId(id)))
+        }
     }
 
     private fun copyFolder(id: String) {
-        viewModelScope.launch { routineRepository.copyFolder(RoutineFolderId(id)) }
+        viewModelScope.launch {
+            reportOperationFailure(routineRepository.copyFolder(RoutineFolderId(id)))
+        }
     }
 
     private fun moveRoutine(id: String, folderId: String?, direction: Int) {
@@ -387,7 +399,9 @@ class RoutinesViewModel @Inject constructor(
         if (index == target) return
         ordered.add(target, ordered.removeAt(index))
         viewModelScope.launch {
-            routineRepository.reorderRoutines(folderId?.let(::RoutineFolderId), ordered)
+            reportOperationFailure(
+                routineRepository.reorderRoutines(folderId?.let(::RoutineFolderId), ordered),
+            )
         }
     }
 
@@ -398,7 +412,15 @@ class RoutinesViewModel @Inject constructor(
         val target = (index + direction).coerceIn(ordered.indices)
         if (index == target) return
         ordered.add(target, ordered.removeAt(index))
-        viewModelScope.launch { routineRepository.reorderFolders(ordered) }
+        viewModelScope.launch {
+            reportOperationFailure(routineRepository.reorderFolders(ordered))
+        }
+    }
+
+    private fun reportOperationFailure(result: DataResult<*>) {
+        if (result is DataResult.Failure) {
+            operationState.update { it.copy(error = RoutinesError.OPERATION_FAILED) }
+        }
     }
 
     private fun updateEditor(transform: RoutineEditorUiState.() -> RoutineEditorUiState) {

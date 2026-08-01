@@ -109,4 +109,15 @@ interface RoutineDao {
         deleteExercises(routine.id)
         insertExercises(exercises)
     }
+
+    @Transaction
+    suspend fun insertFolderCopy(
+        folder: RoutineFolderEntity,
+        routines: List<RoutineEntity>,
+        exercises: List<RoutineExerciseEntity>,
+    ) {
+        upsertFolder(folder)
+        routines.forEach { upsertRoutine(it) }
+        if (exercises.isNotEmpty()) insertExercises(exercises)
+    }
 }

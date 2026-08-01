@@ -108,6 +108,62 @@ class GoalProgressCalculatorTest {
         assertTrue(result.isOverdue)
         assertFalse(result.isCompleted)
     }
+
+    @Test
+    fun workoutAfterDeadlineDoesNotCompleteGoalRetroactively() {
+        val deadline = LocalDate.of(2026, 8, 4)
+        val goal = PerformanceGoal(
+            id = "deadline-count",
+            type = PerformanceGoalType.WORKOUT_COUNT,
+            cadence = GoalCadence.ONCE,
+            title = "Treinar duas vezes",
+            targetValue = 2,
+            deadlineEpochDay = deadline.toEpochDay(),
+            createdAt = Instant.parse("2026-08-01T00:00:00Z"),
+        )
+
+        val result = calculateGoalProgress(
+            goal = goal,
+            history = listOf(
+                workout("2026-08-03T18:00:00Z"),
+                workout("2026-08-05T18:00:00Z"),
+            ),
+            today = LocalDate.of(2026, 8, 6),
+            zoneId = ZoneOffset.UTC,
+        )
+
+        assertEquals(1L, result.currentValue)
+        assertFalse(result.isCompleted)
+        assertTrue(result.isOverdue)
+    }
+
+    @Test
+    fun recurringGoalCompletedByDeadlineRemainsCompletedAfterDeadline() {
+        val deadline = LocalDate.of(2026, 8, 9)
+        val goal = PerformanceGoal(
+            id = "weekly-deadline",
+            type = PerformanceGoalType.WORKOUT_COUNT,
+            cadence = GoalCadence.WEEKLY,
+            title = "Treinar duas vezes",
+            targetValue = 2,
+            deadlineEpochDay = deadline.toEpochDay(),
+            createdAt = Instant.parse("2026-08-01T00:00:00Z"),
+        )
+
+        val result = calculateGoalProgress(
+            goal = goal,
+            history = listOf(
+                workout("2026-08-03T18:00:00Z"),
+                workout("2026-08-08T18:00:00Z"),
+            ),
+            today = LocalDate.of(2026, 8, 17),
+            zoneId = ZoneOffset.UTC,
+        )
+
+        assertEquals(2L, result.currentValue)
+        assertTrue(result.isCompleted)
+        assertFalse(result.isOverdue)
+    }
 }
 
 private fun workout(

@@ -94,5 +94,6 @@ sealed interface NutritionAction {
     data object RemoveLastWater : NutritionAction
     data class WellnessRemindersChanged(val enabled: Boolean) : NutritionAction
     data class WellnessReminderIntervalChanged(val hours: Int) : NutritionAction
+    data object PhotoCaptureFailed : NutritionAction
     data object DismissError : NutritionAction
 }

@@ -39,10 +39,10 @@ fun NavGraphBuilder.nutritionScreen(onBack: () -> Unit) {
         val camera = rememberLauncherForActivityResult(
             ActivityResultContracts.TakePicture(),
         ) { saved ->
-            if (saved) {
-                pendingCameraUri?.let { uri ->
-                    viewModel.onAction(NutritionAction.MealPhotoSelected(uri.toString()))
-                }
+            val capturedUri = pendingCameraUri
+            pendingCameraUri = null
+            if (saved && capturedUri != null) {
+                viewModel.onAction(NutritionAction.MealPhotoSelected(capturedUri.toString()))
             }
         }
         val notificationPermission = rememberLauncherForActivityResult(
@@ -55,13 +55,25 @@ fun NavGraphBuilder.nutritionScreen(onBack: () -> Unit) {
             onAction = viewModel::onAction,
             onBack = onBack,
             onPickMealPhoto = {
-                photoPicker.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                )
+                runCatching {
+                    photoPicker.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                    )
+                }.onFailure {
+                    viewModel.onAction(NutritionAction.PhotoCaptureFailed)
+                }
             },
             onTakeMealPhoto = {
-                pendingCameraUri = context.createNutritionCameraUri()
-                camera.launch(pendingCameraUri!!)
+                val uri = context.createNutritionCameraUri()
+                if (uri == null) {
+                    viewModel.onAction(NutritionAction.PhotoCaptureFailed)
+                } else {
+                    pendingCameraUri = uri
+                    runCatching { camera.launch(uri) }.onFailure {
+                        pendingCameraUri = null
+                        viewModel.onAction(NutritionAction.PhotoCaptureFailed)
+                    }
+                }
             },
             onWellnessReminderChanged = { enabled ->
                 if (
@@ -81,8 +93,9 @@ fun NavGraphBuilder.nutritionScreen(onBack: () -> Unit) {
     }
 }
 
-private fun Context.createNutritionCameraUri(): Uri {
-    val directory = File(cacheDir, "nutrition_camera").apply { mkdirs() }
+private fun Context.createNutritionCameraUri(): Uri? = runCatching {
+    val directory = File(cacheDir, "nutrition_camera")
+    require(directory.exists() || directory.mkdirs())
     val photo = File.createTempFile("meal_", ".jpg", directory)
-    return FileProvider.getUriForFile(this, "$packageName.files", photo)
-}
+    FileProvider.getUriForFile(this, "$packageName.files", photo)
+}.getOrNull()

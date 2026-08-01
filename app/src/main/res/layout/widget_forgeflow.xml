@@ -32,7 +32,7 @@
             android:text="@string/widget_week_progress_preview"
             android:textAllCaps="true"
             android:textColor="@color/widget_text_secondary"
-            android:textSize="10sp" />
+            android:textSize="11sp" />
     </LinearLayout>
 
     <ProgressBar
@@ -69,7 +69,7 @@
                 android:text="@string/widget_next_workout"
                 android:textAllCaps="true"
                 android:textColor="@color/widget_text_secondary"
-                android:textSize="10sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/widget_title"
@@ -127,7 +127,7 @@
             android:text="@string/widget_streak_preview"
             android:textAllCaps="true"
             android:textColor="@color/widget_text_secondary"
-            android:textSize="10sp" />
+            android:textSize="11sp" />
 
         <TextView
             android:id="@+id/widget_primary_action"

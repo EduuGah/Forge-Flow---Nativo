@@ -74,6 +74,13 @@
     <string name="muscle_calves">Panturrilhas</string>
     <string name="muscle_core">Core</string>
     <string name="muscle_full_body">Corpo inteiro</string>
+    <string name="equipment_barbell">Barra</string>
+    <string name="equipment_dumbbell">Halteres</string>
+    <string name="equipment_machine">Máquina</string>
+    <string name="equipment_cable">Cabo</string>
+    <string name="equipment_bodyweight">Peso corporal</string>
+    <string name="equipment_other">Outro</string>
+    <string name="goals_exercise_metadata">%1$s • %2$s</string>
     <string name="planner_loading">Carregando planejamento</string>
     <string name="planner_back">Voltar</string>
     <string name="planner_eyebrow">Planejamento</string>

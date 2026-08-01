@@ -84,6 +84,7 @@ enum class RoutinesError {
     LOAD_FAILED,
     SAVE_FAILED,
     START_FAILED,
+    OPERATION_FAILED,
 }
 
 sealed interface RoutinesAction {
@@ -117,6 +118,7 @@ sealed interface RoutinesAction {
     data class MoveRoutine(val id: String, val folderId: String?, val direction: Int) : RoutinesAction
     data class MoveFolder(val id: String, val direction: Int) : RoutinesAction
     data object DismissError : RoutinesAction
+    data object Retry : RoutinesAction
 }
 
 sealed interface RoutinesEvent {

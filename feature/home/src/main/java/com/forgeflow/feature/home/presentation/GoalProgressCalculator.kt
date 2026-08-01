@@ -24,8 +24,13 @@ internal fun calculateGoalProgress(
     today: LocalDate = LocalDate.now(),
     zoneId: ZoneId = ZoneId.systemDefault(),
 ): GoalProgress {
+    val deadline = goal.deadlineEpochDay?.let(LocalDate::ofEpochDay)
+    val evaluationDate = deadline?.takeIf { it.isBefore(today) } ?: today
+    val eligibleHistory = history.filter { workout ->
+        !workout.session.startedAt.atZone(zoneId).toLocalDate().isAfter(evaluationDate)
+    }
     val current = when (goal.type) {
-        PerformanceGoalType.EXERCISE_WEIGHT -> history
+        PerformanceGoalType.EXERCISE_WEIGHT -> eligibleHistory
             .asSequence()
             .flatMap(WorkoutDetails::exercises)
             .filter { it.sessionExercise.exerciseId == goal.exerciseId }
@@ -39,10 +44,10 @@ internal fun calculateGoalProgress(
             ?: 0L
 
         else -> {
-            val periodStart = goal.periodStart(today, zoneId)
-            val workouts = history.filter { workout ->
+            val periodStart = goal.periodStart(evaluationDate, zoneId)
+            val workouts = eligibleHistory.filter { workout ->
                 val workoutDate = workout.session.startedAt.atZone(zoneId).toLocalDate()
-                !workoutDate.isBefore(periodStart) && !workoutDate.isAfter(today)
+                !workoutDate.isBefore(periodStart)
             }
             when (goal.type) {
                 PerformanceGoalType.WORKOUT_COUNT -> workouts.size.toLong()
@@ -54,7 +59,7 @@ internal fun calculateGoalProgress(
                             .coerceAtLeast(0L)
                     } ?: 0L
                 }
-                PerformanceGoalType.EXERCISE_WEIGHT -> error("Handled above")
+                PerformanceGoalType.EXERCISE_WEIGHT -> 0L
             }
         }
     }

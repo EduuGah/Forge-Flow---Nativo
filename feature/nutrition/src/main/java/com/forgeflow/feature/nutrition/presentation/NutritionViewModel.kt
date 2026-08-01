@@ -116,6 +116,9 @@ class NutritionViewModel @Inject constructor(
             is NutritionAction.WellnessReminderIntervalChanged -> {
                 saveReminderSettings(intervalHours = action.hours)
             }
+            NutritionAction.PhotoCaptureFailed -> operation.update {
+                it.copy(writeFailed = true)
+            }
             NutritionAction.DismissError -> operation.update { it.copy(writeFailed = false) }
         }
     }

@@ -1,5 +1,6 @@
 package com.forgeflow.feature.home.presentation
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -647,7 +648,11 @@ private fun GoalExercisePicker(
                             style = MaterialTheme.typography.titleSmall,
                         )
                         Text(
-                            text = "${exercise.muscleGroup.label()} • ${exercise.equipment.label()}",
+                            text = stringResource(
+                                R.string.goals_exercise_metadata,
+                                stringResource(exercise.muscleGroup.labelResource()),
+                                stringResource(exercise.equipment.labelResource()),
+                            ),
                             color = ForgeFlowDesign.colors.textSecondary,
                             maxLines = 1,
                             style = MaterialTheme.typography.bodySmall,
@@ -698,9 +703,30 @@ private fun WeightUnit.shortLabel(): String = when (this) {
     WeightUnit.POUND -> "lb"
 }
 
-private fun MuscleGroup.label(): String = name.lowercase().replaceFirstChar(Char::uppercase)
+@StringRes
+private fun MuscleGroup.labelResource(): Int = when (this) {
+    MuscleGroup.CHEST -> R.string.muscle_chest
+    MuscleGroup.BACK -> R.string.muscle_back
+    MuscleGroup.SHOULDERS -> R.string.muscle_shoulders
+    MuscleGroup.QUADRICEPS -> R.string.muscle_quadriceps
+    MuscleGroup.HAMSTRINGS -> R.string.muscle_hamstrings
+    MuscleGroup.GLUTES -> R.string.muscle_glutes
+    MuscleGroup.BICEPS -> R.string.muscle_biceps
+    MuscleGroup.TRICEPS -> R.string.muscle_triceps
+    MuscleGroup.CALVES -> R.string.muscle_calves
+    MuscleGroup.CORE -> R.string.muscle_core
+    MuscleGroup.FULL_BODY -> R.string.muscle_full_body
+}
 
-private fun Equipment.label(): String = name.lowercase().replaceFirstChar(Char::uppercase)
+@StringRes
+private fun Equipment.labelResource(): Int = when (this) {
+    Equipment.BARBELL -> R.string.equipment_barbell
+    Equipment.DUMBBELL -> R.string.equipment_dumbbell
+    Equipment.MACHINE -> R.string.equipment_machine
+    Equipment.CABLE -> R.string.equipment_cable
+    Equipment.BODYWEIGHT -> R.string.equipment_bodyweight
+    Equipment.OTHER -> R.string.equipment_other
+}
 
 private const val MILLIS_PER_DAY = 86_400_000L
 private val DATE_FORMATTER = DateTimeFormatter.ofPattern(

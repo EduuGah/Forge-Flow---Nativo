@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -306,7 +307,7 @@ private fun ExercisePickerRow(
     onWarmUpSetsChanged: (Int) -> Unit,
     onNotesChanged: (String) -> Unit,
 ) {
-    var accumulatedDrag by remember { mutableStateOf(0f) }
+    var accumulatedDrag by remember { mutableFloatStateOf(0f) }
     Column(
         modifier = Modifier
             .fillMaxWidth()

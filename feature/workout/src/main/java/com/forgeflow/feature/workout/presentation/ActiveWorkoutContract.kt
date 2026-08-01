@@ -22,6 +22,7 @@ data class ActiveWorkoutUiModel(
     val id: String,
     val routineId: String?,
     val name: String,
+    val startedAtEpochMillis: Long,
     val elapsedSeconds: Long,
     val completedSets: Int,
     val totalSets: Int,

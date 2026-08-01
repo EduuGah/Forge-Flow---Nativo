@@ -62,4 +62,7 @@
     <string name="nutrition_type_pre_workout">Pré-treino</string>
     <string name="nutrition_type_post_workout">Pós-treino</string>
     <string name="nutrition_type_other">Outro</string>
+    <string name="nutrition_write_error_title">Não foi possível concluir a ação</string>
+    <string name="nutrition_write_error_message">Verifique o acesso à câmera ou tente salvar novamente.</string>
+    <string name="nutrition_close_error">Fechar</string>
 </resources>

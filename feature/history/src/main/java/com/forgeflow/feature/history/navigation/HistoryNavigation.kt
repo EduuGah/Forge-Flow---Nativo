@@ -49,8 +49,9 @@ fun NavGraphBuilder.historyScreen(
 }
 
 private suspend fun shareWorkoutStory(context: Context, image: ImageBitmap) {
-    val uri = withContext(Dispatchers.IO) {
-        val directory = File(context.cacheDir, "workout_shares").apply { mkdirs() }
+    val uri = runCatching { withContext(Dispatchers.IO) {
+        val directory = File(context.cacheDir, "workout_shares")
+        check(directory.exists() || directory.mkdirs())
         directory.listFiles()
             .orEmpty()
             .filter { it.lastModified() < System.currentTimeMillis() - SHARE_CACHE_TTL_MILLIS }
@@ -60,17 +61,19 @@ private suspend fun shareWorkoutStory(context: Context, image: ImageBitmap) {
             check(image.asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output))
         }
         FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    }
+    } }.getOrNull() ?: return
     val sendIntent = Intent(Intent.ACTION_SEND).apply {
         type = "image/png"
         putExtra(Intent.EXTRA_STREAM, uri)
         clipData = ClipData.newUri(context.contentResolver, "ForgeFlow", uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(
-        Intent.createChooser(sendIntent, context.getString(R.string.share_workout_chooser))
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-    )
+    runCatching {
+        context.startActivity(
+            Intent.createChooser(sendIntent, context.getString(R.string.share_workout_chooser))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }
 }
 
 private const val SHARE_CACHE_TTL_MILLIS = 24 * 60 * 60 * 1_000L

@@ -5,7 +5,11 @@
     <string name="routines_loading">Carregando rotinas</string>
     <string name="routines_error_title">Não foi possível carregar</string>
     <string name="routines_error_message">Verifique os dados locais e tente novamente.</string>
+    <string name="retry">Tentar novamente</string>
     <string name="dismiss">Fechar</string>
+    <string name="routines_start_error_title">Não foi possível iniciar o treino</string>
+    <string name="routines_operation_error_title">Não foi possível concluir a ação</string>
+    <string name="routines_operation_error_message">Nada foi perdido. Tente novamente em instantes.</string>
     <string name="new_routine">Novo treino</string>
     <string name="new_folder">Nova pasta</string>
     <string name="metric_routines">Rotinas</string>

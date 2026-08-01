@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -32,7 +33,6 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material.icons.outlined.NotificationsActive
-import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.AlertDialog
@@ -208,6 +208,18 @@ fun NutritionScreen(
         NutritionMealDetailsDialog(
             meal = meal,
             onDismiss = { selectedMeal = null },
+        )
+    }
+    if (state.writeFailed) {
+        AlertDialog(
+            onDismissRequest = { onAction(NutritionAction.DismissError) },
+            title = { Text(stringResource(R.string.nutrition_write_error_title)) },
+            text = { Text(stringResource(R.string.nutrition_write_error_message)) },
+            confirmButton = {
+                TextButton(onClick = { onAction(NutritionAction.DismissError) }) {
+                    Text(stringResource(R.string.nutrition_close_error))
+                }
+            },
         )
     }
 }
@@ -498,7 +510,7 @@ private fun HydrationSection(
                 enabled = state.lastHydrationEntryId != null,
             ) {
                 Icon(
-                    Icons.Outlined.Undo,
+                    Icons.AutoMirrored.Outlined.Undo,
                     contentDescription = stringResource(R.string.nutrition_water_undo),
                 )
             }

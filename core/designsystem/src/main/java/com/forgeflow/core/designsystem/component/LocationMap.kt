@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -174,12 +175,18 @@ fun ForgeFlowLocationMap(
                         model = model,
                         contentDescription = null,
                         modifier = Modifier
-                            .offset(
-                                x = viewportWidth / 2 +
-                                    tileSize * (rawX - centerTileX).toFloat(),
-                                y = viewportHeight / 2 +
-                                    tileSize * (rawY - centerTileY).toFloat(),
-                            )
+                            .offset {
+                                IntOffset(
+                                    x = (
+                                        viewportWidth / 2 +
+                                            tileSize * (rawX - centerTileX).toFloat()
+                                        ).roundToPx(),
+                                    y = (
+                                        viewportHeight / 2 +
+                                            tileSize * (rawY - centerTileY).toFloat()
+                                        ).roundToPx(),
+                                )
+                            }
                             .size(tileSize),
                         contentScale = ContentScale.FillBounds,
                     )
@@ -198,7 +205,12 @@ fun ForgeFlowLocationMap(
                 val selected = point.id != null && point.id == selectedPointId
                 Box(
                     modifier = Modifier
-                        .offset(pinX - 24.dp, pinY - 48.dp)
+                        .offset {
+                            IntOffset(
+                                x = (pinX - 24.dp).roundToPx(),
+                                y = (pinY - 48.dp).roundToPx(),
+                            )
+                        }
                         .size(48.dp)
                         .clip(androidx.compose.foundation.shape.CircleShape)
                         .background(

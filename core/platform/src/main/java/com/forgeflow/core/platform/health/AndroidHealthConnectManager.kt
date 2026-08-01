@@ -1,6 +1,5 @@
 package com.forgeflow.core.platform.health
 
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -306,16 +305,19 @@ class AndroidHealthConnectManager @Inject constructor(
             Intent.ACTION_VIEW,
             "market://details?id=$HEALTH_CONNECT_PACKAGE".toUri(),
         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        try {
-            context.startActivity(marketIntent)
-        } catch (_: ActivityNotFoundException) {
-            context.startActivity(
-                Intent(
-                    Intent.ACTION_VIEW,
-                    "https://play.google.com/store/apps/details?id=$HEALTH_CONNECT_PACKAGE".toUri(),
-                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            )
-        }
+        runCatching { context.startActivity(marketIntent) }
+            .onFailure {
+                runCatching {
+                    context.startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            "https://play.google.com/store/apps/details".toUri().buildUpon()
+                                .appendQueryParameter("id", HEALTH_CONNECT_PACKAGE)
+                                .build(),
+                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                }
+            }
     }
 
     private fun availability(): HealthConnectAvailability {

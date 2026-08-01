@@ -150,12 +150,10 @@ fun ProgressPhotosScreen(
                 PhotoGalleryControls(
                     selectedFilter = filter,
                     selectedCount = selectedIds.size,
-                    customRangeLabel = if (
-                        customStartMillis != null && customEndMillis != null
-                    ) {
-                        "${customStartMillis!!.asShortDate()} – ${customEndMillis!!.asShortDate()}"
-                    } else {
-                        null
+                    customRangeLabel = customStartMillis?.let { start ->
+                        customEndMillis?.let { end ->
+                            "${start.asShortDate()} – ${end.asShortDate()}"
+                        }
                     },
                     onFilterSelected = { filter = it },
                     onSelectCustomRange = { showDateRangePicker = true },
@@ -273,22 +271,24 @@ fun ProgressPhotosScreen(
                             )
                         },
                         headline = {
+                            val start = rangeState.selectedStartDateMillis
+                            val end = rangeState.selectedEndDateMillis
                             Text(
                                 text = when {
-                                    rangeState.selectedStartDateMillis == null -> {
+                                    start == null -> {
                                         stringResource(R.string.progress_photos_select_start)
                                     }
-                                    rangeState.selectedEndDateMillis == null -> {
+                                    end == null -> {
                                         stringResource(
                                             R.string.progress_photos_select_end,
-                                            rangeState.selectedStartDateMillis!!.asShortDate(),
+                                            start.asShortDate(),
                                         )
                                     }
                                     else -> {
                                         stringResource(
                                             R.string.progress_photos_selected_range,
-                                            rangeState.selectedStartDateMillis!!.asShortDate(),
-                                            rangeState.selectedEndDateMillis!!.asShortDate(),
+                                            start.asShortDate(),
+                                            end.asShortDate(),
                                         )
                                     }
                                 },

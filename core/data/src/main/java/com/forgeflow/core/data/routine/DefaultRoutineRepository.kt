@@ -158,14 +158,44 @@ class DefaultRoutineRepository @Inject constructor(
 
     override suspend fun copyFolder(id: RoutineFolderId): DataResult<RoutineFolderId> = runCatching {
         val source = requireNotNull(routineDao.getFolderById(id.value))
-        val target = when (val result = saveFolder(null, "${source.name} - cópia")) {
-            is DataResult.Success -> result.value
-            is DataResult.Failure -> error("Unable to copy folder")
+        val sourceRoutines = routineDao.getActiveInFolder(id.value)
+        val targetId = RoutineFolderId.create()
+        val now = clock.now().toEpochMilli()
+        val copiedRoutines = mutableListOf<RoutineEntity>()
+        val copiedExercises = mutableListOf<RoutineExerciseEntity>()
+        sourceRoutines.forEachIndexed { position, record ->
+            val routineId = RoutineId.create()
+            copiedRoutines += record.routine.copy(
+                id = routineId.value,
+                folderId = targetId.value,
+                name = "${record.routine.name} - cópia",
+                position = position,
+                createdAtEpochMillis = now,
+                updatedAtEpochMillis = now,
+                archivedAtEpochMillis = null,
+            )
+            record.exercises
+                .sortedBy { it.item.position }
+                .forEachIndexed { exercisePosition, exercise ->
+                    copiedExercises += exercise.item.copy(
+                        id = RoutineExerciseId.create().value,
+                        routineId = routineId.value,
+                        position = exercisePosition,
+                    )
+                }
         }
-        routineDao.getActiveInFolder(id.value).forEach { record ->
-            check(copyRoutine(RoutineId(record.routine.id), target) is DataResult.Success)
-        }
-        target
+        routineDao.insertFolderCopy(
+            folder = RoutineFolderEntity(
+                id = targetId.value,
+                name = "${source.name} - cópia",
+                position = routineDao.getFolderCount(),
+                createdAtEpochMillis = now,
+                updatedAtEpochMillis = now,
+            ),
+            routines = copiedRoutines,
+            exercises = copiedExercises,
+        )
+        targetId
     }.fold(
         onSuccess = { DataResult.Success(it) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },

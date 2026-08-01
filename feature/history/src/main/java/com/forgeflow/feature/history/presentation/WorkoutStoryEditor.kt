@@ -401,7 +401,7 @@ private fun WorkoutStoryCanvas(
                         }.joinToString("  |  "),
                         modifier = Modifier.fillMaxWidth(),
                         color = palette.secondaryText,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = if (centered) TextAlign.Center else TextAlign.Start,
                         maxLines = 2,
@@ -443,7 +443,7 @@ private fun WorkoutStoryCanvas(
                                     exercise.completedSets,
                                 ),
                                 color = palette.text,
-                                fontSize = 10.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -467,7 +467,7 @@ private fun WorkoutStoryCanvas(
                             "PROGRESSO  •  CONSISTÊNCIA REGISTRADA"
                         },
                         color = palette.accent,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Black,
                     )
                 }

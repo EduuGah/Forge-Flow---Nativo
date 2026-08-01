@@ -11,8 +11,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,8 +51,8 @@ fun RoutinesScreen(
             state.error == RoutinesError.LOAD_FAILED -> ForgeFlowErrorState(
                 title = stringResource(R.string.routines_error_title),
                 message = stringResource(R.string.routines_error_message),
-                retryLabel = stringResource(R.string.dismiss),
-                onRetry = { onAction(RoutinesAction.DismissError) },
+                retryLabel = stringResource(R.string.retry),
+                onRetry = { onAction(RoutinesAction.Retry) },
             )
             else -> RoutinesContent(
                 state = state,
@@ -93,6 +95,28 @@ fun RoutinesScreen(
                 onAction(RoutinesAction.DeleteFolder(folder.id))
             },
             onDismiss = { pendingFolderDeletion = null },
+        )
+    }
+    state.error?.takeIf { it != RoutinesError.LOAD_FAILED }?.let { error ->
+        AlertDialog(
+            onDismissRequest = { onAction(RoutinesAction.DismissError) },
+            title = {
+                Text(
+                    stringResource(
+                        if (error == RoutinesError.START_FAILED) {
+                            R.string.routines_start_error_title
+                        } else {
+                            R.string.routines_operation_error_title
+                        },
+                    ),
+                )
+            },
+            text = { Text(stringResource(R.string.routines_operation_error_message)) },
+            confirmButton = {
+                TextButton(onClick = { onAction(RoutinesAction.DismissError) }) {
+                    Text(stringResource(R.string.dismiss))
+                }
+            },
         )
     }
 }
@@ -165,31 +189,13 @@ private fun RoutinesContent(
                     ),
                 )
             }
-        } else {
-            val unfiled = state.routines.filter { it.folderId == null }
-            if (unfiled.isNotEmpty()) {
-                item(key = "unfiled") {
-                    RoutineFolderSection(
-                        folder = null,
-                        routines = unfiled,
-                        onAction = onAction,
-                        onDeleteRoutine = onDeleteRoutine,
-                        onDeleteFolder = onDeleteFolder,
-                        reorderTarget = reorderTarget,
-                        onReorderStarted = { reorderTarget = it },
-                        onReorderStopped = { reorderTarget = null },
-                    )
-                }
-            }
-            items(
-                state.folders.filter {
-                    state.searchQuery.isBlank() || it.routineCount > 0
-                },
-                key = RoutineFolderUiModel::id,
-            ) { folder ->
+        }
+        val unfiled = state.routines.filter { it.folderId == null }
+        if (unfiled.isNotEmpty()) {
+            item(key = "unfiled") {
                 RoutineFolderSection(
-                    folder = folder,
-                    routines = state.routines.filter { it.folderId == folder.id },
+                    folder = null,
+                    routines = unfiled,
                     onAction = onAction,
                     onDeleteRoutine = onDeleteRoutine,
                     onDeleteFolder = onDeleteFolder,
@@ -198,6 +204,23 @@ private fun RoutinesContent(
                     onReorderStopped = { reorderTarget = null },
                 )
             }
+        }
+        items(
+            state.folders.filter {
+                state.searchQuery.isBlank() || it.routineCount > 0
+            },
+            key = RoutineFolderUiModel::id,
+        ) { folder ->
+            RoutineFolderSection(
+                folder = folder,
+                routines = state.routines.filter { it.folderId == folder.id },
+                onAction = onAction,
+                onDeleteRoutine = onDeleteRoutine,
+                onDeleteFolder = onDeleteFolder,
+                reorderTarget = reorderTarget,
+                onReorderStarted = { reorderTarget = it },
+                onReorderStopped = { reorderTarget = null },
+            )
         }
         item {
             ForgeFlowOutlinedButton(

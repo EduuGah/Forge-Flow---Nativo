@@ -15,9 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Map
-import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -311,7 +311,7 @@ private fun SelectedTrainingPlacePanel(
             text = stringResource(R.string.training_map_open_maps),
             onClick = { context.openMap(place) },
             modifier = Modifier.fillMaxWidth(),
-            icon = Icons.Outlined.OpenInNew,
+            icon = Icons.AutoMirrored.Outlined.OpenInNew,
             iconContentDescription = null,
         )
         Text(
@@ -489,14 +489,13 @@ private fun android.content.Context.openMap(place: TrainingPlaceUiModel) {
             "?q=${place.latitude},${place.longitude}($label)",
     )
     val geoIntent = Intent(Intent.ACTION_VIEW, geoUri)
-    if (geoIntent.resolveActivity(packageManager) != null) {
-        startActivity(geoIntent)
-    } else {
+    val openedInMap = runCatching { startActivity(geoIntent) }.isSuccess
+    if (!openedInMap) {
         val browserUri = Uri.parse(
             "https://www.openstreetmap.org/" +
                 "?mlat=${place.latitude}&mlon=${place.longitude}" +
                 "#map=17/${place.latitude}/${place.longitude}",
         )
-        startActivity(Intent(Intent.ACTION_VIEW, browserUri))
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, browserUri)) }
     }
 }

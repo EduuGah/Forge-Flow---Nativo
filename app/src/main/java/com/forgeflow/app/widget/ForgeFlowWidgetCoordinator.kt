@@ -3,11 +3,11 @@ package com.forgeflow.app.widget
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.Context
-import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
+import androidx.core.net.toUri
 import com.forgeflow.app.R
 import com.forgeflow.app.navigation.AppLaunchDestination
 import com.forgeflow.app.navigation.forgeFlowLaunchIntent
@@ -288,7 +288,7 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
         destination: AppLaunchDestination,
     ): PendingIntent {
         val intent = context.forgeFlowLaunchIntent(destination).apply {
-            data = Uri.parse("forgeflow://widget/$widgetId/${destination.value}")
+            data = "forgeflow://widget/$widgetId/${destination.value}".toUri()
         }
         return PendingIntent.getActivity(
             context,

@@ -32,6 +32,7 @@ data class AppUiState(
     val weeklyWorkoutGoal: Int = 3,
     val compactMode: Boolean = false,
     val showTutorial: Boolean = false,
+    val showGuidedWorkoutTutorial: Boolean = false,
     val hasRequestedNotificationPermission: Boolean = false,
     val activeWorkout: AppActiveWorkoutUiModel? = null,
 )
@@ -56,13 +57,15 @@ class AppViewModel @Inject constructor(
 ) : ViewModel() {
     private val tutorialRequested = MutableStateFlow(false)
     private val tutorialDismissedForSession = MutableStateFlow(false)
+    private val guidedWorkoutTutorialRequested = MutableStateFlow(false)
 
     val uiState = combine(
         settingsRepository.observeSettings(),
         workoutRepository.observeActiveWorkout(),
         tutorialRequested,
         tutorialDismissedForSession,
-    ) { settings, workoutResult, tutorialRequested, tutorialDismissed ->
+        guidedWorkoutTutorialRequested,
+    ) { settings, workoutResult, tutorialRequested, tutorialDismissed, guidedRequested ->
             val activeWorkout = (workoutResult as? DataResult.Success)
                 ?.value
                 ?.let { workout ->
@@ -80,6 +83,11 @@ class AppViewModel @Inject constructor(
                         startedAtEpochMillis = workout.session.startedAt.toEpochMilli(),
                     )
                 }
+            val showTutorial = shouldShowTutorial(
+                hasCompletedOnboarding = settings.hasCompletedOnboarding,
+                requested = tutorialRequested,
+                dismissedForSession = tutorialDismissed,
+            )
             AppUiState(
                 isSettingsLoaded = true,
                 themePreference = settings.themePreference,
@@ -87,11 +95,8 @@ class AppViewModel @Inject constructor(
                 weightUnit = settings.weightUnit,
                 weeklyWorkoutGoal = settings.weeklyWorkoutGoal,
                 compactMode = settings.compactMode,
-                showTutorial = shouldShowTutorial(
-                    hasCompletedOnboarding = settings.hasCompletedOnboarding,
-                    requested = tutorialRequested,
-                    dismissedForSession = tutorialDismissed,
-                ),
+                showTutorial = showTutorial,
+                showGuidedWorkoutTutorial = guidedRequested && !showTutorial,
                 hasRequestedNotificationPermission =
                     settings.hasRequestedNotificationPermission,
                 activeWorkout = activeWorkout,
@@ -132,11 +137,20 @@ class AppViewModel @Inject constructor(
     fun onTutorialCompleted(weightUnit: WeightUnit, weeklyWorkoutGoal: Int) {
         tutorialDismissedForSession.value = true
         tutorialRequested.value = false
+        guidedWorkoutTutorialRequested.value = true
         viewModelScope.launch {
             settingsRepository.setWeightUnit(weightUnit)
             settingsRepository.setWeeklyWorkoutGoal(weeklyWorkoutGoal)
             settingsRepository.setOnboardingCompleted(true)
         }
+    }
+
+    fun onGuidedWorkoutTutorialRequested() {
+        guidedWorkoutTutorialRequested.value = true
+    }
+
+    fun onGuidedWorkoutTutorialDismissed() {
+        guidedWorkoutTutorialRequested.value = false
     }
 
     fun onNotificationPermissionResult(granted: Boolean) {

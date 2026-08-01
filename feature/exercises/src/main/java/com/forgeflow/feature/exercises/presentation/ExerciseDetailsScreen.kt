@@ -318,10 +318,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.exerciseHistory(
         }
     } else {
         items(exercise.sessions, key = ExerciseSessionUiModel::id) { session ->
-            ExerciseSessionCard(
-                session = session,
-                weightUnit = exercise.weightUnit,
-            )
+            ExerciseSessionCard(session = session)
         }
     }
 }
@@ -591,7 +588,6 @@ private fun ExerciseProgressChart(exercise: ExerciseDetailsUiModel) {
 @Composable
 private fun ExerciseSessionCard(
     session: ExerciseSessionUiModel,
-    weightUnit: WeightUnit,
 ) {
     ForgeFlowCard(
         modifier = Modifier
@@ -622,7 +618,7 @@ private fun ExerciseSessionCard(
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "${set.performance} ${weightUnit.shortLabel()}",
+                    text = set.performance,
                     modifier = Modifier.weight(1f),
                 )
                 if (set.isPersonalRecord) {

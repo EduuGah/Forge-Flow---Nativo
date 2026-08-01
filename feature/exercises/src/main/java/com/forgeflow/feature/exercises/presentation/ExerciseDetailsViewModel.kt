@@ -190,7 +190,8 @@ class ExerciseDetailsViewModel @Inject constructor(
                                 number = index + 1,
                                 performance = "${
                                     set.weight.valueIn(settings.weightUnit).toCleanString()
-                                } × ${set.repetitions.count}",
+                                } ${settings.weightUnit.shortLabel()} x " +
+                                    "${set.repetitions.count} rep",
                                 type = set.setType,
                                 personalRecordTypes =
                                     personalRecordsBySet[set.id.value].orEmpty(),

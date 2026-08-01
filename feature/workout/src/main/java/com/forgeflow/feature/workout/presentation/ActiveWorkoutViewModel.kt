@@ -156,9 +156,9 @@ class ActiveWorkoutViewModel @Inject constructor(
                 action.exerciseId,
             )
             is ActiveWorkoutAction.DeleteExercise -> deleteExercise(action.sessionExerciseId)
-            is ActiveWorkoutAction.MoveExercise -> moveExercise(
+            is ActiveWorkoutAction.MoveExerciseToPosition -> moveExerciseToPosition(
                 action.sessionExerciseId,
-                action.direction,
+                action.targetPosition,
             )
             is ActiveWorkoutAction.Finish -> finishWorkout(
                 includeLocation = action.includeLocation,
@@ -259,9 +259,12 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
-    private fun moveExercise(sessionExerciseId: String, direction: Int) {
+    private fun moveExerciseToPosition(sessionExerciseId: String, targetPosition: Int) {
         viewModelScope.launch {
-            repository.moveExercise(SessionExerciseId(sessionExerciseId), direction)
+            repository.moveExerciseToPosition(
+                SessionExerciseId(sessionExerciseId),
+                targetPosition,
+            )
         }
     }
 

@@ -28,12 +28,13 @@ internal fun clusterTrainingLocations(
     val clusters = mutableListOf<MutableTrainingLocationCluster>()
     samples.forEach { sample ->
         val target = clusters.firstOrNull { cluster ->
-            distanceMeters(
-                firstLatitude = cluster.latitude,
-                firstLongitude = cluster.longitude,
-                secondLatitude = sample.latitude,
-                secondLongitude = sample.longitude,
-            ) <= radiusMeters
+            cluster.hasLabel(sample.label) ||
+                distanceMeters(
+                    firstLatitude = cluster.latitude,
+                    firstLongitude = cluster.longitude,
+                    secondLatitude = sample.latitude,
+                    secondLongitude = sample.longitude,
+                ) <= radiusMeters
         }
         if (target == null) {
             clusters += MutableTrainingLocationCluster(sample)
@@ -55,6 +56,11 @@ private class MutableTrainingLocationCluster(first: TrainingLocationSample) {
 
     fun add(sample: TrainingLocationSample) {
         items += sample
+    }
+
+    fun hasLabel(label: String?): Boolean {
+        val normalized = label.normalizedLocationLabel() ?: return false
+        return items.any { it.label.normalizedLocationLabel() == normalized }
     }
 
     fun toImmutable(): TrainingLocationCluster {
@@ -97,5 +103,10 @@ private fun distanceMeters(
 
 private fun Double.toRadians(): Double = this * PI / 180.0
 
-private const val DEFAULT_CLUSTER_RADIUS_METERS = 150.0
+private fun String?.normalizedLocationLabel(): String? = this
+    ?.trim()
+    ?.takeIf(String::isNotEmpty)
+    ?.lowercase()
+
+private const val DEFAULT_CLUSTER_RADIUS_METERS = 20.0
 private const val EARTH_RADIUS_METERS = 6_371_000.0

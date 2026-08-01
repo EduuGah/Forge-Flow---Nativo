@@ -247,4 +247,5 @@
     <string name="tutorial_settings_title">Tutorial do ForgeFlow</string>
     <string name="tutorial_settings_description">Veja novamente como organizar, registrar e acompanhar seus treinos.</string>
     <string name="tutorial_settings_action">Refazer tutorial</string>
+    <string name="guided_tutorial_settings_action">Praticar um treino guiado</string>
 </resources>

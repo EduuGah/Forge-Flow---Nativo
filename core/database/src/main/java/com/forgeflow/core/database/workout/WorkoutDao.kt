@@ -153,17 +153,22 @@ interface WorkoutDao {
     suspend fun updateExercisePosition(id: String, position: Int)
 
     @Transaction
-    suspend fun moveExercise(id: String, direction: Int) {
+    suspend fun moveExerciseToPosition(id: String, targetPosition: Int) {
         val exercise = getSessionExercise(id) ?: return
         val ordered = getSessionExercises(exercise.sessionId)
         val currentIndex = ordered.indexOfFirst { it.id == id }
         if (currentIndex < 0 || ordered.isEmpty()) return
-        val targetIndex = (currentIndex + direction).coerceIn(0, ordered.lastIndex)
+        val targetIndex = targetPosition.coerceIn(0, ordered.lastIndex)
         if (targetIndex == currentIndex) return
-        val target = ordered[targetIndex]
-        updateExercisePosition(exercise.id, -1)
-        updateExercisePosition(target.id, exercise.position)
-        updateExercisePosition(exercise.id, target.position)
+        val reordered = ordered.toMutableList().apply {
+            add(targetIndex, removeAt(currentIndex))
+        }
+        ordered.forEachIndexed { index, item ->
+            updateExercisePosition(item.id, -(index + 1))
+        }
+        reordered.forEachIndexed { index, item ->
+            updateExercisePosition(item.id, index)
+        }
     }
 
     @Query("DELETE FROM workout_sessions WHERE id = :sessionId AND status = 'COMPLETED'")

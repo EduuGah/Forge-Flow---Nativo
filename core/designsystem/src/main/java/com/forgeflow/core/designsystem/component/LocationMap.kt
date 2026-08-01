@@ -23,19 +23,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -46,6 +47,7 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.forgeflow.core.designsystem.R
 import kotlin.math.PI
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.ln
@@ -69,88 +71,130 @@ fun ForgeFlowLocationMap(
 ) {
     if (points.isEmpty()) return
     val context = LocalContext.current
-    val viewport = remember(points) { MapViewport.from(points) }
-    var gestureScale by remember(viewport) { mutableFloatStateOf(1f) }
-    var mapPan by remember(viewport) { mutableStateOf(Offset.Zero) }
-    val tileSize = 180.dp
-    val centerTileX = floor(viewport.centerX).toInt()
-    val centerTileY = floor(viewport.centerY).toInt()
-    val centerFractionX = viewport.centerX - floor(viewport.centerX)
-    val centerFractionY = viewport.centerY - floor(viewport.centerY)
+    val density = LocalDensity.current
+    val initialViewport = remember(points) { MapViewport.from(points) }
+    var mapZoom by remember(initialViewport) { mutableIntStateOf(initialViewport.zoom) }
+    var centerTileX by remember(initialViewport) {
+        mutableDoubleStateOf(initialViewport.centerX)
+    }
+    var centerTileY by remember(initialViewport) {
+        mutableDoubleStateOf(initialViewport.centerY)
+    }
+    var visualScale by remember(initialViewport) { mutableFloatStateOf(1f) }
+    val tileSize = 192.dp
+    val tileSizePx = with(density) { tileSize.toPx() }
     val headers = remember {
         NetworkHeaders.Builder()
             .set("User-Agent", "ForgeFlow/1.0 (Android; com.forgeflow.app)")
             .build()
     }
 
+    fun resetCamera() {
+        mapZoom = initialViewport.zoom
+        centerTileX = initialViewport.centerX
+        centerTileY = initialViewport.centerY
+        visualScale = 1f
+    }
+
+    fun changeZoom(targetZoom: Int) {
+        val nextZoom = targetZoom.coerceIn(MIN_MAP_ZOOM, MAX_MAP_ZOOM)
+        if (nextZoom == mapZoom) return
+        val factor = 1 shl kotlin.math.abs(nextZoom - mapZoom)
+        if (nextZoom > mapZoom) {
+            centerTileX *= factor
+            centerTileY *= factor
+        } else {
+            centerTileX /= factor
+            centerTileY /= factor
+        }
+        mapZoom = nextZoom
+        visualScale = 1f
+    }
+
     BoxWithConstraints(
         modifier = modifier
             .clip(MaterialTheme.shapes.large)
             .background(Color(0xFFE8ECEF))
-            .pointerInput(viewport) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    val nextScale = (gestureScale * zoom).coerceIn(1f, MAX_GESTURE_SCALE)
-                    val horizontalLimit = size.width * (nextScale - 1f) / 2f +
-                        tileSize.toPx() * 0.75f
-                    val verticalLimit = size.height * (nextScale - 1f) / 2f +
-                        tileSize.toPx() * 0.75f
-                    gestureScale = nextScale
-                    mapPan = Offset(
-                        x = (mapPan.x + pan.x).coerceIn(-horizontalLimit, horizontalLimit),
-                        y = (mapPan.y + pan.y).coerceIn(-verticalLimit, verticalLimit),
+            .pointerInput(initialViewport) {
+                detectTransformGestures { _, pan, zoomChange, _ ->
+                    val tileCount = (1 shl mapZoom).toDouble()
+                    centerTileX = wrapTileX(
+                        centerTileX - pan.x / (tileSizePx * visualScale),
+                        tileCount,
                     )
-                }
-            },
-    ) {
-        val mapOffsetX = maxWidth / 2 - tileSize * (1 + centerFractionX.toFloat())
-        val mapOffsetY = maxHeight / 2 - tileSize * (1 + centerFractionY.toFloat())
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer(
-                    scaleX = gestureScale,
-                    scaleY = gestureScale,
-                    translationX = mapPan.x,
-                    translationY = mapPan.y,
-                ),
-        ) {
-            Box(
-                modifier = Modifier
-                    .offset(mapOffsetX, mapOffsetY)
-                    .size(tileSize * 3),
-            ) {
-                (-1..1).forEach { deltaY ->
-                    (-1..1).forEach { deltaX ->
-                        val x = centerTileX + deltaX
-                        val y = centerTileY + deltaY
-                        val model = remember(x, y, viewport.zoom) {
-                            ImageRequest.Builder(context)
-                                .data(
-                                    "https://tile.openstreetmap.org/" +
-                                        "${viewport.zoom}/$x/$y.png",
-                                )
-                                .httpHeaders(headers)
-                                .build()
+                    centerTileY = (
+                        centerTileY - pan.y / (tileSizePx * visualScale)
+                        ).coerceIn(0.0, tileCount)
+                    val nextScale = visualScale * zoomChange
+                    when {
+                        nextScale >= ZOOM_IN_THRESHOLD && mapZoom < MAX_MAP_ZOOM -> {
+                            centerTileX *= 2.0
+                            centerTileY *= 2.0
+                            mapZoom += 1
+                            visualScale = (nextScale / 2f).coerceAtLeast(MIN_VISUAL_SCALE)
                         }
-                        AsyncImage(
-                            model = model,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .offset(
-                                    x = tileSize * (deltaX + 1),
-                                    y = tileSize * (deltaY + 1),
-                                )
-                                .size(tileSize),
-                            contentScale = ContentScale.FillBounds,
+                        nextScale <= ZOOM_OUT_THRESHOLD && mapZoom > MIN_MAP_ZOOM -> {
+                            centerTileX /= 2.0
+                            centerTileY /= 2.0
+                            mapZoom -= 1
+                            visualScale = (nextScale * 2f).coerceAtMost(MAX_VISUAL_SCALE)
+                        }
+                        else -> visualScale = nextScale.coerceIn(
+                            MIN_VISUAL_SCALE,
+                            MAX_VISUAL_SCALE,
                         )
                     }
                 }
+            },
+    ) {
+        val viewportWidth = maxWidth
+        val viewportHeight = maxHeight
+        val tileCount = 1 shl mapZoom
+        val baseTileX = floor(centerTileX).toInt()
+        val baseTileY = floor(centerTileY).toInt()
+        val horizontalRadius = ceil(viewportWidth.value / tileSize.value / 2f).toInt() + 2
+        val verticalRadius = ceil(viewportHeight.value / tileSize.value / 2f).toInt() + 2
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(scaleX = visualScale, scaleY = visualScale),
+        ) {
+            for (rawY in (baseTileY - verticalRadius)..(baseTileY + verticalRadius)) {
+                if (rawY !in 0 until tileCount) continue
+                for (rawX in (baseTileX - horizontalRadius)..(baseTileX + horizontalRadius)) {
+                    val tileX = rawX.floorMod(tileCount)
+                    val model = remember(tileX, rawY, mapZoom) {
+                        ImageRequest.Builder(context)
+                            .data("https://tile.openstreetmap.org/$mapZoom/$tileX/$rawY.png")
+                            .httpHeaders(headers)
+                            .build()
+                    }
+                    AsyncImage(
+                        model = model,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .offset(
+                                x = viewportWidth / 2 +
+                                    tileSize * (rawX - centerTileX).toFloat(),
+                                y = viewportHeight / 2 +
+                                    tileSize * (rawY - centerTileY).toFloat(),
+                            )
+                            .size(tileSize),
+                        contentScale = ContentScale.FillBounds,
+                    )
+                }
             }
             points.forEach { point ->
-                val tileX = longitudeToTileX(point.longitude, viewport.zoom)
-                val tileY = latitudeToTileY(point.latitude, viewport.zoom)
-                val pinX = mapOffsetX + tileSize * (tileX - centerTileX + 1).toFloat()
-                val pinY = mapOffsetY + tileSize * (tileY - centerTileY + 1).toFloat()
+                val pointTileX = longitudeToTileX(point.longitude, mapZoom)
+                val pointTileY = latitudeToTileY(point.latitude, mapZoom)
+                val horizontalDelta = shortestWrappedDelta(
+                    pointTileX - centerTileX,
+                    tileCount.toDouble(),
+                )
+                val pinX = viewportWidth / 2 + tileSize * horizontalDelta.toFloat()
+                val pinY = viewportHeight / 2 +
+                    tileSize * (pointTileY - centerTileY).toFloat()
                 val selected = point.id != null && point.id == selectedPointId
                 Box(
                     modifier = Modifier
@@ -158,11 +202,8 @@ fun ForgeFlowLocationMap(
                         .size(48.dp)
                         .clip(androidx.compose.foundation.shape.CircleShape)
                         .background(
-                            if (selected) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                Color.Transparent
-                            },
+                            if (selected) MaterialTheme.colorScheme.primaryContainer
+                            else Color.Transparent,
                         )
                         .then(
                             if (onPointClick != null) {
@@ -191,11 +232,8 @@ fun ForgeFlowLocationMap(
         ) {
             Row {
                 IconButton(
-                    onClick = {
-                        gestureScale = (gestureScale / MAP_ZOOM_STEP).coerceAtLeast(1f)
-                        if (gestureScale == 1f) mapPan = Offset.Zero
-                    },
-                    enabled = gestureScale > 1f,
+                    onClick = { changeZoom(mapZoom - 1) },
+                    enabled = mapZoom > MIN_MAP_ZOOM,
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Remove,
@@ -203,23 +241,15 @@ fun ForgeFlowLocationMap(
                     )
                 }
                 IconButton(
-                    onClick = {
-                        gestureScale = (gestureScale * MAP_ZOOM_STEP)
-                            .coerceAtMost(MAX_GESTURE_SCALE)
-                    },
-                    enabled = gestureScale < MAX_GESTURE_SCALE,
+                    onClick = { changeZoom(mapZoom + 1) },
+                    enabled = mapZoom < MAX_MAP_ZOOM,
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Add,
                         contentDescription = stringResource(R.string.map_zoom_in),
                     )
                 }
-                IconButton(
-                    onClick = {
-                        gestureScale = 1f
-                        mapPan = Offset.Zero
-                    },
-                ) {
+                IconButton(onClick = ::resetCamera) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
                         contentDescription = stringResource(R.string.map_reset),
@@ -233,7 +263,7 @@ fun ForgeFlowLocationMap(
             shape = MaterialTheme.shapes.extraSmall,
         ) {
             Text(
-                text = "© OpenStreetMap contributors",
+                text = "\u00A9 OpenStreetMap contributors",
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
@@ -243,8 +273,12 @@ fun ForgeFlowLocationMap(
     }
 }
 
-private const val MAX_GESTURE_SCALE = 3f
-private const val MAP_ZOOM_STEP = 1.35f
+private const val MIN_MAP_ZOOM = 2
+private const val MAX_MAP_ZOOM = 18
+private const val MIN_VISUAL_SCALE = 0.72f
+private const val MAX_VISUAL_SCALE = 1.4f
+private const val ZOOM_IN_THRESHOLD = 1.35f
+private const val ZOOM_OUT_THRESHOLD = 0.76f
 
 private data class MapViewport(
     val zoom: Int,
@@ -288,10 +322,18 @@ private fun longitudeToTileX(longitude: Double, zoom: Int): Double {
 private fun latitudeToTileY(latitude: Double, zoom: Int): Double {
     val tiles = (1 shl zoom).toDouble()
     val radians = latitude.coerceIn(-85.0511, 85.0511) * PI / 180.0
-    return (
-        1.0 -
-            ln(tan(radians) + 1.0 / cos(radians)) / PI
-        ) / 2.0 * tiles
+    return (1.0 - ln(tan(radians) + 1.0 / cos(radians)) / PI) / 2.0 * tiles
 }
+
+private fun wrapTileX(value: Double, tileCount: Double): Double =
+    ((value % tileCount) + tileCount) % tileCount
+
+private fun shortestWrappedDelta(delta: Double, tileCount: Double): Double = when {
+    delta > tileCount / 2 -> delta - tileCount
+    delta < -tileCount / 2 -> delta + tileCount
+    else -> delta
+}
+
+private fun Int.floorMod(modulus: Int): Int = ((this % modulus) + modulus) % modulus
 
 private operator fun Dp.times(value: Int): Dp = this * value.toFloat()

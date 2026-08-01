@@ -7,6 +7,8 @@
     <string name="nutrition_previous_day">Dia anterior</string>
     <string name="nutrition_next_day">Próximo dia</string>
     <string name="nutrition_today">Voltar para hoje</string>
+    <string name="nutrition_choose_date">Escolher data</string>
+    <string name="nutrition_apply_date">Aplicar</string>
     <string name="nutrition_daily_goal">Resumo do dia</string>
     <string name="nutrition_calorie_value">%1$d / %2$d kcal</string>
     <string name="nutrition_edit_goals">Editar metas nutricionais</string>
@@ -29,9 +31,9 @@
     <string name="nutrition_save">Salvar</string>
     <string name="nutrition_meal_editor_title">Nova refeição</string>
     <string name="nutrition_meal_name">Nome ou descrição</string>
-    <string name="nutrition_protein_short">Proteína</string>
+    <string name="nutrition_protein_short">Prot.</string>
     <string name="nutrition_carbohydrate_short">Carbo</string>
-    <string name="nutrition_fat_short">Gordura</string>
+    <string name="nutrition_fat_short">Gord.</string>
     <string name="nutrition_calories">Calorias</string>
     <string name="nutrition_calculate">Calcular</string>
     <string name="nutrition_photo_preview">Prévia da refeição</string>
@@ -39,6 +41,10 @@
     <string name="nutrition_pick_photo">Galeria</string>
     <string name="nutrition_photo_analysis_hint">O cálculo atual usa proteína, carboidrato e gordura. A análise automática da foto será conectada à nuvem em uma próxima fase.</string>
     <string name="nutrition_notes">Observações</string>
+    <string name="nutrition_time">Horário</string>
+    <string name="nutrition_macros">Macronutrientes</string>
+    <string name="nutrition_meal_photo">Foto completa da refeição</string>
+    <string name="nutrition_close_details">Fechar detalhes da refeição</string>
     <string name="nutrition_goals_title">Metas diárias</string>
     <string name="nutrition_calories_goal">Calorias</string>
     <string name="nutrition_water">Água</string>

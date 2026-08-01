@@ -7,6 +7,7 @@ import com.forgeflow.core.model.NutritionMealType
 data class NutritionUiState(
     val isLoading: Boolean = true,
     val dateLabel: String = "",
+    val selectedDateEpochDay: Long = 0L,
     val isToday: Boolean = true,
     val calories: Int = 0,
     val calorieGoal: Int = 2_200,
@@ -67,6 +68,7 @@ sealed interface NutritionAction {
     data object PreviousDay : NutritionAction
     data object NextDay : NutritionAction
     data object Today : NutritionAction
+    data class DateSelected(val epochDay: Long) : NutritionAction
     data object OpenMealEditor : NutritionAction
     data object CloseMealEditor : NutritionAction
     data class MealNameChanged(val value: String) : NutritionAction

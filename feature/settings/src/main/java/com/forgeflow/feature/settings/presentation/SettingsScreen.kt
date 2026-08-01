@@ -21,6 +21,7 @@ fun SettingsScreen(
     onSelectMeasurementCsv: () -> Unit,
     onOpenHealthDashboard: () -> Unit,
     onOpenTutorial: () -> Unit,
+    onOpenGuidedWorkoutTutorial: () -> Unit,
     onCreateDataExport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -43,7 +44,10 @@ fun SettingsScreen(
                 )
             }
             item {
-                TutorialSection(onOpenTutorial = onOpenTutorial)
+                TutorialSection(
+                    onOpenTutorial = onOpenTutorial,
+                    onOpenGuidedWorkoutTutorial = onOpenGuidedWorkoutTutorial,
+                )
             }
             item {
                 DataProtectionSection(

@@ -42,6 +42,7 @@ fun NavController.navigateToProgressPhotos() {
 fun NavGraphBuilder.settingsScreen(
     onOpenHealthDashboard: () -> Unit,
     onOpenTutorial: () -> Unit,
+    onOpenGuidedWorkoutTutorial: () -> Unit,
 ) {
     composable<SettingsRoute> {
         val viewModel: SettingsViewModel = hiltViewModel()
@@ -83,6 +84,7 @@ fun NavGraphBuilder.settingsScreen(
             onSelectMeasurementCsv = { measurementCsvPicker.launch(CSV_MIME_TYPES) },
             onOpenHealthDashboard = onOpenHealthDashboard,
             onOpenTutorial = onOpenTutorial,
+            onOpenGuidedWorkoutTutorial = onOpenGuidedWorkoutTutorial,
             onCreateDataExport = {
                 dataExportLauncher.launch("forgeflow-backup-${LocalDate.now()}.zip")
             },

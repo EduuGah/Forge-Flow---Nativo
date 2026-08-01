@@ -2,6 +2,7 @@ package com.forgeflow.feature.nutrition.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,9 +23,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.WaterDrop
@@ -33,6 +36,9 @@ import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,6 +49,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +65,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.window.Dialog
 import coil3.compose.AsyncImage
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
@@ -70,7 +78,9 @@ import com.forgeflow.core.model.NutritionMealType
 import com.forgeflow.feature.nutrition.R
 import java.io.File
 import java.text.NumberFormat
+import java.time.LocalDate
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NutritionScreen(
     state: NutritionUiState,
@@ -82,6 +92,7 @@ fun NutritionScreen(
     modifier: Modifier = Modifier,
 ) {
     var pendingDeletion by remember { mutableStateOf<String?>(null) }
+    var selectedMeal by remember { mutableStateOf<NutritionMealUiModel?>(null) }
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -152,6 +163,7 @@ fun NutritionScreen(
                 items(state.meals.size, key = { index -> state.meals[index].id }) { index ->
                     NutritionMealCard(
                         meal = state.meals[index],
+                        onOpen = { selectedMeal = state.meals[index] },
                         onDelete = { pendingDeletion = state.meals[index].id },
                     )
                 }
@@ -192,6 +204,12 @@ fun NutritionScreen(
             },
         )
     }
+    selectedMeal?.let { meal ->
+        NutritionMealDetailsDialog(
+            meal = meal,
+            onDismiss = { selectedMeal = null },
+        )
+    }
 }
 
 @Composable
@@ -217,10 +235,12 @@ private fun NutritionHeader(onBack: () -> Unit) {
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun NutritionDateSelector(
     state: NutritionUiState,
     onAction: (NutritionAction) -> Unit,
 ) {
+    var showDatePicker by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -232,16 +252,39 @@ private fun NutritionDateSelector(
                 contentDescription = stringResource(R.string.nutrition_previous_day),
             )
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { showDatePicker = true }
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
                 text = state.dateLabel.replaceFirstChar { it.uppercase() },
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleSmall,
             )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.CalendarMonth,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = stringResource(R.string.nutrition_choose_date),
+                    modifier = Modifier.padding(start = 4.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
             if (!state.isToday) {
-                TextButton(onClick = { onAction(NutritionAction.Today) }) {
-                    Text(stringResource(R.string.nutrition_today))
-                }
+                Text(
+                    text = stringResource(R.string.nutrition_today),
+                    modifier = Modifier.clickable { onAction(NutritionAction.Today) },
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.labelSmall,
+                )
             }
         }
         IconButton(
@@ -252,6 +295,42 @@ private fun NutritionDateSelector(
                 imageVector = Icons.Outlined.ChevronRight,
                 contentDescription = stringResource(R.string.nutrition_next_day),
             )
+        }
+    }
+    if (showDatePicker) {
+        val maximumDateMillis = LocalDate.now().toEpochDay() * MILLIS_PER_DAY
+        val pickerState = androidx.compose.material3.rememberDatePickerState(
+            initialSelectedDateMillis = state.selectedDateEpochDay * MILLIS_PER_DAY,
+            selectableDates = object : androidx.compose.material3.SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                    utcTimeMillis <= maximumDateMillis
+            },
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pickerState.selectedDateMillis?.let { selectedMillis ->
+                            onAction(
+                                NutritionAction.DateSelected(
+                                    epochDay = selectedMillis / MILLIS_PER_DAY,
+                                ),
+                            )
+                        }
+                        showDatePicker = false
+                    },
+                ) {
+                    Text(stringResource(R.string.nutrition_apply_date))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(stringResource(R.string.nutrition_cancel))
+                }
+            },
+        ) {
+            DatePicker(state = pickerState)
         }
     }
 }
@@ -501,9 +580,14 @@ private fun NutritionMacro(
 @Composable
 private fun NutritionMealCard(
     meal: NutritionMealUiModel,
+    onOpen: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
+    ForgeFlowCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpen),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
@@ -577,6 +661,120 @@ private fun NutritionMealCard(
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+    }
+}
+
+@Composable
+private fun NutritionMealDetailsDialog(
+    meal: NutritionMealUiModel,
+    onDismiss: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 720.dp),
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        ForgeFlowEyebrow(text = meal.typeLabel)
+                        Text(
+                            text = meal.name,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = stringResource(R.string.nutrition_close_details),
+                        )
+                    }
+                }
+                meal.photoPath?.let { path ->
+                    AsyncImage(
+                        model = File(path),
+                        contentDescription = stringResource(R.string.nutrition_meal_photo),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(4f / 3f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentScale = ContentScale.Fit,
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    NutritionDetailMetric(
+                        label = stringResource(R.string.nutrition_time),
+                        value = meal.timeLabel,
+                        modifier = Modifier.weight(1f),
+                    )
+                    NutritionDetailMetric(
+                        label = stringResource(R.string.nutrition_calories),
+                        value = stringResource(R.string.nutrition_meal_calories, meal.calories),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ForgeFlowEyebrow(text = stringResource(R.string.nutrition_macros))
+                    Text(
+                        text = meal.macrosLabel,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+                if (meal.notes.isNotBlank()) {
+                    HorizontalDivider(color = ForgeFlowDesign.colors.divider)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        ForgeFlowEyebrow(text = stringResource(R.string.nutrition_notes))
+                        Text(
+                            text = meal.notes,
+                            color = ForgeFlowDesign.colors.textSecondary,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NutritionDetailMetric(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = label.uppercase(),
+            color = ForgeFlowDesign.colors.textSecondary,
+            style = MaterialTheme.typography.labelSmall,
+        )
+        Text(
+            text = value,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }
 
@@ -662,7 +860,7 @@ private fun NutritionMealEditorDialog(
                             .aspectRatio(16f / 9f)
                             .clip(RoundedCornerShape(8.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.Fit,
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -722,7 +920,7 @@ private fun NutritionNumberField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
-        label = { Text(label) },
+        label = { Text(text = label, maxLines = 1) },
         suffix = { Text("g") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         singleLine = true,
@@ -821,3 +1019,5 @@ private fun NutritionMealType.label(): String = stringResource(
 private fun Double.asNumber(): String = NumberFormat.getNumberInstance().apply {
     maximumFractionDigits = 1
 }.format(this)
+
+private const val MILLIS_PER_DAY = 86_400_000L

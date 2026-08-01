@@ -97,9 +97,9 @@ sealed interface ActiveWorkoutAction {
         val exerciseId: String,
     ) : ActiveWorkoutAction
     data class DeleteExercise(val sessionExerciseId: String) : ActiveWorkoutAction
-    data class MoveExercise(
+    data class MoveExerciseToPosition(
         val sessionExerciseId: String,
-        val direction: Int,
+        val targetPosition: Int,
     ) : ActiveWorkoutAction
     data class Finish(
         val includeLocation: Boolean,

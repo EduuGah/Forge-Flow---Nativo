@@ -105,6 +105,7 @@ internal fun WorkoutStoryEditor(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(backgroundUri) {
+        photoFit = true
         photoScale = 1f
         photoRotation = 0f
         photoPan = Offset.Zero

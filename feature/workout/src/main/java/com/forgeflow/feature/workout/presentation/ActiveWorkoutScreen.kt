@@ -233,6 +233,13 @@ private fun WorkoutContent(
 ) {
     var collapsedExerciseIds by remember { mutableStateOf(emptySet<String>()) }
     var reorderingExerciseId by remember { mutableStateOf<String?>(null) }
+    var reorderedExerciseIds by remember(workout.exercises.map(ActiveExerciseUiModel::id)) {
+        mutableStateOf<List<String>?>(null)
+    }
+    val displayedExercises = reorderedExerciseIds
+        ?.mapNotNull { id -> workout.exercises.firstOrNull { it.id == id } }
+        ?.takeIf { it.size == workout.exercises.size }
+        ?: workout.exercises
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -264,7 +271,7 @@ private fun WorkoutContent(
                 )
             }
         }
-        items(workout.exercises, key = ActiveExerciseUiModel::id) { exercise ->
+        items(displayedExercises, key = ActiveExerciseUiModel::id) { exercise ->
             ActiveExerciseCard(
                 exercise = exercise,
                 weightUnit = workout.weightUnit,
@@ -278,8 +285,37 @@ private fun WorkoutContent(
                         collapsedExerciseIds + exercise.id
                     }
                 },
-                onDragStarted = { reorderingExerciseId = exercise.id },
-                onDragStopped = { reorderingExerciseId = null },
+                onDragStarted = {
+                    reorderedExerciseIds = displayedExercises.map(ActiveExerciseUiModel::id)
+                    reorderingExerciseId = exercise.id
+                },
+                onDragStopped = {
+                    reorderedExerciseIds?.indexOf(exercise.id)
+                        ?.takeIf { it >= 0 }
+                        ?.let { targetPosition ->
+                            onAction(
+                                ActiveWorkoutAction.MoveExerciseToPosition(
+                                    sessionExerciseId = exercise.id,
+                                    targetPosition = targetPosition,
+                                ),
+                            )
+                        }
+                    reorderingExerciseId = null
+                },
+                onMoveRequested = { direction ->
+                    reorderedExerciseIds = reorderedExerciseIds?.let { ids ->
+                        val currentIndex = ids.indexOf(exercise.id)
+                        val targetIndex = (currentIndex + direction)
+                            .coerceIn(0, ids.lastIndex)
+                        if (currentIndex < 0 || currentIndex == targetIndex) {
+                            ids
+                        } else {
+                            ids.toMutableList().apply {
+                                add(targetIndex, removeAt(currentIndex))
+                            }
+                        }
+                    }
+                },
                 onAction = onAction,
                 onOpenExercise = onOpenExercise,
                 onReplaceExercise = {

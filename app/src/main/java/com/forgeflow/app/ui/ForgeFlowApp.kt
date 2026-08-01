@@ -107,6 +107,8 @@ fun ForgeFlowApp(
     launchRequest: AppLaunchRequest? = null,
     onOpenTutorial: () -> Unit,
     onCompleteTutorial: (WeightUnit, Int) -> Unit,
+    onOpenGuidedWorkoutTutorial: () -> Unit,
+    onDismissGuidedWorkoutTutorial: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
@@ -131,7 +133,7 @@ fun ForgeFlowApp(
     Box(modifier = modifier.fillMaxSize()) {
         ModalNavigationDrawer(
             drawerState = drawerState,
-            gesturesEnabled = !state.showTutorial,
+            gesturesEnabled = !state.showTutorial && !state.showGuidedWorkoutTutorial,
             drawerContent = {
                 ForgeFlowDrawer(
                     currentDestination = currentDestination,
@@ -198,6 +200,7 @@ fun ForgeFlowApp(
                             navController.navigateDrawerRoute(HealthDashboardRoute)
                         },
                         onOpenTutorial = onOpenTutorial,
+                        onOpenGuidedWorkoutTutorial = onOpenGuidedWorkoutTutorial,
                     )
                     healthDashboardScreen(onBack = navController::popBackStack)
                     nutritionScreen(onBack = navController::popBackStack)
@@ -219,6 +222,9 @@ fun ForgeFlowApp(
                 initialWeeklyWorkoutGoal = state.weeklyWorkoutGoal,
                 onComplete = onCompleteTutorial,
             )
+        }
+        if (state.isSettingsLoaded && state.showGuidedWorkoutTutorial) {
+            GuidedWorkoutTutorial(onDismiss = onDismissGuidedWorkoutTutorial)
         }
     }
 }

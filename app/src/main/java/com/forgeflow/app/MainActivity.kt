@@ -79,6 +79,10 @@ class MainActivity : ComponentActivity() {
                     launchRequest = launchRequest,
                     onOpenTutorial = viewModel::onTutorialRequested,
                     onCompleteTutorial = viewModel::onTutorialCompleted,
+                    onOpenGuidedWorkoutTutorial =
+                        viewModel::onGuidedWorkoutTutorialRequested,
+                    onDismissGuidedWorkoutTutorial =
+                        viewModel::onGuidedWorkoutTutorialDismissed,
                 )
             }
         }

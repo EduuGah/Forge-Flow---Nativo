@@ -279,11 +279,11 @@ class DefaultWorkoutRepository @Inject constructor(
         onFailure = { DataResult.Failure(AppError.WriteFailed) },
     )
 
-    override suspend fun moveExercise(
+    override suspend fun moveExerciseToPosition(
         sessionExerciseId: SessionExerciseId,
-        direction: Int,
+        targetPosition: Int,
     ): DataResult<Unit> = runCatching {
-        workoutDao.moveExercise(sessionExerciseId.value, direction.coerceIn(-1, 1))
+        workoutDao.moveExerciseToPosition(sessionExerciseId.value, targetPosition)
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },

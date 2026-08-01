@@ -55,6 +55,12 @@ class NutritionViewModel @Inject constructor(
                 if (date.isBefore(LocalDate.now())) date.plusDays(1) else date
             }
             NutritionAction.Today -> selectedDate.value = LocalDate.now()
+            is NutritionAction.DateSelected -> {
+                val requestedDate = LocalDate.ofEpochDay(action.epochDay)
+                if (!requestedDate.isAfter(LocalDate.now())) {
+                    selectedDate.value = requestedDate
+                }
+            }
             NutritionAction.OpenMealEditor -> operation.update {
                 it.copy(mealEditor = NutritionMealEditorUiState(), writeFailed = false)
             }
@@ -289,6 +295,7 @@ class NutritionViewModel @Inject constructor(
         return NutritionUiState(
             isLoading = false,
             dateLabel = DATE_FORMATTER.format(date),
+            selectedDateEpochDay = date.toEpochDay(),
             isToday = date == LocalDate.now(),
             calories = dailyMeals.sumOf(NutritionMeal::calories),
             calorieGoal = goals.calories,

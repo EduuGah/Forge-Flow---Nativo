@@ -50,9 +50,9 @@ interface WorkoutRepository {
 
     suspend fun deleteExercise(sessionExerciseId: SessionExerciseId): DataResult<Unit>
 
-    suspend fun moveExercise(
+    suspend fun moveExerciseToPosition(
         sessionExerciseId: SessionExerciseId,
-        direction: Int,
+        targetPosition: Int,
     ): DataResult<Unit>
 
     suspend fun finishWorkout(

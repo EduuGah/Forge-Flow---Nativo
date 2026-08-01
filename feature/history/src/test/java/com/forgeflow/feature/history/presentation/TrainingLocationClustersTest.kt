@@ -49,4 +49,29 @@ class TrainingLocationClustersTest {
 
         assertEquals(2, clusters.size)
     }
+
+    @Test
+    fun coordinatesWithinTwentyMetersBecomeOnePlaceEvenWithDifferentLabels() {
+        val clusters = clusterTrainingLocations(
+            listOf(
+                TrainingLocationSample("first", "Academia", -23.550500, -46.633300),
+                TrainingLocationSample("second", "Unidade Centro", -23.550590, -46.633300),
+            ),
+        )
+
+        assertEquals(1, clusters.size)
+    }
+
+    @Test
+    fun equalNamesBecomeOnePlaceEvenWhenCoordinatesDiffer() {
+        val clusters = clusterTrainingLocations(
+            listOf(
+                TrainingLocationSample("first", "Forge Gym", -23.5505, -46.6333),
+                TrainingLocationSample("second", " forge gym ", -23.6505, -46.7333),
+            ),
+        )
+
+        assertEquals(1, clusters.size)
+        assertEquals(2, clusters.single().samples.size)
+    }
 }

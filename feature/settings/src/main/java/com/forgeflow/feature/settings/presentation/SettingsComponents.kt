@@ -56,7 +56,10 @@ import com.forgeflow.core.platform.health.HealthConnectAvailability
 import com.forgeflow.feature.settings.R
 
 @Composable
-internal fun TutorialSection(onOpenTutorial: () -> Unit) {
+internal fun TutorialSection(
+    onOpenTutorial: () -> Unit,
+    onOpenGuidedWorkoutTutorial: () -> Unit,
+) {
     SettingsSection(
         eyebrow = stringResource(R.string.tutorial_settings_eyebrow),
         title = stringResource(R.string.tutorial_settings_title),
@@ -70,6 +73,16 @@ internal fun TutorialSection(onOpenTutorial: () -> Unit) {
             Icon(imageVector = Icons.Outlined.School, contentDescription = null)
             Text(
                 text = stringResource(R.string.tutorial_settings_action),
+                modifier = Modifier.padding(start = ForgeFlowDesign.spacing.small),
+            )
+        }
+        FilledTonalButton(
+            onClick = onOpenGuidedWorkoutTutorial,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(imageVector = Icons.Outlined.FitnessCenter, contentDescription = null)
+            Text(
+                text = stringResource(R.string.guided_tutorial_settings_action),
                 modifier = Modifier.padding(start = ForgeFlowDesign.spacing.small),
             )
         }

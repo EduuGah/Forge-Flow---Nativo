@@ -61,6 +61,7 @@ internal fun ActiveExerciseCard(
     onToggleCollapsed: () -> Unit,
     onDragStarted: () -> Unit,
     onDragStopped: () -> Unit,
+    onMoveRequested: (Int) -> Unit,
     onAction: (ActiveWorkoutAction) -> Unit,
     onOpenExercise: (String) -> Unit,
     onReplaceExercise: () -> Unit,
@@ -74,11 +75,11 @@ internal fun ActiveExerciseCard(
             .zIndex(if (isDragging) 1f else 0f)
             .graphicsLayer {
                 translationY = if (isDragging) accumulatedDrag else 0f
-                scaleX = if (isDragging) 1.025f else 1f
-                scaleY = if (isDragging) 1.025f else 1f
-                shadowElevation = if (isDragging) 18.dp.toPx() else 0f
+                scaleX = if (isDragging) 1.01f else 1f
+                scaleY = if (isDragging) 1.01f else 1f
+                shadowElevation = if (isDragging) 4.dp.toPx() else 0f
             }
-            .alpha(if (isDragging) 0.82f else 1f),
+            .alpha(if (isDragging) 0.9f else 1f),
         contentPadding = if (detailsHidden) {
             PaddingValues(horizontal = 8.dp, vertical = 6.dp)
         } else {
@@ -117,12 +118,7 @@ internal fun ActiveExerciseCard(
                         val moveThreshold = 58.dp.toPx()
                         if (kotlin.math.abs(accumulatedDrag) >= moveThreshold) {
                             val direction = if (accumulatedDrag > 0) 1 else -1
-                            onAction(
-                                ActiveWorkoutAction.MoveExercise(
-                                    exercise.id,
-                                    direction,
-                                ),
-                            )
+                            onMoveRequested(direction)
                             accumulatedDrag -= direction * moveThreshold
                         }
                     }
@@ -134,22 +130,26 @@ internal fun ActiveExerciseCard(
                     tint = ForgeFlowDesign.colors.textSecondary,
                 )
             }
-            if (!isReordering) {
-                ForgeFlowExerciseMedia(
-                    mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
-                    contentDescription = exercise.name,
-                    modifier = Modifier
-                        .size(if (collapsed) 38.dp else 60.dp)
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f),
-                            shape = CircleShape,
-                        ),
-                    contentScale = ContentScale.Fit,
-                    shape = CircleShape,
-                    containerColor = Color.White,
-                )
-            }
+            ForgeFlowExerciseMedia(
+                mediaUri = exercise.mediaThumbnailUri ?: exercise.mediaUri,
+                contentDescription = exercise.name,
+                modifier = Modifier
+                    .size(
+                        when {
+                            isReordering -> 32.dp
+                            collapsed -> 38.dp
+                            else -> 60.dp
+                        },
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f),
+                        shape = CircleShape,
+                    ),
+                contentScale = ContentScale.Fit,
+                shape = CircleShape,
+                containerColor = Color.White,
+            )
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.extraSmall),

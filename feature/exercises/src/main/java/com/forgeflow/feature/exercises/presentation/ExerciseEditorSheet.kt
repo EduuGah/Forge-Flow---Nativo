@@ -77,7 +77,7 @@ internal fun ExerciseEditorSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f),
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.Fit,
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),

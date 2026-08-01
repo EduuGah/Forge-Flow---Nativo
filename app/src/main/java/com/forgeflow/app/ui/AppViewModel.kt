@@ -18,15 +18,20 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.stateIn
 
 @Immutable
 data class AppUiState(
+    val isSettingsLoaded: Boolean = false,
     val themePreference: ThemePreference = ThemePreference.DARK,
     val accentColor: AccentColor = AccentColor.BLUE,
+    val weightUnit: WeightUnit = WeightUnit.KILOGRAM,
+    val weeklyWorkoutGoal: Int = 3,
     val compactMode: Boolean = false,
+    val showTutorial: Boolean = false,
     val hasRequestedNotificationPermission: Boolean = false,
     val activeWorkout: AppActiveWorkoutUiModel? = null,
 )
@@ -49,10 +54,15 @@ class AppViewModel @Inject constructor(
     private val activeWorkoutNotifier: ActiveWorkoutNotifier,
     private val launcherIconManager: LauncherIconManager,
 ) : ViewModel() {
+    private val tutorialRequested = MutableStateFlow(false)
+    private val tutorialDismissedForSession = MutableStateFlow(false)
+
     val uiState = combine(
         settingsRepository.observeSettings(),
         workoutRepository.observeActiveWorkout(),
-    ) { settings, workoutResult ->
+        tutorialRequested,
+        tutorialDismissedForSession,
+    ) { settings, workoutResult, tutorialRequested, tutorialDismissed ->
             val activeWorkout = (workoutResult as? DataResult.Success)
                 ?.value
                 ?.let { workout ->
@@ -71,9 +81,17 @@ class AppViewModel @Inject constructor(
                     )
                 }
             AppUiState(
+                isSettingsLoaded = true,
                 themePreference = settings.themePreference,
                 accentColor = settings.accentColor,
+                weightUnit = settings.weightUnit,
+                weeklyWorkoutGoal = settings.weeklyWorkoutGoal,
                 compactMode = settings.compactMode,
+                showTutorial = shouldShowTutorial(
+                    hasCompletedOnboarding = settings.hasCompletedOnboarding,
+                    requested = tutorialRequested,
+                    dismissedForSession = tutorialDismissed,
+                ),
                 hasRequestedNotificationPermission =
                     settings.hasRequestedNotificationPermission,
                 activeWorkout = activeWorkout,
@@ -103,6 +121,21 @@ class AppViewModel @Inject constructor(
     fun onNotificationPermissionRequested() {
         viewModelScope.launch {
             settingsRepository.setNotificationPermissionRequested(true)
+        }
+    }
+
+    fun onTutorialRequested() {
+        tutorialDismissedForSession.value = false
+        tutorialRequested.value = true
+    }
+
+    fun onTutorialCompleted(weightUnit: WeightUnit, weeklyWorkoutGoal: Int) {
+        tutorialDismissedForSession.value = true
+        tutorialRequested.value = false
+        viewModelScope.launch {
+            settingsRepository.setWeightUnit(weightUnit)
+            settingsRepository.setWeeklyWorkoutGoal(weeklyWorkoutGoal)
+            settingsRepository.setOnboardingCompleted(true)
         }
     }
 
@@ -136,3 +169,9 @@ class AppViewModel @Inject constructor(
         const val STOP_TIMEOUT_MILLIS = 5_000L
     }
 }
+
+internal fun shouldShowTutorial(
+    hasCompletedOnboarding: Boolean,
+    requested: Boolean,
+    dismissedForSession: Boolean,
+): Boolean = requested || (!hasCompletedOnboarding && !dismissedForSession)

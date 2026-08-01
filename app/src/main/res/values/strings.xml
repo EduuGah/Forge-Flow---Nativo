@@ -77,4 +77,102 @@
     <string name="hydration_widget_add">+250 ml</string>
     <string name="hydration_widget_add_description">Registrar 250 ml de água</string>
     <string name="hydration_widget_open_description">Abrir hidratação no ForgeFlow</string>
+    <string name="tutorial_brand">FORGEFLOW</string>
+    <string name="tutorial_page_progress">ETAPA %1$d DE %2$d</string>
+    <string name="tutorial_skip">Pular</string>
+    <string name="tutorial_previous">Etapa anterior</string>
+    <string name="tutorial_next">Continuar</string>
+    <string name="tutorial_start">Começar a usar</string>
+
+    <string name="tutorial_welcome_eyebrow">Visão geral</string>
+    <string name="tutorial_welcome_title">Seu treino inteiro, em um só lugar.</string>
+    <string name="tutorial_welcome_description">O ForgeFlow organiza sua rotina, acompanha cada série e transforma seu histórico em decisões claras para o próximo treino.</string>
+    <string name="tutorial_dashboard_title">Dashboard diário</string>
+    <string name="tutorial_dashboard_description">Veja sequência, meta semanal, treino sugerido e os resultados mais recentes.</string>
+    <string name="tutorial_routines_title">Rotinas por pasta</string>
+    <string name="tutorial_routines_description">Separe treinos por academia, objetivo ou fase e reorganize tudo por arraste.</string>
+    <string name="tutorial_history_title">Histórico pesquisável</string>
+    <string name="tutorial_history_description">Encontre sessões por nome, período e local, com todos os exercícios detalhados.</string>
+
+    <string name="tutorial_workout_eyebrow">Durante o treino</string>
+    <string name="tutorial_workout_title">Registre sem perder o ritmo.</string>
+    <string name="tutorial_workout_description">Peso, repetições, aquecimento, descanso e anotações ficam acessíveis na tela mais importante do aplicativo.</string>
+    <string name="tutorial_sets_title">Séries rápidas e claras</string>
+    <string name="tutorial_sets_description">Marque séries concluídas, altere o tipo e consulte o desempenho anterior.</string>
+    <string name="tutorial_pr_title">PRs detectados automaticamente</string>
+    <string name="tutorial_pr_description">Recordes de peso e volume aparecem no momento em que você progride.</string>
+    <string name="tutorial_reorder_title">Ordem flexível</string>
+    <string name="tutorial_reorder_description">Segure o ícone de arraste para compactar a lista e trocar a sequência dos exercícios.</string>
+
+    <string name="tutorial_progress_eyebrow">Depois do treino</string>
+    <string name="tutorial_progress_title">Entenda como você está evoluindo.</string>
+    <string name="tutorial_progress_description">O histórico alimenta gráficos, tabelas, recordes, comparações e o mapa dos lugares onde você treinou.</string>
+    <string name="tutorial_filters_title">Filtros e detalhes</string>
+    <string name="tutorial_filters_description">Abra qualquer treino ou exercício e confira a série exata que gerou cada recorde.</string>
+    <string name="tutorial_photos_title">Fotos de progresso</string>
+    <string name="tutorial_photos_description">Organize sua galeria por data e compare duas fotos com o divisor ajustável.</string>
+    <string name="tutorial_map_title">Mapa de treinos</string>
+    <string name="tutorial_map_description">Salve o local apenas ao finalizar e visualize onde seu histórico foi construído.</string>
+
+    <string name="tutorial_wellness_eyebrow">Além das cargas</string>
+    <string name="tutorial_wellness_title">Treino, saúde e nutrição juntos.</string>
+    <string name="tutorial_wellness_description">Use os recursos nativos do Android para acompanhar sua rotina completa sem misturar seus dados pessoais.</string>
+    <string name="tutorial_health_title">Health Connect</string>
+    <string name="tutorial_health_description">Leia passos, sono, peso e atividade do Samsung Health e grave treinos concluídos.</string>
+    <string name="tutorial_nutrition_title">Nutrição e hidratação</string>
+    <string name="tutorial_nutrition_description">Registre refeições, calorias, macros e água com metas diárias e lembretes.</string>
+    <string name="tutorial_profile_title">Perfil e evolução corporal</string>
+    <string name="tutorial_profile_description">Peso, medidas e fotos ficam no armazenamento privado do aplicativo.</string>
+
+    <string name="tutorial_setup_eyebrow">Último passo</string>
+    <string name="tutorial_setup_title">Deixe o ForgeFlow com a sua medida.</string>
+    <string name="tutorial_setup_description">Estas escolhas são aplicadas ao dashboard, aos treinos e ao histórico. Você pode alterá-las depois em Ajustes.</string>
+    <string name="tutorial_weight_unit">Unidade de carga</string>
+    <string name="tutorial_weight_kg">Quilogramas</string>
+    <string name="tutorial_weight_lb">Libras</string>
+    <string name="tutorial_weekly_goal">Meta semanal</string>
+    <plurals name="tutorial_weekly_goal_value">
+        <item quantity="one">%1$d treino por semana</item>
+        <item quantity="other">%1$d treinos por semana</item>
+    </plurals>
+    <string name="tutorial_goal_decrease">Diminuir meta semanal</string>
+    <string name="tutorial_goal_increase">Aumentar meta semanal</string>
+    <string name="tutorial_setup_backup_title">Seus dados continuam sob seu controle</string>
+    <string name="tutorial_setup_backup_description">Use a exportação completa e o backup protegido do Android para guardar seu histórico.</string>
+
+    <string name="tutorial_artwork_dashboard">PAINEL DE HOJE</string>
+    <string name="tutorial_artwork_active">TREINO ATIVO</string>
+    <string name="tutorial_artwork_progress">EVOLUÇÃO GERAL</string>
+    <string name="tutorial_artwork_health">BEM-ESTAR</string>
+    <string name="tutorial_artwork_setup">SUAS PREFERÊNCIAS</string>
+    <string name="tutorial_metric_week">esta semana</string>
+    <string name="tutorial_metric_week_value">3/4</string>
+    <string name="tutorial_metric_prs">novos PRs</string>
+    <string name="tutorial_metric_prs_value">2</string>
+    <string name="tutorial_metric_sets">séries feitas</string>
+    <string name="tutorial_metric_sets_value">18</string>
+    <string name="tutorial_metric_time">duração</string>
+    <string name="tutorial_metric_time_value">42:18</string>
+    <string name="tutorial_metric_progress">séries</string>
+    <string name="tutorial_metric_progress_value">12/16</string>
+    <string name="tutorial_metric_volume">volume</string>
+    <string name="tutorial_metric_volume_value">8.420 kg</string>
+    <string name="tutorial_metric_workouts">treinos</string>
+    <string name="tutorial_metric_workouts_value">24</string>
+    <string name="tutorial_metric_evolution">volume</string>
+    <string name="tutorial_metric_evolution_value" formatted="false">+12%</string>
+    <string name="tutorial_metric_places">locais</string>
+    <string name="tutorial_metric_places_value">6</string>
+    <string name="tutorial_metric_steps">passos</string>
+    <string name="tutorial_metric_steps_value">8.430</string>
+    <string name="tutorial_metric_water">água</string>
+    <string name="tutorial_metric_water_value">1,8 L</string>
+    <string name="tutorial_metric_calories">calorias</string>
+    <string name="tutorial_metric_calories_value">2.100</string>
+    <string name="tutorial_metric_unit">carga</string>
+    <string name="tutorial_metric_unit_value">KG / LB</string>
+    <string name="tutorial_metric_goal">meta</string>
+    <string name="tutorial_metric_goal_value">3x semana</string>
+    <string name="tutorial_metric_sync">dados</string>
+    <string name="tutorial_metric_sync_value">Local + backup</string>
 </resources>

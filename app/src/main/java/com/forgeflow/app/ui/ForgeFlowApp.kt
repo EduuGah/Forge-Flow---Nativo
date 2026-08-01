@@ -3,6 +3,7 @@ package com.forgeflow.app.ui
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -75,6 +76,7 @@ import com.forgeflow.core.navigation.ProgressPhotosRoute
 import com.forgeflow.core.navigation.RoutinesRoute
 import com.forgeflow.core.navigation.SettingsRoute
 import com.forgeflow.core.navigation.TrainingMapRoute
+import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.feature.exercises.navigation.exerciseDetailsScreen
 import com.forgeflow.feature.exercises.navigation.exercisesScreen
 import com.forgeflow.feature.exercises.navigation.navigateToExerciseDetails
@@ -103,6 +105,8 @@ import kotlinx.coroutines.launch
 fun ForgeFlowApp(
     state: AppUiState,
     launchRequest: AppLaunchRequest? = null,
+    onOpenTutorial: () -> Unit,
+    onCompleteTutorial: (WeightUnit, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
@@ -124,87 +128,97 @@ fun ForgeFlowApp(
         }
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        gesturesEnabled = true,
-        drawerContent = {
-            ForgeFlowDrawer(
-                currentDestination = currentDestination,
-                onClose = { scope.launch { drawerState.close() } },
-                onDestinationSelected = { destination ->
-                    scope.launch { drawerState.close() }
-                    navController.navigateToDrawerDestination(destination)
-                },
-            )
-        },
-    ) {
-        ForgeFlowScaffold(
-            modifier = modifier.fillMaxSize(),
-            bottomBar = {
-                if (showBottomBar) {
-                    Column {
-                        state.activeWorkout?.let { active ->
-                            ActiveWorkoutMiniBar(
-                                active = active,
-                                onClick = navController::navigateToActiveWorkout,
-                            )
-                        }
-                        ForgeFlowBottomBar(
-                            currentDestination = currentDestination,
-                            onDestinationSelected = navController::navigateToTopLevel,
-                            onOpenMenu = { scope.launch { drawerState.open() } },
-                        )
-                    }
-                }
-            },
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = HomeRoute,
-                modifier = Modifier.padding(innerPadding),
-            ) {
-                homeScreen(
-                    onOpenExercises = navController::navigateToExercises,
-                    onOpenRoutines = { navController.navigateTopLevelRoute(RoutinesRoute) },
-                    onOpenActiveWorkout = navController::navigateToActiveWorkout,
-                    onOpenPlanner = navController::navigateToPlanner,
-                    onOpenEvolution = navController::navigateToEvolution,
-                )
-                plannerScreen(onBack = navController::popBackStack)
-                evolutionScreen(
-                    onBack = navController::popBackStack,
-                    onOpenExercise = navController::navigateToExerciseDetails,
-                )
-                routinesScreen(
-                    onOpenExercises = navController::navigateToExercises,
-                    onOpenActiveWorkout = navController::navigateToActiveWorkout,
-                    onOpenExercise = navController::navigateToExerciseDetails,
-                )
-                historyScreen(
-                    onOpenExercise = navController::navigateToExerciseDetails,
-                    onOpenTrainingMap = navController::navigateToTrainingMap,
-                )
-                trainingMapScreen(onBack = navController::popBackStack)
-                profileScreen(onOpenProgressPhotos = navController::navigateToProgressPhotos)
-                progressPhotosScreen(onBack = navController::popBackStack)
-                settingsScreen(
-                    onOpenHealthDashboard = {
-                        navController.navigateDrawerRoute(HealthDashboardRoute)
+    Box(modifier = modifier.fillMaxSize()) {
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            gesturesEnabled = !state.showTutorial,
+            drawerContent = {
+                ForgeFlowDrawer(
+                    currentDestination = currentDestination,
+                    onClose = { scope.launch { drawerState.close() } },
+                    onDestinationSelected = { destination ->
+                        scope.launch { drawerState.close() }
+                        navController.navigateToDrawerDestination(destination)
                     },
                 )
-                healthDashboardScreen(onBack = navController::popBackStack)
-                nutritionScreen(onBack = navController::popBackStack)
-                exercisesScreen(
-                    onBack = navController::popBackStack,
-                    onOpenExercise = navController::navigateToExerciseDetails,
-                )
-                exerciseDetailsScreen(onBack = navController::popBackStack)
-                activeWorkoutScreen(
-                    onBack = navController::popBackStack,
-                    onOpenExercise = navController::navigateToExerciseDetails,
-                )
+            },
+        ) {
+            ForgeFlowScaffold(
+                modifier = Modifier.fillMaxSize(),
+                bottomBar = {
+                    if (showBottomBar) {
+                        Column {
+                            state.activeWorkout?.let { active ->
+                                ActiveWorkoutMiniBar(
+                                    active = active,
+                                    onClick = navController::navigateToActiveWorkout,
+                                )
+                            }
+                            ForgeFlowBottomBar(
+                                currentDestination = currentDestination,
+                                onDestinationSelected = navController::navigateToTopLevel,
+                                onOpenMenu = { scope.launch { drawerState.open() } },
+                            )
+                        }
+                    }
+                },
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            ) { innerPadding ->
+                NavHost(
+                    navController = navController,
+                    startDestination = HomeRoute,
+                    modifier = Modifier.padding(innerPadding),
+                ) {
+                    homeScreen(
+                        onOpenExercises = navController::navigateToExercises,
+                        onOpenRoutines = { navController.navigateTopLevelRoute(RoutinesRoute) },
+                        onOpenActiveWorkout = navController::navigateToActiveWorkout,
+                        onOpenPlanner = navController::navigateToPlanner,
+                        onOpenEvolution = navController::navigateToEvolution,
+                    )
+                    plannerScreen(onBack = navController::popBackStack)
+                    evolutionScreen(
+                        onBack = navController::popBackStack,
+                        onOpenExercise = navController::navigateToExerciseDetails,
+                    )
+                    routinesScreen(
+                        onOpenExercises = navController::navigateToExercises,
+                        onOpenActiveWorkout = navController::navigateToActiveWorkout,
+                        onOpenExercise = navController::navigateToExerciseDetails,
+                    )
+                    historyScreen(
+                        onOpenExercise = navController::navigateToExerciseDetails,
+                        onOpenTrainingMap = navController::navigateToTrainingMap,
+                    )
+                    trainingMapScreen(onBack = navController::popBackStack)
+                    profileScreen(onOpenProgressPhotos = navController::navigateToProgressPhotos)
+                    progressPhotosScreen(onBack = navController::popBackStack)
+                    settingsScreen(
+                        onOpenHealthDashboard = {
+                            navController.navigateDrawerRoute(HealthDashboardRoute)
+                        },
+                        onOpenTutorial = onOpenTutorial,
+                    )
+                    healthDashboardScreen(onBack = navController::popBackStack)
+                    nutritionScreen(onBack = navController::popBackStack)
+                    exercisesScreen(
+                        onBack = navController::popBackStack,
+                        onOpenExercise = navController::navigateToExerciseDetails,
+                    )
+                    exerciseDetailsScreen(onBack = navController::popBackStack)
+                    activeWorkoutScreen(
+                        onBack = navController::popBackStack,
+                        onOpenExercise = navController::navigateToExerciseDetails,
+                    )
+                }
             }
+        }
+        if (state.isSettingsLoaded && state.showTutorial) {
+            TutorialScreen(
+                initialWeightUnit = state.weightUnit,
+                initialWeeklyWorkoutGoal = state.weeklyWorkoutGoal,
+                onComplete = onCompleteTutorial,
+            )
         }
     }
 }

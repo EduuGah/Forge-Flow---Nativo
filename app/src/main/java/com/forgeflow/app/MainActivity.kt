@@ -77,6 +77,8 @@ class MainActivity : ComponentActivity() {
                 ForgeFlowApp(
                     state = appState,
                     launchRequest = launchRequest,
+                    onOpenTutorial = viewModel::onTutorialRequested,
+                    onCompleteTutorial = viewModel::onTutorialCompleted,
                 )
             }
         }

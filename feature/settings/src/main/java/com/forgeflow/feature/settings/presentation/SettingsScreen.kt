@@ -20,6 +20,7 @@ fun SettingsScreen(
     onSelectWorkoutCsv: () -> Unit,
     onSelectMeasurementCsv: () -> Unit,
     onOpenHealthDashboard: () -> Unit,
+    onOpenTutorial: () -> Unit,
     onCreateDataExport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -40,6 +41,9 @@ fun SettingsScreen(
                     title = stringResource(R.string.settings_title),
                     description = stringResource(R.string.settings_description),
                 )
+            }
+            item {
+                TutorialSection(onOpenTutorial = onOpenTutorial)
             }
             item {
                 DataProtectionSection(

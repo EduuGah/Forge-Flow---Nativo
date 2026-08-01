@@ -243,4 +243,8 @@
     <string name="health_data_exercises_description">Treinos registrados no Samsung Health e em outros apps.</string>
     <string name="health_data_sleep">Sono</string>
     <string name="health_data_sleep_description">Duração total do sono compartilhada pelo Samsung Health.</string>
+    <string name="tutorial_settings_eyebrow">Ajuda</string>
+    <string name="tutorial_settings_title">Tutorial do ForgeFlow</string>
+    <string name="tutorial_settings_description">Veja novamente como organizar, registrar e acompanhar seus treinos.</string>
+    <string name="tutorial_settings_action">Refazer tutorial</string>
 </resources>

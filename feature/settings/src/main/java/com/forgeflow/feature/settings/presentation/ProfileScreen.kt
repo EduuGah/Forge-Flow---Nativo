@@ -93,6 +93,7 @@ fun ProfileScreen(
     ) -> Unit,
     onDismissAvatarCrop: () -> Unit,
     onOpenProgressPhotos: () -> Unit,
+    onGoogleSignIn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -118,6 +119,13 @@ fun ProfileScreen(
                     state = state,
                     onSelectAvatar = onSelectAvatar,
                     onEdit = { onAction(SettingsAction.OpenProfileEditor) },
+                )
+            }
+            item {
+                AccountSection(
+                    state = state,
+                    onGoogleSignIn = onGoogleSignIn,
+                    onAction = onAction,
                 )
             }
             item {

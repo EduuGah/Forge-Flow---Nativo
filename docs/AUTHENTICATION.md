@@ -2,13 +2,13 @@
 
 ## Estado atual
 
-A base técnica está preparada para Google Credential Manager, Firebase Authentication,
-Cloud Firestore e Cloud Storage. A conta continuará opcional e o banco local continuará
-sendo a fonte principal durante o treino.
+A entrada nativa pelo Google Credential Manager e a sessão do Firebase Authentication estão
+implementadas no Perfil. A conta continua opcional e o banco local continua sendo a fonte
+principal durante o treino.
 
-Já existem os contratos `AuthRepository`, `AccountSession` e `SyncRepository`. O login só
-será ativado depois que o projeto Firebase de desenvolvimento for conectado, para não
-exibir uma opção que ainda não pode concluir o fluxo.
+Sem `app/google-services.json`, a seção de conta permanece visível para orientar a configuração,
+mas o botão de entrada fica desativado. A sincronização de dados com Cloud Firestore e Cloud
+Storage ainda não está ativa; entrar identifica o usuário, mas não envia dados locais.
 
 ## Onde colocar a configuração do Google
 
@@ -47,6 +47,16 @@ ser colocados no APK ou no repositório.
 - **Offline:** Room e DataStore continuam atendendo toda a experiência local.
 - **Fila:** WorkManager enviará alterações finalizadas quando houver conta e rede.
 
+## Exportação e restauração atuais
+
+- **Exportação manual:** Ajustes > Dados e backup cria um `.zip` com Room, DataStore, avatar,
+  fotos de progresso e fotos de nutrição.
+- **Backup Android:** banco e arquivos elegíveis podem ser restaurados pelo Android durante a
+  configuração ou transferência de um aparelho, conforme disponibilidade e limites do sistema.
+- **Conta Google:** autentica o usuário, mas ainda não é uma cópia remota dos dados do ForgeFlow.
+- **Importação do `.zip`:** o pacote já inclui versão de formato; o fluxo seguro de restauração
+  será implementado junto da mesclagem da Fase 5.
+
 Estrutura remota inicial:
 
 ```text
@@ -74,12 +84,11 @@ consultar ou escrever no namespace de outro usuário.
 
 ## Próxima implementação
 
-1. Implementar `FirebaseAuthRepository` e a tela de conta no Perfil.
-2. Abrir o Credential Manager e trocar o Google ID token por uma sessão Firebase.
-3. Criar regras e emuladores de Auth, Firestore e Storage.
-4. Sincronizar primeiro perfil e rotinas.
-5. Adicionar histórico, peso, nutrição e fotos em lotes separados.
-6. Implementar mesclagem, exclusão de conta e exportação.
+1. Criar regras e emuladores de Auth, Firestore e Storage.
+2. Sincronizar primeiro perfil e rotinas.
+3. Adicionar histórico, peso, nutrição e fotos em lotes separados.
+4. Implementar mesclagem e exclusão remota de conta.
+5. Implementar importação validada dos pacotes exportados.
 
 ## Checklist antes de ativar
 

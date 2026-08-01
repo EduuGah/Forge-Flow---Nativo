@@ -63,6 +63,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.component.ForgeFlowCard
@@ -248,11 +249,15 @@ fun ProgressPhotosScreen(
             initialSelectedStartDateMillis = customStartMillis,
             initialSelectedEndDateMillis = customEndMillis,
         )
-        Dialog(onDismissRequest = { showDateRangePicker = false }) {
+        Dialog(
+            onDismissRequest = { showDateRangePicker = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(560.dp),
+                    .fillMaxHeight(0.94f)
+                    .padding(horizontal = 12.dp),
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(8.dp),
             ) {
@@ -265,6 +270,31 @@ fun ProgressPhotosScreen(
                                 text = stringResource(R.string.progress_photos_exact_period),
                                 modifier = Modifier.padding(16.dp),
                                 style = MaterialTheme.typography.titleLarge,
+                            )
+                        },
+                        headline = {
+                            Text(
+                                text = when {
+                                    rangeState.selectedStartDateMillis == null -> {
+                                        stringResource(R.string.progress_photos_select_start)
+                                    }
+                                    rangeState.selectedEndDateMillis == null -> {
+                                        stringResource(
+                                            R.string.progress_photos_select_end,
+                                            rangeState.selectedStartDateMillis!!.asShortDate(),
+                                        )
+                                    }
+                                    else -> {
+                                        stringResource(
+                                            R.string.progress_photos_selected_range,
+                                            rangeState.selectedStartDateMillis!!.asShortDate(),
+                                            rangeState.selectedEndDateMillis!!.asShortDate(),
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                maxLines = 2,
+                                style = MaterialTheme.typography.titleMedium,
                             )
                         },
                     )

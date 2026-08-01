@@ -31,7 +31,26 @@ data class SettingsUiState(
     val healthSyncResult: HealthSyncUiResult? = null,
     val isReadingHealthData: Boolean = false,
     val healthReadResult: HealthReadUiResult? = null,
+    val isExportingData: Boolean = false,
+    val dataExportResult: DataExportUiResult? = null,
+    val account: AccountUiModel = AccountUiModel(),
 )
+
+@Immutable
+data class AccountUiModel(
+    val isConfigured: Boolean = false,
+    val isSignedIn: Boolean = false,
+    val displayName: String? = null,
+    val email: String? = null,
+    val photoUrl: String? = null,
+    val isSigningIn: Boolean = false,
+    val operationFailed: Boolean = false,
+)
+
+enum class DataExportUiResult {
+    SUCCESS,
+    FAILED,
+}
 
 @Immutable
 data class SettingsProfileUiModel(
@@ -173,4 +192,10 @@ sealed interface SettingsAction {
     data class HevyWorkoutFileSelected(val sourceUri: String) : SettingsAction
     data class HevyMeasurementFileSelected(val sourceUri: String) : SettingsAction
     data object ImportHevyData : SettingsAction
+    data class ExportData(val targetUri: String) : SettingsAction
+    data object DismissDataExportResult : SettingsAction
+    data class GoogleIdTokenReceived(val idToken: String) : SettingsAction
+    data object GoogleSignInFailed : SettingsAction
+    data object SignOut : SettingsAction
+    data object DismissAccountError : SettingsAction
 }

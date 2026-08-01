@@ -150,7 +150,10 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_forgeflow)
         val isActive = state.activeWorkoutName != null
-        val isCompact = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT) in 1..129
+        val maxHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+        val maxWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
+        val isCompact = maxHeight in 1..149
+        val isNarrow = maxWidth in 1..279
         val accent = state.accentColor.toArgb()
         val progress = (
             state.weeklyWorkoutCount.toFloat() / state.weeklyGoal * WIDGET_PROGRESS_MAX
@@ -170,7 +173,6 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
             progress,
             false,
         )
-        views.setTextColor(R.id.widget_brand, accent)
         views.setTextColor(R.id.widget_primary_action, accent)
         views.setInt(R.id.widget_history_action, "setColorFilter", accent)
 
@@ -251,7 +253,11 @@ class ForgeFlowWidgetCoordinator @Inject constructor(
         )
         views.setViewVisibility(
             R.id.widget_streak,
-            if (isCompact) View.GONE else View.VISIBLE,
+            if (isCompact || isNarrow) View.GONE else View.VISIBLE,
+        )
+        views.setViewVisibility(
+            R.id.widget_history_action,
+            if (isNarrow) View.GONE else View.VISIBLE,
         )
 
         val primaryDestination = if (isActive) {

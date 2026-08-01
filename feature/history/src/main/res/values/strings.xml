@@ -65,6 +65,7 @@
     <string name="training_map_registered">agrupados por proximidade</string>
     <string name="training_map_with_location">com localização</string>
     <string name="training_map_total_volume_unit">volume total em %1$s</string>
+    <string name="training_map_place_total_volume">volume total</string>
     <string name="training_map_total_time">tempo total</string>
     <string name="training_map_overview">Visão geral</string>
     <string name="training_map_all_places">Onde você já treinou</string>
@@ -103,6 +104,18 @@
     <string name="story_reset_photo">Redefinir enquadramento</string>
     <string name="story_remove_photo">Remover foto</string>
     <string name="story_photo_gesture_hint">Use dois dedos para ampliar, mover e girar a foto.</string>
+    <string name="story_photo_fit">Foto inteira</string>
+    <string name="story_photo_fill">Preencher tela</string>
+    <string name="story_composition">Composição</string>
+    <string name="story_composition_description">Ajuste o tamanho, a leitura do painel e a cor dos destaques.</string>
+    <string name="story_content_size">Tamanho das informações</string>
+    <string name="story_panel_opacity">Opacidade do painel</string>
+    <string name="story_color_theme">Tema</string>
+    <string name="story_color_coral">Coral</string>
+    <string name="story_color_green">Verde</string>
+    <string name="story_color_blue">Azul</string>
+    <string name="story_color_purple">Roxo</string>
+    <string name="story_color_white">Branco</string>
     <string name="story_message">Mensagem</string>
     <string name="story_message_hint">Como foi o treino de hoje?</string>
     <string name="story_information">Informações</string>

@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":core:database"))
 
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.room.runtime)
     implementation(libs.commons.csv)
     implementation(libs.coroutines.core)
     implementation(libs.kotlin.serialization.json)

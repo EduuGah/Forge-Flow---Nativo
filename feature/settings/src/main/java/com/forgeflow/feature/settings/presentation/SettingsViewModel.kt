@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.data.importer.HevyImportPreview
+import com.forgeflow.core.data.backup.LocalDataExportRepository
+import com.forgeflow.core.data.auth.AuthRepository
 import com.forgeflow.core.data.importer.HevyImportRepository
 import com.forgeflow.core.data.importer.HevyImportResult
 import com.forgeflow.core.data.profile.ProfileRepository
@@ -42,6 +44,8 @@ class SettingsViewModel @Inject constructor(
     private val workoutRepository: WorkoutRepository,
     private val hevyImportRepository: HevyImportRepository,
     private val healthConnectManager: HealthConnectManager,
+    private val localDataExportRepository: LocalDataExportRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
     private val healthStatus = MutableStateFlow(
         HealthConnectStatus(HealthConnectAvailability.UNAVAILABLE),
@@ -120,6 +124,22 @@ class SettingsViewModel @Inject constructor(
             healthSyncResult = currentOperation.healthSyncResult,
             isReadingHealthData = currentOperation.isReadingHealthData,
             healthReadResult = currentOperation.healthReadResult,
+            isExportingData = currentOperation.isExportingData,
+            dataExportResult = currentOperation.dataExportResult,
+            account = AccountUiModel(
+                isConfigured = authRepository.isConfigured(),
+                isSigningIn = currentOperation.isSigningIn,
+                operationFailed = currentOperation.accountOperationFailed,
+            ),
+        )
+    }.combine(authRepository.observeSession()) { state, session ->
+        state.copy(
+            account = state.account.copy(
+                isSignedIn = session != null,
+                displayName = session?.displayName,
+                email = session?.email,
+                photoUrl = session?.photoUrl,
+            ),
         )
     }.stateIn(
         scope = viewModelScope,
@@ -225,6 +245,61 @@ class SettingsViewModel @Inject constructor(
             is SettingsAction.HevyMeasurementFileSelected ->
                 inspectHevyMeasurementFile(action.sourceUri)
             SettingsAction.ImportHevyData -> importHevyData()
+            is SettingsAction.ExportData -> exportData(action.targetUri)
+            SettingsAction.DismissDataExportResult -> operation.update {
+                it.copy(dataExportResult = null)
+            }
+            is SettingsAction.GoogleIdTokenReceived -> signInWithGoogle(action.idToken)
+            SettingsAction.GoogleSignInFailed -> operation.update {
+                it.copy(isSigningIn = false, accountOperationFailed = true)
+            }
+            SettingsAction.SignOut -> signOut()
+            SettingsAction.DismissAccountError -> operation.update {
+                it.copy(accountOperationFailed = false)
+            }
+        }
+    }
+
+    private fun signInWithGoogle(idToken: String) {
+        if (operation.value.isSigningIn) return
+        viewModelScope.launch {
+            operation.update { it.copy(isSigningIn = true, accountOperationFailed = false) }
+            val result = authRepository.signInWithGoogleIdToken(idToken)
+            operation.update {
+                it.copy(
+                    isSigningIn = false,
+                    accountOperationFailed = result is DataResult.Failure,
+                )
+            }
+        }
+    }
+
+    private fun signOut() {
+        viewModelScope.launch {
+            val result = authRepository.signOut()
+            operation.update {
+                it.copy(accountOperationFailed = result is DataResult.Failure)
+            }
+        }
+    }
+
+    private fun exportData(targetUri: String) {
+        if (operation.value.isExportingData) return
+        viewModelScope.launch {
+            operation.update {
+                it.copy(isExportingData = true, dataExportResult = null)
+            }
+            val result = localDataExportRepository.export(targetUri)
+            operation.update {
+                it.copy(
+                    isExportingData = false,
+                    dataExportResult = if (result is DataResult.Success) {
+                        DataExportUiResult.SUCCESS
+                    } else {
+                        DataExportUiResult.FAILED
+                    },
+                )
+            }
         }
     }
 
@@ -605,6 +680,10 @@ class SettingsViewModel @Inject constructor(
         val isImportingHevy: Boolean = false,
         val hevyImportFailed: Boolean = false,
         val hevyImportResult: HevyImportResult? = null,
+        val isExportingData: Boolean = false,
+        val dataExportResult: DataExportUiResult? = null,
+        val isSigningIn: Boolean = false,
+        val accountOperationFailed: Boolean = false,
     )
 
     private fun Double.toInputValue(): String =

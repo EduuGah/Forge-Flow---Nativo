@@ -11,7 +11,7 @@
 | 2 | Métricas, calendário, mapas e progresso | Concluída |
 | 3 | Integrações Android, Health Connect e importação | Concluída |
 | 4 | Perfil, fotos, navegação, evolução geral e nutrição | Em andamento |
-| 5 | Conta Google, sincronização e recuperação entre aparelhos | Preparada |
+| 5 | Conta Google, sincronização e recuperação entre aparelhos | Em andamento |
 | 6 | Produção, privacidade, monitoramento e Play Store | Planejada |
 
 ## Concluído
@@ -101,11 +101,13 @@
 - [x] Escolher Firebase e documentar segurança, custos e limites
 - [x] Preparar contratos `AuthRepository`, `AccountSession` e `SyncRepository`
 - [x] Preparar Credential Manager e dependências Firebase por ambiente
-- [ ] Implementar `FirebaseAuthRepository` e sessão opcional
-- [ ] Login nativo com Google e opção por e-mail
+- [x] Implementar `FirebaseAuthRepository` e sessão opcional
+- [x] Login nativo com Google
+- [ ] Login opcional por e-mail
 - [ ] Fila persistente de sincronização com WorkManager
 - [ ] Mesclagem explícita entre dados locais e remotos
-- [ ] Exportação e exclusão de conta
+- [x] Exportação integral dos dados locais
+- [ ] Importação validada do pacote local e exclusão de conta
 
 ### Prioridade 3 - Comparações e análises
 

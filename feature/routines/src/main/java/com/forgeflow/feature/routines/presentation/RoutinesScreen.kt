@@ -106,6 +106,7 @@ private fun RoutinesContent(
     onDeleteFolder: (RoutineFolderUiModel) -> Unit,
     contentPadding: PaddingValues,
 ) {
+    var reorderTarget by remember { mutableStateOf<RoutineReorderTarget?>(null) }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -174,6 +175,9 @@ private fun RoutinesContent(
                         onAction = onAction,
                         onDeleteRoutine = onDeleteRoutine,
                         onDeleteFolder = onDeleteFolder,
+                        reorderTarget = reorderTarget,
+                        onReorderStarted = { reorderTarget = it },
+                        onReorderStopped = { reorderTarget = null },
                     )
                 }
             }
@@ -189,6 +193,9 @@ private fun RoutinesContent(
                     onAction = onAction,
                     onDeleteRoutine = onDeleteRoutine,
                     onDeleteFolder = onDeleteFolder,
+                    reorderTarget = reorderTarget,
+                    onReorderStarted = { reorderTarget = it },
+                    onReorderStopped = { reorderTarget = null },
                 )
             }
         }
@@ -202,4 +209,9 @@ private fun RoutinesContent(
             )
         }
     }
+}
+
+internal sealed interface RoutineReorderTarget {
+    data class Folder(val id: String) : RoutineReorderTarget
+    data class Routine(val id: String) : RoutineReorderTarget
 }

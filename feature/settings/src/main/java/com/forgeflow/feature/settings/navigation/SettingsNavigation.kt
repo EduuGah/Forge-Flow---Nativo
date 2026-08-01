@@ -7,6 +7,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import java.time.LocalDate
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.launch
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,6 +63,11 @@ fun NavGraphBuilder.settingsScreen(
                 viewModel.onAction(SettingsAction.HevyMeasurementFileSelected(it.toString()))
             }
         }
+        val dataExportLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument("application/zip"),
+        ) { uri ->
+            uri?.let { viewModel.onAction(SettingsAction.ExportData(it.toString())) }
+        }
         LifecycleResumeEffect(viewModel) {
             viewModel.onAction(SettingsAction.HealthConnectRefresh)
             onPauseOrDispose {}
@@ -67,6 +81,9 @@ fun NavGraphBuilder.settingsScreen(
             onSelectWorkoutCsv = { workoutCsvPicker.launch(CSV_MIME_TYPES) },
             onSelectMeasurementCsv = { measurementCsvPicker.launch(CSV_MIME_TYPES) },
             onOpenHealthDashboard = onOpenHealthDashboard,
+            onCreateDataExport = {
+                dataExportLauncher.launch("forgeflow-backup-${LocalDate.now()}.zip")
+            },
         )
     }
 }
@@ -104,6 +121,16 @@ fun NavGraphBuilder.profileScreen(
     composable<ProfileRoute> {
         val viewModel: SettingsViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+        val credentialManager = remember(context) { CredentialManager.create(context) }
+        val googleWebClientId = remember(context) {
+            context.resources.getIdentifier(
+                "default_web_client_id",
+                "string",
+                context.packageName,
+            ).takeIf { it != 0 }?.let(context::getString)
+        }
         var pendingAvatarUri by remember { mutableStateOf<String?>(null) }
         val avatarPicker = rememberLauncherForActivityResult(
             ActivityResultContracts.PickVisualMedia(),
@@ -135,6 +162,47 @@ fun NavGraphBuilder.profileScreen(
             },
             onDismissAvatarCrop = { pendingAvatarUri = null },
             onOpenProgressPhotos = onOpenProgressPhotos,
+            onGoogleSignIn = {
+                val clientId = googleWebClientId
+                if (clientId == null) {
+                    viewModel.onAction(SettingsAction.GoogleSignInFailed)
+                } else {
+                    scope.launch {
+                        runCatching {
+                            val googleOption = GetGoogleIdOption.Builder()
+                                .setFilterByAuthorizedAccounts(false)
+                                .setServerClientId(clientId)
+                                .setAutoSelectEnabled(false)
+                                .build()
+                            val request = GetCredentialRequest.Builder()
+                                .addCredentialOption(googleOption)
+                                .build()
+                            credentialManager.getCredential(context, request).credential
+                        }.onSuccess { credential ->
+                            val googleCredential = if (
+                                credential is CustomCredential &&
+                                credential.type ==
+                                GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                            ) {
+                                GoogleIdTokenCredential.createFrom(credential.data)
+                            } else {
+                                null
+                            }
+                            if (googleCredential != null) {
+                                viewModel.onAction(
+                                    SettingsAction.GoogleIdTokenReceived(
+                                        googleCredential.idToken,
+                                    ),
+                                )
+                            } else {
+                                viewModel.onAction(SettingsAction.GoogleSignInFailed)
+                            }
+                        }.onFailure {
+                            viewModel.onAction(SettingsAction.GoogleSignInFailed)
+                        }
+                    }
+                }
+            },
         )
     }
 }

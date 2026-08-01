@@ -110,6 +110,57 @@ internal fun DiscardWorkoutDialog(
 }
 
 @Composable
+internal fun FinishWorkoutConfirmationDialog(
+    workoutName: String,
+    includeLocation: Boolean,
+    locationLabel: String,
+    hasRoutine: Boolean,
+    routineAction: RoutineFinishAction,
+    onConfirm: () -> Unit,
+    onReview: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.finish_confirmation_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
+                Text(stringResource(R.string.finish_confirmation_workout, workoutName))
+                if (includeLocation) {
+                    Text(
+                        stringResource(
+                            R.string.finish_confirmation_location,
+                            locationLabel.ifBlank {
+                                stringResource(R.string.finish_confirmation_location_unnamed)
+                            },
+                        ),
+                    )
+                }
+                if (hasRoutine) {
+                    Text(
+                        text = stringResource(
+                            R.string.finish_confirmation_routine,
+                            stringResource(routineAction.titleResource()),
+                        ),
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.finish_confirmation_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onReview) {
+                Text(stringResource(R.string.finish_confirmation_review))
+            }
+        },
+    )
+}
+
+@Composable
 @OptIn(ExperimentalMaterial3Api::class)
 internal fun FinishWorkoutSheet(
     includeLocation: Boolean,

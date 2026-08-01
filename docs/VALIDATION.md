@@ -82,8 +82,10 @@ Prioridades:
 - [ ] Excluir treino com confirmação
 - [ ] Compartilhar treino com e sem foto, testar os três temas e ocultar informações
 - [ ] Ampliar, mover e girar a foto do story; arrastar o painel de informações
+- [ ] Alternar foto inteira/preenchimento, cor, tamanho e opacidade do story
 - [ ] Compartilhar a imagem final para outro aplicativo
 - [ ] Abrir mapa do treino e mapa geral
+- [ ] Ampliar e mover o mapa; conferir unidade e legenda de volume por local
 - [ ] Tocar nos gráficos e conferir o valor selecionado
 
 ### Android
@@ -95,6 +97,9 @@ Prioridades:
 - [ ] Conferir origem Samsung Health e histórico de passos em 7 e 30 dias
 - [ ] Registrar água e validar lembretes de bem-estar
 - [ ] Conferir sequência, último treino, duração e volume no widget de treino
+- [ ] Redimensionar o widget e confirmar marca, textos e ações sem cortes
+- [ ] Exportar todos os dados em Ajustes e conferir a criação do arquivo `.zip`
+- [ ] Com Firebase configurado, entrar e sair da conta Google pelo Perfil
 - [ ] Adicionar widgets de nutrição e hidratação à tela inicial
 - [ ] Registrar 250 ml pelo widget e conferir o diário de hidratação
 - [ ] Abrir nutrição diretamente pelos dois novos widgets

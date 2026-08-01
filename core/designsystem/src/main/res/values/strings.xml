@@ -2,4 +2,7 @@
     <string name="preview_action">Continuar</string>
     <string name="preview_empty_title">Nada por aqui</string>
     <string name="preview_empty_message">O conteúdo aparecerá quando estiver disponível.</string>
+    <string name="map_zoom_in">Aproximar mapa</string>
+    <string name="map_zoom_out">Afastar mapa</string>
+    <string name="map_reset">Redefinir mapa</string>
 </resources>

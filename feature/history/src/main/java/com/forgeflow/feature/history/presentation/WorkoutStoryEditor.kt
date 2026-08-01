@@ -35,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -91,6 +92,10 @@ internal fun WorkoutStoryEditor(
     var showExercises by remember { mutableStateOf(true) }
     var showProgress by remember { mutableStateOf(true) }
     var centered by remember { mutableStateOf(false) }
+    var photoFit by remember { mutableStateOf(true) }
+    var contentScale by remember { mutableFloatStateOf(1f) }
+    var panelOpacity by remember { mutableFloatStateOf(0.9f) }
+    var storyAccent by remember { mutableStateOf(StoryAccent.THEME) }
     var photoScale by remember { mutableFloatStateOf(1f) }
     var photoRotation by remember { mutableFloatStateOf(0f) }
     var photoPan by remember { mutableStateOf(Offset.Zero) }
@@ -185,6 +190,10 @@ internal fun WorkoutStoryEditor(
                             showExercises = showExercises,
                             showProgress = showProgress,
                             centered = centered,
+                            photoFit = photoFit,
+                            contentScale = contentScale,
+                            panelOpacity = panelOpacity,
+                            storyAccent = storyAccent,
                             photoScale = photoScale,
                             photoRotation = photoRotation,
                             photoPan = photoPan,
@@ -234,6 +243,14 @@ internal fun WorkoutStoryEditor(
                                 photoRotation = 0f
                                 photoPan = Offset.Zero
                             },
+                            photoFit = photoFit,
+                            onPhotoFitChanged = { photoFit = it },
+                            contentScale = contentScale,
+                            onContentScaleChanged = { contentScale = it },
+                            panelOpacity = panelOpacity,
+                            onPanelOpacityChanged = { panelOpacity = it },
+                            storyAccent = storyAccent,
+                            onStoryAccentChanged = { storyAccent = it },
                             showDate = showDate,
                             onShowDateChanged = { showDate = it },
                             showLocation = showLocation,
@@ -270,6 +287,10 @@ private fun WorkoutStoryCanvas(
     showExercises: Boolean,
     showProgress: Boolean,
     centered: Boolean,
+    photoFit: Boolean,
+    contentScale: Float,
+    panelOpacity: Float,
+    storyAccent: StoryAccent,
     photoScale: Float,
     photoRotation: Float,
     photoPan: Offset,
@@ -278,7 +299,11 @@ private fun WorkoutStoryCanvas(
     onMoveContent: (Offset) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val palette = theme.palette()
+    val basePalette = theme.palette()
+    val palette = basePalette.copy(
+        panel = basePalette.panel.copy(alpha = panelOpacity),
+        accent = storyAccent.color ?: basePalette.accent,
+    )
     val personalRecords = workout.exercises.sumOf(HistoryExerciseUiModel::personalRecordCount)
     Box(
         modifier = modifier.background(palette.background),
@@ -296,7 +321,7 @@ private fun WorkoutStoryCanvas(
                         translationX = photoPan.x,
                         translationY = photoPan.y,
                     ),
-                contentScale = ContentScale.Crop,
+                contentScale = if (photoFit) ContentScale.Fit else ContentScale.Crop,
             )
             Box(
                 modifier = Modifier
@@ -339,6 +364,8 @@ private fun WorkoutStoryCanvas(
                     .graphicsLayer(
                         translationX = contentPan.x,
                         translationY = contentPan.y,
+                        scaleX = contentScale,
+                        scaleY = contentScale,
                     )
                     .clip(RoundedCornerShape(8.dp))
                     .background(palette.panel)
@@ -495,6 +522,14 @@ private fun StoryControls(
     onRemovePhoto: () -> Unit,
     onRotatePhoto: () -> Unit,
     onResetPhoto: () -> Unit,
+    photoFit: Boolean,
+    onPhotoFitChanged: (Boolean) -> Unit,
+    contentScale: Float,
+    onContentScaleChanged: (Float) -> Unit,
+    panelOpacity: Float,
+    onPanelOpacityChanged: (Float) -> Unit,
+    storyAccent: StoryAccent,
+    onStoryAccentChanged: (StoryAccent) -> Unit,
     showDate: Boolean,
     onShowDateChanged: (Boolean) -> Unit,
     showLocation: Boolean,
@@ -569,11 +604,62 @@ private fun StoryControls(
             }
         }
         if (hasPhoto) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = photoFit,
+                    onClick = { onPhotoFitChanged(true) },
+                    label = { Text(stringResource(R.string.story_photo_fit)) },
+                )
+                FilterChip(
+                    selected = !photoFit,
+                    onClick = { onPhotoFitChanged(false) },
+                    label = { Text(stringResource(R.string.story_photo_fill)) },
+                )
+            }
             Text(
                 text = stringResource(R.string.story_photo_gesture_hint),
                 color = ForgeFlowDesign.colors.textSecondary,
                 style = MaterialTheme.typography.bodySmall,
             )
+        }
+        StoryControlTitle(
+            title = stringResource(R.string.story_composition),
+            description = stringResource(R.string.story_composition_description),
+        )
+        Text(
+            text = stringResource(R.string.story_content_size),
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Slider(
+            value = contentScale,
+            onValueChange = onContentScaleChanged,
+            valueRange = 0.8f..1.18f,
+        )
+        Text(
+            text = stringResource(R.string.story_panel_opacity),
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Slider(
+            value = panelOpacity,
+            onValueChange = onPanelOpacityChanged,
+            valueRange = 0.35f..1f,
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            StoryAccent.entries.forEach { option ->
+                FilterChip(
+                    selected = option == storyAccent,
+                    onClick = { onStoryAccentChanged(option) },
+                    label = { Text(stringResource(option.labelResource)) },
+                )
+            }
         }
         OutlinedTextField(
             value = message,
@@ -684,6 +770,15 @@ private enum class WorkoutStoryTheme(val labelResource: Int) {
     FORGE(R.string.story_theme_forge),
     PULSE(R.string.story_theme_pulse),
     MINIMAL(R.string.story_theme_minimal),
+}
+
+private enum class StoryAccent(val labelResource: Int, val color: Color?) {
+    THEME(R.string.story_color_theme, null),
+    CORAL(R.string.story_color_coral, Color(0xFFFF5A44)),
+    GREEN(R.string.story_color_green, Color(0xFF48D59B)),
+    BLUE(R.string.story_color_blue, Color(0xFF4BA3FF)),
+    PURPLE(R.string.story_color_purple, Color(0xFFA98BFF)),
+    WHITE(R.string.story_color_white, Color.White),
 }
 
 private data class StoryPalette(

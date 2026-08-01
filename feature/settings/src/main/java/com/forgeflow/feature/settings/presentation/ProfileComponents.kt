@@ -22,7 +22,9 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.AlertDialog
@@ -369,7 +371,11 @@ private fun ProgressPhotoFrame(
 }
 
 @Composable
-internal fun DataProtectionSection() {
+internal fun DataProtectionSection(
+    state: SettingsUiState,
+    onExport: () -> Unit,
+    onDismissResult: () -> Unit,
+) {
     SettingsSection(
         eyebrow = stringResource(R.string.data_eyebrow),
         title = stringResource(R.string.data_title),
@@ -385,6 +391,149 @@ internal fun DataProtectionSection() {
             title = stringResource(R.string.data_backup_title),
             description = stringResource(R.string.data_backup_description),
         )
+        HorizontalDivider(color = ForgeFlowDesign.colors.divider)
+        ForgeFlowButton(
+            text = if (state.isExportingData) {
+                stringResource(R.string.data_exporting)
+            } else {
+                stringResource(R.string.data_export_action)
+            },
+            onClick = onExport,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !state.isExportingData,
+            icon = Icons.Outlined.Download,
+            iconContentDescription = null,
+        )
+        state.dataExportResult?.let { result ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(
+                        if (result == DataExportUiResult.SUCCESS) {
+                            R.string.data_export_success
+                        } else {
+                            R.string.data_export_failed
+                        },
+                    ),
+                    modifier = Modifier.weight(1f),
+                    color = if (result == DataExportUiResult.SUCCESS) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                IconButton(onClick = onDismissResult) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = stringResource(R.string.data_export_dismiss),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun AccountSection(
+    state: SettingsUiState,
+    onGoogleSignIn: () -> Unit,
+    onAction: (SettingsAction) -> Unit,
+) {
+    SettingsSection(
+        eyebrow = stringResource(R.string.account_eyebrow),
+        title = stringResource(R.string.account_title),
+        description = stringResource(R.string.account_description),
+        icon = Icons.Outlined.AccountCircle,
+    ) {
+        if (state.account.isSignedIn) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (state.account.photoUrl != null) {
+                    AsyncImage(
+                        model = state.account.photoUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape),
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.AccountCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = state.account.displayName
+                            ?: stringResource(R.string.account_google_user),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    state.account.email?.let { email ->
+                        Text(
+                            text = email,
+                            color = ForgeFlowDesign.colors.textSecondary,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.account_local_only),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
+            ForgeFlowOutlinedButton(
+                text = stringResource(R.string.account_sign_out),
+                onClick = { onAction(SettingsAction.SignOut) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            Text(
+                text = stringResource(
+                    if (state.account.isConfigured) {
+                        R.string.account_sign_in_explanation
+                    } else {
+                        R.string.account_configuration_pending
+                    },
+                ),
+                color = ForgeFlowDesign.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            ForgeFlowButton(
+                text = if (state.account.isSigningIn) {
+                    stringResource(R.string.account_signing_in)
+                } else {
+                    stringResource(R.string.account_sign_in_google)
+                },
+                onClick = onGoogleSignIn,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.account.isConfigured && !state.account.isSigningIn,
+                icon = Icons.Outlined.AccountCircle,
+                iconContentDescription = null,
+            )
+        }
+        if (state.account.operationFailed) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.account_operation_failed),
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                TextButton(onClick = { onAction(SettingsAction.DismissAccountError) }) {
+                    Text(stringResource(R.string.account_error_dismiss))
+                }
+            }
+        }
     }
 }
 

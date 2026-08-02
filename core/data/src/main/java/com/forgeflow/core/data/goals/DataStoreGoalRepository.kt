@@ -6,6 +6,9 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.forgeflow.core.common.result.AppError
 import com.forgeflow.core.common.result.DataResult
+import com.forgeflow.core.data.auth.AuthRepository
+import com.forgeflow.core.data.auth.observeCurrentUserId
+import com.forgeflow.core.data.auth.requireCurrentUserId
 import com.forgeflow.core.model.ExerciseId
 import com.forgeflow.core.model.GoalCadence
 import com.forgeflow.core.model.PerformanceGoal
@@ -13,34 +16,58 @@ import com.forgeflow.core.model.PerformanceGoalType
 import java.io.IOException
 import java.time.Instant
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DataStoreGoalRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,
+    private val authRepository: AuthRepository,
 ) : GoalRepository {
     private val json = Json { ignoreUnknownKeys = true }
 
-    override fun observeGoals(): Flow<List<PerformanceGoal>> = dataStore.data
-        .catch { error ->
-            if (error is IOException) {
-                emit(androidx.datastore.preferences.core.emptyPreferences())
+    override fun observeGoals(): Flow<List<PerformanceGoal>> =
+        authRepository.observeCurrentUserId().flatMapLatest { ownerUserId ->
+            if (ownerUserId == null) {
+                flowOf(emptyList())
             } else {
-                throw error
+                flow {
+                    claimLegacyGoals(ownerUserId)
+                    val key = goalsKey(ownerUserId)
+                    emitAll(
+                        dataStore.data
+                            .catch { error ->
+                                if (error is IOException) {
+                                    emit(androidx.datastore.preferences.core.emptyPreferences())
+                                } else {
+                                    throw error
+                                }
+                            }
+                            .map { preferences ->
+                                decodeGoals(preferences.accountValue(key, ownerUserId))
+                            },
+                    )
+                }
             }
         }
-        .map { preferences -> decodeGoals(preferences[GOALS]) }
 
     override suspend fun saveGoal(goal: PerformanceGoal): DataResult<Unit> = runCatching {
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val key = goalsKey(ownerUserId)
         dataStore.edit { preferences ->
-            val goals = decodeGoals(preferences[GOALS]).toMutableList()
+            val goals = decodeGoals(preferences.accountValue(key, ownerUserId)).toMutableList()
             val existingIndex = goals.indexOfFirst { it.id == goal.id }
             if (existingIndex >= 0) goals[existingIndex] = goal else goals += goal
-            preferences[GOALS] = json.encodeToString(
+            preferences[key] = json.encodeToString(
                 goals.sortedBy(PerformanceGoal::createdAt).map(PerformanceGoalDto::from),
             )
         }
@@ -50,9 +77,12 @@ class DataStoreGoalRepository @Inject constructor(
     )
 
     override suspend fun deleteGoal(goalId: String): DataResult<Unit> = runCatching {
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val key = goalsKey(ownerUserId)
         dataStore.edit { preferences ->
-            val goals = decodeGoals(preferences[GOALS]).filterNot { it.id == goalId }
-            preferences[GOALS] = json.encodeToString(goals.map(PerformanceGoalDto::from))
+            val goals = decodeGoals(preferences.accountValue(key, ownerUserId))
+                .filterNot { it.id == goalId }
+            preferences[key] = json.encodeToString(goals.map(PerformanceGoalDto::from))
         }
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
@@ -68,8 +98,29 @@ class DataStoreGoalRepository @Inject constructor(
         }.getOrDefault(emptyList())
     }
 
+    private suspend fun claimLegacyGoals(ownerUserId: String) {
+        dataStore.edit { preferences ->
+            if (preferences[LEGACY_GOALS_OWNER] == null && preferences.contains(GOALS)) {
+                preferences[LEGACY_GOALS_OWNER] =
+                    preferences[LAST_COMPLETED_PROFILE_USER_ID] ?: ownerUserId
+            }
+        }
+    }
+
+    private fun Preferences.accountValue(
+        scopedKey: Preferences.Key<String>,
+        ownerUserId: String,
+    ): String? = this[scopedKey] ?: this[GOALS]
+        ?.takeIf { this[LEGACY_GOALS_OWNER] == ownerUserId }
+
+    private fun goalsKey(ownerUserId: String) =
+        stringPreferencesKey("performance_goals_v1.$ownerUserId")
+
     private companion object {
         val GOALS = stringPreferencesKey("performance_goals_v1")
+        val LEGACY_GOALS_OWNER = stringPreferencesKey("legacy_goals_owner_user_id")
+        val LAST_COMPLETED_PROFILE_USER_ID =
+            stringPreferencesKey("profile_completed_for_user_id")
     }
 }
 

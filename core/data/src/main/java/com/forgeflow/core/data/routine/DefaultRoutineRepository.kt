@@ -3,6 +3,9 @@ package com.forgeflow.core.data.routine
 import com.forgeflow.core.common.result.AppError
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.common.time.AppClock
+import com.forgeflow.core.data.auth.AuthRepository
+import com.forgeflow.core.data.auth.observeCurrentUserId
+import com.forgeflow.core.data.auth.requireCurrentUserId
 import com.forgeflow.core.database.routine.RoutineDao
 import com.forgeflow.core.database.routine.RoutineEntity
 import com.forgeflow.core.database.routine.RoutineExerciseEntity
@@ -16,35 +19,66 @@ import com.forgeflow.core.model.RoutineFolderId
 import com.forgeflow.core.model.RoutineId
 import com.forgeflow.core.model.RoutineExerciseDraft
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DefaultRoutineRepository @Inject constructor(
     private val routineDao: RoutineDao,
     private val clock: AppClock,
+    private val authRepository: AuthRepository,
 ) : RoutineRepository {
     override fun observeRoutines(): Flow<DataResult<List<RoutineDetails>>> =
-        routineDao.observeActive()
-            .map { records ->
-                DataResult.Success(records.map { it.asExternalModel() }) as DataResult<List<RoutineDetails>>
+        authRepository.observeCurrentUserId()
+            .flatMapLatest { ownerUserId ->
+                if (ownerUserId == null) {
+                    flowOf<DataResult<List<RoutineDetails>>>(DataResult.Success(emptyList()))
+                } else {
+                    flow {
+                        routineDao.claimUnownedData(ownerUserId)
+                        emitAll(
+                            routineDao.observeActive(ownerUserId).map { records ->
+                                DataResult.Success(records.map { it.asExternalModel() }) as
+                                    DataResult<List<RoutineDetails>>
+                            },
+                        )
+                    }
+                }
             }
             .catch {
                 emit(DataResult.Failure(AppError.LocalDataUnavailable))
             }
 
     override fun observeFolders(): Flow<DataResult<List<RoutineFolder>>> =
-        routineDao.observeFolders()
-            .map { folders ->
-                DataResult.Success(folders.map { it.asExternalModel() }) as
-                    DataResult<List<RoutineFolder>>
+        authRepository.observeCurrentUserId()
+            .flatMapLatest { ownerUserId ->
+                if (ownerUserId == null) {
+                    flowOf<DataResult<List<RoutineFolder>>>(DataResult.Success(emptyList()))
+                } else {
+                    flow {
+                        routineDao.claimUnownedData(ownerUserId)
+                        emitAll(
+                            routineDao.observeFolders(ownerUserId).map { folders ->
+                                DataResult.Success(folders.map { it.asExternalModel() }) as
+                                    DataResult<List<RoutineFolder>>
+                            },
+                        )
+                    }
+                }
             }
             .catch {
                 emit(DataResult.Failure(AppError.LocalDataUnavailable))
             }
 
     override suspend fun getRoutine(id: RoutineId): DataResult<RoutineDetails> = runCatching {
-        requireNotNull(routineDao.getById(id.value)).asExternalModel()
+        val ownerUserId = authRepository.requireCurrentUserId()
+        requireNotNull(routineDao.getById(id.value, ownerUserId)).asExternalModel()
     }.fold(
         onSuccess = { DataResult.Success(it) },
         onFailure = { DataResult.Failure(AppError.LocalDataUnavailable) },
@@ -54,15 +88,17 @@ class DefaultRoutineRepository @Inject constructor(
         require(draft.name.isNotBlank())
         require(draft.exercises.isNotEmpty())
         val id = draft.id ?: RoutineId.create()
-        val existing = draft.id?.let { routineDao.getById(it.value) }
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val existing = draft.id?.let { routineDao.getById(it.value, ownerUserId) }
         val now = clock.now().toEpochMilli()
         val routine = RoutineEntity(
             id = id.value,
+            ownerUserId = ownerUserId,
             folderId = draft.folderId?.value,
             name = draft.name.trim(),
             description = draft.description.trim(),
             position = existing?.routine?.position
-                ?: routineDao.getLastRoutinePosition(draft.folderId?.value) + 1,
+                ?: routineDao.getLastRoutinePosition(draft.folderId?.value, ownerUserId) + 1,
             compareHistoryWithinFolder = draft.compareHistoryWithinFolder,
             createdAtEpochMillis = existing?.routine?.createdAtEpochMillis ?: now,
             updatedAtEpochMillis = now,
@@ -90,7 +126,11 @@ class DefaultRoutineRepository @Inject constructor(
     )
 
     override suspend fun archiveRoutine(id: RoutineId): DataResult<Unit> = runCatching {
-        routineDao.archive(id.value, clock.now().toEpochMilli())
+        routineDao.archive(
+            routineId = id.value,
+            ownerUserId = authRepository.requireCurrentUserId(),
+            archivedAt = clock.now().toEpochMilli(),
+        )
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },
@@ -101,13 +141,15 @@ class DefaultRoutineRepository @Inject constructor(
         name: String,
     ): DataResult<RoutineFolderId> = runCatching {
         require(name.isNotBlank())
+        val ownerUserId = authRepository.requireCurrentUserId()
         val folderId = id ?: RoutineFolderId.create()
-        val existing = id?.let { routineDao.getFolderById(it.value) }
+        val existing = id?.let { routineDao.getFolderById(it.value, ownerUserId) }
         val now = clock.now().toEpochMilli()
-        val position = existing?.position ?: routineDao.getFolderCount()
+        val position = existing?.position ?: routineDao.getFolderCount(ownerUserId)
         routineDao.upsertFolder(
             RoutineFolderEntity(
                 id = folderId.value,
+                ownerUserId = ownerUserId,
                 name = name.trim(),
                 position = position,
                 createdAtEpochMillis = existing?.createdAtEpochMillis ?: now,
@@ -121,7 +163,7 @@ class DefaultRoutineRepository @Inject constructor(
     )
 
     override suspend fun deleteFolder(id: RoutineFolderId): DataResult<Unit> = runCatching {
-        routineDao.deleteFolder(id.value)
+        routineDao.deleteFolder(id.value, authRepository.requireCurrentUserId())
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },
@@ -157,8 +199,9 @@ class DefaultRoutineRepository @Inject constructor(
     }
 
     override suspend fun copyFolder(id: RoutineFolderId): DataResult<RoutineFolderId> = runCatching {
-        val source = requireNotNull(routineDao.getFolderById(id.value))
-        val sourceRoutines = routineDao.getActiveInFolder(id.value)
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val source = requireNotNull(routineDao.getFolderById(id.value, ownerUserId))
+        val sourceRoutines = routineDao.getActiveInFolder(id.value, ownerUserId)
         val targetId = RoutineFolderId.create()
         val now = clock.now().toEpochMilli()
         val copiedRoutines = mutableListOf<RoutineEntity>()
@@ -187,8 +230,9 @@ class DefaultRoutineRepository @Inject constructor(
         routineDao.insertFolderCopy(
             folder = RoutineFolderEntity(
                 id = targetId.value,
+                ownerUserId = ownerUserId,
                 name = "${source.name} - cópia",
-                position = routineDao.getFolderCount(),
+                position = routineDao.getFolderCount(ownerUserId),
                 createdAtEpochMillis = now,
                 updatedAtEpochMillis = now,
             ),
@@ -204,8 +248,9 @@ class DefaultRoutineRepository @Inject constructor(
     override suspend fun reorderFolders(
         orderedIds: List<RoutineFolderId>,
     ): DataResult<Unit> = runCatching {
+        val ownerUserId = authRepository.requireCurrentUserId()
         orderedIds.forEachIndexed { position, id ->
-            routineDao.updateFolderPosition(id.value, position)
+            routineDao.updateFolderPosition(id.value, ownerUserId, position)
         }
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
@@ -216,10 +261,13 @@ class DefaultRoutineRepository @Inject constructor(
         folderId: RoutineFolderId?,
         orderedIds: List<RoutineId>,
     ): DataResult<Unit> = runCatching {
-        val allowed = routineDao.getActiveInFolder(folderId?.value).map { it.routine.id }.toSet()
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val allowed = routineDao.getActiveInFolder(folderId?.value, ownerUserId)
+            .map { it.routine.id }
+            .toSet()
         require(orderedIds.all { it.value in allowed })
         orderedIds.forEachIndexed { position, id ->
-            routineDao.updateRoutinePosition(id.value, position)
+            routineDao.updateRoutinePosition(id.value, ownerUserId, position)
         }
     }.fold(
         onSuccess = { DataResult.Success(Unit) },

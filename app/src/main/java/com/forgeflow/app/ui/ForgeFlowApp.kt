@@ -125,6 +125,10 @@ fun ForgeFlowApp(
         ForgeFlowLoadingScreen(modifier)
         return
     }
+    if (state.auth.isInitializing && !state.auth.isSignedIn) {
+        ForgeFlowLoadingScreen(modifier)
+        return
+    }
     if (!state.auth.isSignedIn) {
         AccountEntryScreen(
             state = state.auth,
@@ -135,6 +139,10 @@ fun ForgeFlowApp(
             onDismissFeedback = onDismissAuthFeedback,
             modifier = modifier,
         )
+        return
+    }
+    if (state.isAccountDataLoading) {
+        ForgeFlowLoadingScreen(modifier)
         return
     }
     if (state.showProfileSetup) {

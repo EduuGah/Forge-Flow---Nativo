@@ -16,22 +16,29 @@ data class ImportedWorkoutEntities(
 @Dao
 interface WorkoutDao {
     @Transaction
-    @Query("SELECT * FROM workout_sessions WHERE status = 'ACTIVE' LIMIT 1")
-    fun observeActive(): Flow<WorkoutRecord?>
+    @Query(
+        "SELECT * FROM workout_sessions " +
+            "WHERE owner_user_id = :ownerUserId AND status = 'ACTIVE' LIMIT 1",
+    )
+    fun observeActive(ownerUserId: String): Flow<WorkoutRecord?>
 
     @Transaction
-    @Query("SELECT * FROM workout_sessions WHERE status = 'ACTIVE' LIMIT 1")
-    suspend fun getActive(): WorkoutRecord?
+    @Query(
+        "SELECT * FROM workout_sessions " +
+            "WHERE owner_user_id = :ownerUserId AND status = 'ACTIVE' LIMIT 1",
+    )
+    suspend fun getActive(ownerUserId: String): WorkoutRecord?
 
     @Transaction
     @Query(
         """
         SELECT * FROM workout_sessions
-        WHERE status = 'COMPLETED'
+        WHERE owner_user_id = :ownerUserId
+          AND status = 'COMPLETED'
         ORDER BY finished_at_epoch_millis DESC
         """,
     )
-    fun observeHistory(): Flow<List<WorkoutRecord>>
+    fun observeHistory(ownerUserId: String): Flow<List<WorkoutRecord>>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertSession(session: WorkoutSessionEntity)
@@ -48,12 +55,15 @@ interface WorkoutDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertSet(set: WorkoutSetEntity)
 
-    @Query("SELECT COUNT(*) FROM workout_sessions WHERE id = :sessionId")
-    suspend fun sessionCount(sessionId: String): Int
+    @Query(
+        "SELECT COUNT(*) FROM workout_sessions " +
+            "WHERE id = :sessionId AND owner_user_id = :ownerUserId",
+    )
+    suspend fun sessionCount(sessionId: String, ownerUserId: String): Int
 
     @Transaction
     suspend fun insertImportedWorkout(workout: ImportedWorkoutEntities): Boolean {
-        if (sessionCount(workout.session.id) > 0) return false
+        if (sessionCount(workout.session.id, workout.session.ownerUserId) > 0) return false
         insertSession(workout.session)
         insertExercises(workout.exercises)
         insertSets(workout.sets)
@@ -171,8 +181,11 @@ interface WorkoutDao {
         }
     }
 
-    @Query("DELETE FROM workout_sessions WHERE id = :sessionId AND status = 'COMPLETED'")
-    suspend fun deleteCompletedWorkout(sessionId: String): Int
+    @Query(
+        "DELETE FROM workout_sessions WHERE id = :sessionId " +
+            "AND owner_user_id = :ownerUserId AND status = 'COMPLETED'",
+    )
+    suspend fun deleteCompletedWorkout(sessionId: String, ownerUserId: String): Int
 
     @Query(
         """
@@ -180,10 +193,10 @@ interface WorkoutDao {
         SET status = 'DISCARDED',
             finished_at_epoch_millis = :timestamp,
             updated_at_epoch_millis = :timestamp
-        WHERE status = 'ACTIVE'
+        WHERE owner_user_id = :ownerUserId AND status = 'ACTIVE'
         """,
     )
-    suspend fun discardActive(timestamp: Long)
+    suspend fun discardActive(ownerUserId: String, timestamp: Long)
 
     @Query(
         """
@@ -196,11 +209,12 @@ interface WorkoutDao {
             location_captured_at_epoch_millis = :locationCapturedAt,
             location_label = :locationLabel,
             updated_at_epoch_millis = :timestamp
-        WHERE id = :sessionId AND status = 'ACTIVE'
+        WHERE id = :sessionId AND owner_user_id = :ownerUserId AND status = 'ACTIVE'
         """,
     )
     suspend fun finish(
         sessionId: String,
+        ownerUserId: String,
         timestamp: Long,
         locationLatitude: Double?,
         locationLongitude: Double?,
@@ -211,14 +225,18 @@ interface WorkoutDao {
 
     @Transaction
     suspend fun replaceActive(
+        ownerUserId: String,
         timestamp: Long,
         session: WorkoutSessionEntity,
         exercises: List<WorkoutSessionExerciseEntity>,
         sets: List<WorkoutSetEntity>,
     ) {
-        discardActive(timestamp)
+        discardActive(ownerUserId, timestamp)
         insertSession(session)
         insertExercises(exercises)
         insertSets(sets)
     }
+
+    @Query("UPDATE workout_sessions SET owner_user_id = :ownerUserId WHERE owner_user_id = ''")
+    suspend fun claimUnownedData(ownerUserId: String)
 }

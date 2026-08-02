@@ -46,6 +46,7 @@ class FirebaseEntitlementRepository @Inject constructor(
                         return@addSnapshotListener
                     }
                     val tier = snapshot.getString("supporterTier")
+                        ?.trim()
                         ?.let { value ->
                             SupporterTier.entries.firstOrNull {
                                 it.name.equals(value, ignoreCase = true)

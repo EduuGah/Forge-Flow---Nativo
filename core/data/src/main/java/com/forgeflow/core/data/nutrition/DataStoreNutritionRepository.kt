@@ -9,6 +9,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.forgeflow.core.common.di.IoDispatcher
 import com.forgeflow.core.common.result.AppError
 import com.forgeflow.core.common.result.DataResult
+import com.forgeflow.core.data.auth.AuthRepository
+import com.forgeflow.core.data.auth.observeCurrentUserId
+import com.forgeflow.core.data.auth.requireCurrentUserId
 import com.forgeflow.core.model.NutritionGoals
 import com.forgeflow.core.model.NutritionJournal
 import com.forgeflow.core.model.NutritionMeal
@@ -21,32 +24,57 @@ import java.io.IOException
 import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DataStoreNutritionRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val dataStore: DataStore<Preferences>,
+    private val authRepository: AuthRepository,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : NutritionRepository {
     private val json = Json { ignoreUnknownKeys = true }
 
-    override fun observeJournal(): Flow<NutritionJournal> = dataStore.data
-        .catch { error ->
-            if (error is IOException) {
-                emit(androidx.datastore.preferences.core.emptyPreferences())
+    override fun observeJournal(): Flow<NutritionJournal> = authRepository.observeCurrentUserId()
+        .flatMapLatest { ownerUserId ->
+            if (ownerUserId == null) {
+                flowOf(NutritionJournal())
             } else {
-                throw error
+                flow {
+                    claimLegacyNutrition(ownerUserId)
+                    val keys = nutritionKeys(ownerUserId)
+                    emitAll(
+                        dataStore.data
+                            .catch { error ->
+                                if (error is IOException) {
+                                    emit(androidx.datastore.preferences.core.emptyPreferences())
+                                } else {
+                                    throw error
+                                }
+                            }
+                            .map { preferences -> journalFrom(preferences, keys, ownerUserId) },
+                    )
+                }
             }
         }
-        .map { preferences ->
-            NutritionJournal(
-                meals = preferences[MEALS]
+
+    private fun journalFrom(
+        preferences: Preferences,
+        keys: NutritionKeys,
+        ownerUserId: String,
+    ): NutritionJournal = NutritionJournal(
+                meals = preferences.accountValue(keys.meals, MEALS, ownerUserId)
                     ?.let { encoded ->
                         runCatching {
                             json.decodeFromString<List<NutritionMealDto>>(encoded)
@@ -55,14 +83,14 @@ class DataStoreNutritionRepository @Inject constructor(
                         }.getOrDefault(emptyList())
                     }
                     .orEmpty(),
-                goals = preferences[GOALS]
+                goals = preferences.accountValue(keys.goals, GOALS, ownerUserId)
                     ?.let { encoded ->
                         runCatching {
                             json.decodeFromString<NutritionGoalsDto>(encoded).asModel()
                         }.getOrNull()
                     }
                     ?: NutritionGoals(),
-                hydration = preferences[HYDRATION]
+                hydration = preferences.accountValue(keys.hydration, HYDRATION, ownerUserId)
                     ?.let { encoded ->
                         runCatching {
                             json.decodeFromString<List<HydrationEntryDto>>(encoded)
@@ -71,7 +99,7 @@ class DataStoreNutritionRepository @Inject constructor(
                         }.getOrDefault(emptyList())
                     }
                     .orEmpty(),
-                reminders = preferences[REMINDERS]
+                reminders = preferences.accountValue(keys.reminders, REMINDERS, ownerUserId)
                     ?.let { encoded ->
                         runCatching {
                             json.decodeFromString<NutritionReminderSettingsDto>(encoded).asModel()
@@ -79,17 +107,20 @@ class DataStoreNutritionRepository @Inject constructor(
                     }
                     ?: NutritionReminderSettings(),
             )
-        }
 
     override suspend fun saveMeal(
         meal: NutritionMeal,
         sourcePhotoUri: String?,
     ): DataResult<Unit> = withContext(ioDispatcher) {
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val keys = nutritionKeys(ownerUserId)
         var importedPhotoPath: String? = null
         runCatching {
-            importedPhotoPath = sourcePhotoUri?.let { uri -> importPhoto(meal.id, Uri.parse(uri)) }
+            importedPhotoPath = sourcePhotoUri?.let { uri ->
+                importPhoto(ownerUserId, meal.id, Uri.parse(uri))
+            }
             dataStore.edit { preferences ->
-                val meals = preferences[MEALS]
+                val meals = preferences.accountValue(keys.meals, MEALS, ownerUserId)
                     ?.let { encoded ->
                         runCatching {
                             json.decodeFromString<List<NutritionMealDto>>(encoded).toMutableList()
@@ -102,22 +133,24 @@ class DataStoreNutritionRepository @Inject constructor(
                     meal.copy(photoPath = importedPhotoPath ?: meal.photoPath ?: existingPhoto),
                 )
                 if (existingIndex >= 0) meals[existingIndex] = stored else meals += stored
-                preferences[MEALS] = json.encodeToString(meals)
+                preferences[keys.meals] = json.encodeToString(meals)
             }
         }.fold(
             onSuccess = { DataResult.Success(Unit) },
             onFailure = {
-                importedPhotoPath?.let(::deletePrivatePhoto)
+                importedPhotoPath?.let { path -> deletePrivatePhoto(path, ownerUserId) }
                 DataResult.Failure(AppError.WriteFailed)
             },
         )
     }
 
     override suspend fun deleteMeal(mealId: String): DataResult<Unit> = withContext(ioDispatcher) {
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val keys = nutritionKeys(ownerUserId)
         var photoPath: String? = null
         runCatching {
             dataStore.edit { preferences ->
-                val meals = preferences[MEALS]
+                val meals = preferences.accountValue(keys.meals, MEALS, ownerUserId)
                     ?.let { encoded ->
                         runCatching {
                             json.decodeFromString<List<NutritionMealDto>>(encoded).toMutableList()
@@ -126,28 +159,32 @@ class DataStoreNutritionRepository @Inject constructor(
                     ?: mutableListOf()
                 photoPath = meals.firstOrNull { it.id == mealId }?.photoPath
                 meals.removeAll { it.id == mealId }
-                preferences[MEALS] = json.encodeToString(meals)
+                preferences[keys.meals] = json.encodeToString(meals)
             }
-            photoPath?.let(::deletePrivatePhoto)
+            photoPath?.let { path -> deletePrivatePhoto(path, ownerUserId) }
         }.fold(
             onSuccess = { DataResult.Success(Unit) },
             onFailure = { DataResult.Failure(AppError.WriteFailed) },
         )
     }
 
-    override suspend fun saveGoals(goals: NutritionGoals): DataResult<Unit> =
-        runCatching {
+    override suspend fun saveGoals(goals: NutritionGoals): DataResult<Unit> {
+        val keys = nutritionKeys(authRepository.requireCurrentUserId())
+        return runCatching {
             dataStore.edit { preferences ->
-                preferences[GOALS] = json.encodeToString(NutritionGoalsDto.from(goals))
+                preferences[keys.goals] = json.encodeToString(NutritionGoalsDto.from(goals))
             }
         }.fold(
             onSuccess = { DataResult.Success(Unit) },
             onFailure = { DataResult.Failure(AppError.WriteFailed) },
         )
+    }
 
     override suspend fun addHydration(entry: HydrationEntry): DataResult<Unit> = runCatching {
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val keys = nutritionKeys(ownerUserId)
         dataStore.edit { preferences ->
-            val entries = preferences[HYDRATION]
+            val entries = preferences.accountValue(keys.hydration, HYDRATION, ownerUserId)
                 ?.let { encoded ->
                     runCatching {
                         json.decodeFromString<List<HydrationEntryDto>>(encoded).toMutableList()
@@ -156,7 +193,7 @@ class DataStoreNutritionRepository @Inject constructor(
                 ?: mutableListOf()
             entries.removeAll { it.id == entry.id }
             entries += HydrationEntryDto.from(entry)
-            preferences[HYDRATION] = json.encodeToString(entries)
+            preferences[keys.hydration] = json.encodeToString(entries)
         }
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
@@ -164,8 +201,10 @@ class DataStoreNutritionRepository @Inject constructor(
     )
 
     override suspend fun removeHydration(entryId: String): DataResult<Unit> = runCatching {
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val keys = nutritionKeys(ownerUserId)
         dataStore.edit { preferences ->
-            val entries = preferences[HYDRATION]
+            val entries = preferences.accountValue(keys.hydration, HYDRATION, ownerUserId)
                 ?.let { encoded ->
                     runCatching {
                         json.decodeFromString<List<HydrationEntryDto>>(encoded).toMutableList()
@@ -173,7 +212,7 @@ class DataStoreNutritionRepository @Inject constructor(
                 }
                 ?: mutableListOf()
             entries.removeAll { it.id == entryId }
-            preferences[HYDRATION] = json.encodeToString(entries)
+            preferences[keys.hydration] = json.encodeToString(entries)
         }
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
@@ -183,8 +222,9 @@ class DataStoreNutritionRepository @Inject constructor(
     override suspend fun saveReminderSettings(
         settings: NutritionReminderSettings,
     ): DataResult<Unit> = runCatching {
+        val keys = nutritionKeys(authRepository.requireCurrentUserId())
         dataStore.edit { preferences ->
-            preferences[REMINDERS] = json.encodeToString(
+            preferences[keys.reminders] = json.encodeToString(
                 NutritionReminderSettingsDto.from(settings),
             )
         }
@@ -193,8 +233,8 @@ class DataStoreNutritionRepository @Inject constructor(
         onFailure = { DataResult.Failure(AppError.WriteFailed) },
     )
 
-    private fun importPhoto(mealId: String, sourceUri: Uri): String {
-        val directory = nutritionPhotoDirectory().apply { mkdirs() }
+    private fun importPhoto(ownerUserId: String, mealId: String, sourceUri: Uri): String {
+        val directory = nutritionPhotoDirectory(ownerUserId).apply { mkdirs() }
         require(directory.isDirectory)
         val extension = when (context.contentResolver.getType(sourceUri)) {
             "image/png" -> "png"
@@ -210,12 +250,42 @@ class DataStoreNutritionRepository @Inject constructor(
         return target.absolutePath
     }
 
-    private fun nutritionPhotoDirectory(): File = File(context.filesDir, PHOTO_DIRECTORY)
+    private suspend fun claimLegacyNutrition(ownerUserId: String) {
+        dataStore.edit { preferences ->
+            if (
+                preferences[LEGACY_NUTRITION_OWNER] == null &&
+                LEGACY_NUTRITION_KEYS.any { key -> preferences.asMap().containsKey(key) }
+            ) {
+                preferences[LEGACY_NUTRITION_OWNER] =
+                    preferences[LAST_COMPLETED_PROFILE_USER_ID] ?: ownerUserId
+            }
+        }
+    }
 
-    private fun deletePrivatePhoto(path: String) {
-        val directory = nutritionPhotoDirectory().canonicalFile
+    private fun <T> Preferences.accountValue(
+        scopedKey: Preferences.Key<T>,
+        legacyKey: Preferences.Key<T>,
+        ownerUserId: String,
+    ): T? = this[scopedKey] ?: this[legacyKey]
+        ?.takeIf { this[LEGACY_NUTRITION_OWNER] == ownerUserId }
+
+    private fun nutritionKeys(ownerUserId: String) = NutritionKeys(
+        meals = stringPreferencesKey("nutrition_meals_json.$ownerUserId"),
+        goals = stringPreferencesKey("nutrition_goals_json.$ownerUserId"),
+        hydration = stringPreferencesKey("nutrition_hydration_json.$ownerUserId"),
+        reminders = stringPreferencesKey("nutrition_reminders_json.$ownerUserId"),
+    )
+
+    private fun nutritionPhotoDirectory(ownerUserId: String): File =
+        File(File(context.filesDir, PHOTO_DIRECTORY), ownerUserId)
+
+    private fun deletePrivatePhoto(path: String, ownerUserId: String) {
+        val directories = setOf(
+            nutritionPhotoDirectory(ownerUserId).canonicalFile,
+            File(context.filesDir, PHOTO_DIRECTORY).canonicalFile,
+        )
         val photo = File(path).canonicalFile
-        if (photo.parentFile == directory) photo.delete()
+        if (photo.parentFile?.let(directories::contains) == true) photo.delete()
     }
 
     private companion object {
@@ -223,9 +293,20 @@ class DataStoreNutritionRepository @Inject constructor(
         val GOALS = stringPreferencesKey("nutrition_goals_json")
         val HYDRATION = stringPreferencesKey("nutrition_hydration_json")
         val REMINDERS = stringPreferencesKey("nutrition_reminders_json")
+        val LEGACY_NUTRITION_OWNER = stringPreferencesKey("legacy_nutrition_owner_user_id")
+        val LAST_COMPLETED_PROFILE_USER_ID =
+            stringPreferencesKey("profile_completed_for_user_id")
+        val LEGACY_NUTRITION_KEYS = listOf(MEALS, GOALS, HYDRATION, REMINDERS)
         const val PHOTO_DIRECTORY = "nutrition_photos"
     }
 }
+
+private data class NutritionKeys(
+    val meals: Preferences.Key<String>,
+    val goals: Preferences.Key<String>,
+    val hydration: Preferences.Key<String>,
+    val reminders: Preferences.Key<String>,
+)
 
 @Serializable
 private data class NutritionMealDto(

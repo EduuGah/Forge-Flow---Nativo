@@ -93,12 +93,42 @@ object MigrationRegistry {
         }
     }
 
+    private val migration6To7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE `routine_folders` ADD COLUMN " +
+                    "`owner_user_id` TEXT NOT NULL DEFAULT ''",
+            )
+            db.execSQL(
+                "ALTER TABLE `routines` ADD COLUMN " +
+                    "`owner_user_id` TEXT NOT NULL DEFAULT ''",
+            )
+            db.execSQL(
+                "ALTER TABLE `workout_sessions` ADD COLUMN " +
+                    "`owner_user_id` TEXT NOT NULL DEFAULT ''",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_routine_folders_owner_user_id` " +
+                    "ON `routine_folders` (`owner_user_id`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_routines_owner_user_id` " +
+                    "ON `routines` (`owner_user_id`)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_workout_sessions_owner_user_id` " +
+                    "ON `workout_sessions` (`owner_user_id`)",
+            )
+        }
+    }
+
     val all: Array<Migration> = arrayOf(
         migration1To2,
         migration2To3,
         migration3To4,
         migration4To5,
         migration5To6,
+        migration6To7,
     )
 
     private fun updateDefaultExerciseMedia(database: SupportSQLiteDatabase) {

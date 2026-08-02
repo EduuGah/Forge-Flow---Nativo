@@ -19,6 +19,9 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.forgeflow.core.common.di.IoDispatcher
 import com.forgeflow.core.common.result.AppError
 import com.forgeflow.core.common.result.DataResult
+import com.forgeflow.core.data.auth.AuthRepository
+import com.forgeflow.core.data.auth.observeCurrentUserId
+import com.forgeflow.core.data.auth.requireCurrentUserId
 import com.forgeflow.core.model.BodyWeightEntry
 import com.forgeflow.core.model.BodyWeightSource
 import com.forgeflow.core.model.ExperienceLevel
@@ -33,36 +36,60 @@ import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DataStoreProfileRepository @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val dataStore: DataStore<Preferences>,
+    private val authRepository: AuthRepository,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ProfileRepository {
-    override fun observeProfile(): Flow<UserProfile> = dataStore.data
-        .catch { error ->
-            if (error is IOException) {
-                emit(androidx.datastore.preferences.core.emptyPreferences())
+    override fun observeProfile(): Flow<UserProfile> = authRepository.observeCurrentUserId()
+        .flatMapLatest { ownerUserId ->
+            if (ownerUserId == null) {
+                flowOf(UserProfile())
             } else {
-                throw error
+                flow {
+                    claimLegacyProfile(ownerUserId)
+                    val keys = profileKeys(ownerUserId)
+                    emitAll(
+                        dataStore.data
+                            .catch { error ->
+                                if (error is IOException) {
+                                    emit(androidx.datastore.preferences.core.emptyPreferences())
+                                } else {
+                                    throw error
+                                }
+                            }
+                            .map { preferences ->
+                                profileFrom(preferences, keys, ownerUserId)
+                            },
+                    )
+                }
             }
         }
-        .map(::profileFrom)
 
-    override suspend fun saveProfile(profile: UserProfile): DataResult<Unit> =
-        updatePreferences { preferences ->
-            preferences[DISPLAY_NAME] = profile.displayName.trim()
-            preferences.setOrRemove(BIRTH_YEAR, profile.birthYear)
-            preferences.setOrRemove(HEIGHT_CENTIMETERS, profile.heightCentimeters)
-            preferences.setOrRemove(BODY_WEIGHT_GRAMS, profile.bodyWeight?.grams)
-            preferences[TRAINING_GOAL] = profile.trainingGoal.name
-            preferences[EXPERIENCE_LEVEL] = profile.experienceLevel.name
+    override suspend fun saveProfile(profile: UserProfile): DataResult<Unit> {
+        val keys = profileKeys(authRepository.requireCurrentUserId())
+        return updatePreferences { preferences ->
+            preferences[keys.displayName] = profile.displayName.trim()
+            preferences.setOrRemove(keys.birthYear, profile.birthYear)
+            preferences.setOrRemove(keys.heightCentimeters, profile.heightCentimeters)
+            preferences.setOrRemove(keys.bodyWeightGrams, profile.bodyWeight?.grams)
+            preferences[keys.trainingGoal] = profile.trainingGoal.name
+            preferences[keys.experienceLevel] = profile.experienceLevel.name
         }
+    }
 
     override suspend fun importProfilePhoto(
         sourceUri: String,
@@ -71,7 +98,9 @@ class DataStoreProfileRepository @Inject constructor(
         verticalOffset: Float,
         rotationDegrees: Float,
     ): DataResult<Unit> = withContext(ioDispatcher) {
-        val photoDirectory = profileDirectory()
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val keys = profileKeys(ownerUserId)
+        val photoDirectory = profileDirectory(ownerUserId)
         val source = Uri.parse(sourceUri)
         val version = System.currentTimeMillis()
         val target = File(photoDirectory, "avatar_$version.jpg")
@@ -95,9 +124,13 @@ class DataStoreProfileRepository @Inject constructor(
             sourceBitmap.recycle()
             require(temporary.length() > 0)
             require(temporary.renameTo(target))
-            val previousPhotoPath = dataStore.data.first()[PROFILE_PHOTO_PATH]
+            val previousPhotoPath = dataStore.data.first().accountValue(
+                scopedKey = keys.profilePhotoPath,
+                legacyKey = PROFILE_PHOTO_PATH,
+                ownerUserId = ownerUserId,
+            )
             dataStore.edit { preferences ->
-                preferences[PROFILE_PHOTO_PATH] = target.absolutePath
+                preferences[keys.profilePhotoPath] = target.absolutePath
             }
             photoDirectory.listFiles()
                 .orEmpty()
@@ -108,7 +141,7 @@ class DataStoreProfileRepository @Inject constructor(
                 .forEach(File::delete)
             previousPhotoPath
                 ?.takeIf { it != target.absolutePath }
-                ?.let(::deleteProfilePhoto)
+                ?.let { path -> deleteProfilePhoto(path, ownerUserId) }
         }.fold(
             onSuccess = { DataResult.Success(Unit) },
             onFailure = {
@@ -200,10 +233,16 @@ class DataStoreProfileRepository @Inject constructor(
     override suspend fun mergeBodyWeightEntries(
         entries: List<BodyWeightEntry>,
     ): DataResult<Int> = withContext(ioDispatcher) {
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val keys = profileKeys(ownerUserId)
         var importedCount = 0
         runCatching {
             dataStore.edit { preferences ->
-                val current = preferences[BODY_WEIGHT_HISTORY]
+                val current = preferences.accountValue(
+                    scopedKey = keys.bodyWeightHistory,
+                    legacyKey = BODY_WEIGHT_HISTORY,
+                    ownerUserId = ownerUserId,
+                )
                     .orEmpty()
                     .mapNotNull { encoded -> encoded.decodeWeightEntry() }
                     .associateByTo(linkedMapOf(), BodyWeightEntry::id)
@@ -212,10 +251,10 @@ class DataStoreProfileRepository @Inject constructor(
                     current[entry.id] = entry
                 }
                 val sorted = current.values.sortedBy(BodyWeightEntry::measuredAt)
-                preferences[BODY_WEIGHT_HISTORY] = sorted
+                preferences[keys.bodyWeightHistory] = sorted
                     .mapTo(mutableSetOf()) { entry -> entry.encode() }
                 sorted.lastOrNull()?.let { latest ->
-                    preferences[BODY_WEIGHT_GRAMS] = latest.weight.grams
+                    preferences[keys.bodyWeightGrams] = latest.weight.grams
                 }
             }
         }.fold(
@@ -227,7 +266,9 @@ class DataStoreProfileRepository @Inject constructor(
     override suspend fun importProgressPhoto(
         sourceUri: String,
     ): DataResult<Unit> = withContext(ioDispatcher) {
-        val photoDirectory = progressPhotoDirectory()
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val keys = profileKeys(ownerUserId)
+        val photoDirectory = progressPhotoDirectory(ownerUserId)
         val id = UUID.randomUUID().toString()
         val source = Uri.parse(sourceUri)
         val target = File(photoDirectory, "$id.${source.imageExtension()}")
@@ -240,13 +281,17 @@ class DataStoreProfileRepository @Inject constructor(
             }
             require(target.length() > 0)
             dataStore.edit { preferences ->
-                val photos = preferences[PROGRESS_PHOTOS].orEmpty().toMutableSet()
+                val photos = preferences.accountValue(
+                    scopedKey = keys.progressPhotos,
+                    legacyKey = PROGRESS_PHOTOS,
+                    ownerUserId = ownerUserId,
+                ).orEmpty().toMutableSet()
                 photos += ProgressPhoto(
                     id = id,
                     filePath = target.absolutePath,
                     capturedAt = Instant.now(),
                 ).encode()
-                preferences[PROGRESS_PHOTOS] = photos
+                preferences[keys.progressPhotos] = photos
             }
         }.fold(
             onSuccess = { DataResult.Success(Unit) },
@@ -260,10 +305,16 @@ class DataStoreProfileRepository @Inject constructor(
     override suspend fun deleteProgressPhoto(
         photoId: String,
     ): DataResult<Unit> = withContext(ioDispatcher) {
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val keys = profileKeys(ownerUserId)
         var filePath: String? = null
         runCatching {
             dataStore.edit { preferences ->
-                val photos = preferences[PROGRESS_PHOTOS].orEmpty()
+                val photos = preferences.accountValue(
+                    scopedKey = keys.progressPhotos,
+                    legacyKey = PROGRESS_PHOTOS,
+                    ownerUserId = ownerUserId,
+                ).orEmpty()
                 val retained = photos.filterTo(mutableSetOf()) { encoded ->
                     val photo = encoded.decodePhoto()
                     if (photo?.id == photoId) {
@@ -273,9 +324,9 @@ class DataStoreProfileRepository @Inject constructor(
                         true
                     }
                 }
-                preferences[PROGRESS_PHOTOS] = retained
+                preferences[keys.progressPhotos] = retained
             }
-            filePath?.let(::deletePrivatePhoto)
+            filePath?.let { path -> deletePrivatePhoto(path, ownerUserId) }
         }.fold(
             onSuccess = { DataResult.Success(Unit) },
             onFailure = { DataResult.Failure(AppError.WriteFailed) },
@@ -291,23 +342,60 @@ class DataStoreProfileRepository @Inject constructor(
         onFailure = { DataResult.Failure(AppError.WriteFailed) },
     )
 
-    private fun profileFrom(preferences: Preferences): UserProfile = UserProfile(
-        displayName = preferences[DISPLAY_NAME].orEmpty(),
-        birthYear = preferences[BIRTH_YEAR],
-        heightCentimeters = preferences[HEIGHT_CENTIMETERS],
-        bodyWeight = preferences[BODY_WEIGHT_GRAMS]?.let(Weight::fromGrams),
-        trainingGoal = preferences[TRAINING_GOAL]
+    private fun profileFrom(
+        preferences: Preferences,
+        keys: ProfileKeys,
+        ownerUserId: String,
+    ): UserProfile = UserProfile(
+        ownerUserId = ownerUserId,
+        displayName = preferences.accountValue(
+            keys.displayName,
+            DISPLAY_NAME,
+            ownerUserId,
+        ).orEmpty(),
+        birthYear = preferences.accountValue(keys.birthYear, BIRTH_YEAR, ownerUserId),
+        heightCentimeters = preferences.accountValue(
+            keys.heightCentimeters,
+            HEIGHT_CENTIMETERS,
+            ownerUserId,
+        ),
+        bodyWeight = preferences.accountValue(
+            keys.bodyWeightGrams,
+            BODY_WEIGHT_GRAMS,
+            ownerUserId,
+        )?.let(Weight::fromGrams),
+        trainingGoal = preferences.accountValue(
+            keys.trainingGoal,
+            TRAINING_GOAL,
+            ownerUserId,
+        )
             ?.let { stored -> TrainingGoal.entries.firstOrNull { it.name == stored } }
             ?: TrainingGoal.HYPERTROPHY,
-        experienceLevel = preferences[EXPERIENCE_LEVEL]
+        experienceLevel = preferences.accountValue(
+            keys.experienceLevel,
+            EXPERIENCE_LEVEL,
+            ownerUserId,
+        )
             ?.let { stored -> ExperienceLevel.entries.firstOrNull { it.name == stored } }
             ?: ExperienceLevel.INTERMEDIATE,
-        profilePhotoPath = preferences[PROFILE_PHOTO_PATH],
-        bodyWeightHistory = preferences[BODY_WEIGHT_HISTORY]
+        profilePhotoPath = preferences.accountValue(
+            keys.profilePhotoPath,
+            PROFILE_PHOTO_PATH,
+            ownerUserId,
+        ),
+        bodyWeightHistory = preferences.accountValue(
+            keys.bodyWeightHistory,
+            BODY_WEIGHT_HISTORY,
+            ownerUserId,
+        )
             .orEmpty()
             .mapNotNull { encoded -> encoded.decodeWeightEntry() }
             .sortedBy(BodyWeightEntry::measuredAt),
-        progressPhotos = preferences[PROGRESS_PHOTOS]
+        progressPhotos = preferences.accountValue(
+            keys.progressPhotos,
+            PROGRESS_PHOTOS,
+            ownerUserId,
+        )
             .orEmpty()
             .mapNotNull { encoded -> encoded.decodePhoto() }
             .sortedBy(ProgressPhoto::capturedAt),
@@ -355,21 +443,61 @@ class DataStoreProfileRepository @Inject constructor(
         else -> "jpg"
     }
 
-    private fun progressPhotoDirectory(): File =
-        File(context.filesDir, PROGRESS_PHOTO_DIRECTORY)
-
-    private fun profileDirectory(): File = File(context.filesDir, PROFILE_DIRECTORY)
-
-    private fun deleteProfilePhoto(path: String) {
-        val directory = profileDirectory().canonicalFile
-        val photo = File(path).canonicalFile
-        if (photo.parentFile == directory) photo.delete()
+    private suspend fun claimLegacyProfile(ownerUserId: String) {
+        dataStore.edit { preferences ->
+            if (
+                preferences[LEGACY_PROFILE_OWNER] == null &&
+                LEGACY_PROFILE_KEYS.any { key -> preferences.asMap().containsKey(key) }
+            ) {
+                preferences[LEGACY_PROFILE_OWNER] =
+                    preferences[LAST_COMPLETED_PROFILE_USER_ID] ?: ownerUserId
+            }
+        }
     }
 
-    private fun deletePrivatePhoto(path: String) {
-        val directory = progressPhotoDirectory().canonicalFile
+    private fun <T> Preferences.accountValue(
+        scopedKey: Preferences.Key<T>,
+        legacyKey: Preferences.Key<T>,
+        ownerUserId: String,
+    ): T? = this[scopedKey] ?: this[legacyKey]
+        ?.takeIf { this[LEGACY_PROFILE_OWNER] == ownerUserId }
+
+    private fun profileKeys(ownerUserId: String) = ProfileKeys(
+        displayName = stringPreferencesKey("profile_display_name.$ownerUserId"),
+        birthYear = intPreferencesKey("profile_birth_year.$ownerUserId"),
+        heightCentimeters = intPreferencesKey("profile_height_centimeters.$ownerUserId"),
+        bodyWeightGrams = longPreferencesKey("profile_body_weight_grams.$ownerUserId"),
+        trainingGoal = stringPreferencesKey("profile_training_goal.$ownerUserId"),
+        experienceLevel = stringPreferencesKey("profile_experience_level.$ownerUserId"),
+        progressPhotos = stringSetPreferencesKey("profile_progress_photos.$ownerUserId"),
+        profilePhotoPath = stringPreferencesKey("profile_photo_path.$ownerUserId"),
+        bodyWeightHistory = stringSetPreferencesKey(
+            "profile_body_weight_history.$ownerUserId",
+        ),
+    )
+
+    private fun progressPhotoDirectory(ownerUserId: String): File =
+        File(File(context.filesDir, PROGRESS_PHOTO_DIRECTORY), ownerUserId)
+
+    private fun profileDirectory(ownerUserId: String): File =
+        File(File(context.filesDir, PROFILE_DIRECTORY), ownerUserId)
+
+    private fun deleteProfilePhoto(path: String, ownerUserId: String) {
+        val directories = setOf(
+            profileDirectory(ownerUserId).canonicalFile,
+            File(context.filesDir, PROFILE_DIRECTORY).canonicalFile,
+        )
         val photo = File(path).canonicalFile
-        if (photo.parentFile == directory) {
+        if (photo.parentFile?.let(directories::contains) == true) photo.delete()
+    }
+
+    private fun deletePrivatePhoto(path: String, ownerUserId: String) {
+        val directories = setOf(
+            progressPhotoDirectory(ownerUserId).canonicalFile,
+            File(context.filesDir, PROGRESS_PHOTO_DIRECTORY).canonicalFile,
+        )
+        val photo = File(path).canonicalFile
+        if (photo.parentFile?.let(directories::contains) == true) {
             photo.delete()
         }
     }
@@ -391,6 +519,20 @@ class DataStoreProfileRepository @Inject constructor(
         val PROGRESS_PHOTOS = stringSetPreferencesKey("profile_progress_photos")
         val PROFILE_PHOTO_PATH = stringPreferencesKey("profile_photo_path")
         val BODY_WEIGHT_HISTORY = stringSetPreferencesKey("profile_body_weight_history")
+        val LEGACY_PROFILE_OWNER = stringPreferencesKey("legacy_profile_owner_user_id")
+        val LAST_COMPLETED_PROFILE_USER_ID =
+            stringPreferencesKey("profile_completed_for_user_id")
+        val LEGACY_PROFILE_KEYS = listOf(
+            DISPLAY_NAME,
+            BIRTH_YEAR,
+            HEIGHT_CENTIMETERS,
+            BODY_WEIGHT_GRAMS,
+            TRAINING_GOAL,
+            EXPERIENCE_LEVEL,
+            PROGRESS_PHOTOS,
+            PROFILE_PHOTO_PATH,
+            BODY_WEIGHT_HISTORY,
+        )
         const val PROGRESS_PHOTO_DIRECTORY = "progress_photos"
         const val PROFILE_DIRECTORY = "profile"
         const val PHOTO_SEPARATOR = '\t'
@@ -402,3 +544,15 @@ class DataStoreProfileRepository @Inject constructor(
         const val MAX_AVATAR_ZOOM = 4f
     }
 }
+
+private data class ProfileKeys(
+    val displayName: Preferences.Key<String>,
+    val birthYear: Preferences.Key<Int>,
+    val heightCentimeters: Preferences.Key<Int>,
+    val bodyWeightGrams: Preferences.Key<Long>,
+    val trainingGoal: Preferences.Key<String>,
+    val experienceLevel: Preferences.Key<String>,
+    val progressPhotos: Preferences.Key<Set<String>>,
+    val profilePhotoPath: Preferences.Key<String>,
+    val bodyWeightHistory: Preferences.Key<Set<String>>,
+)

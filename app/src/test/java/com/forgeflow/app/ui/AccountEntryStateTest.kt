@@ -61,4 +61,40 @@ class AccountEntryStateTest {
         assertFalse(shouldReportAuthFailure(requestFailed = true, hasActiveSession = true))
         assertFalse(shouldReportAuthFailure(requestFailed = false, hasActiveSession = false))
     }
+
+    @Test
+    fun profileSetup_isScopedToTheAuthenticatedAccount() {
+        assertFalse(
+            shouldShowProfileSetup(
+                sessionUserId = "user-a",
+                completedProfileUserId = "user-a",
+                profileOwnerUserId = null,
+                profileHasRequiredDetails = false,
+            ),
+        )
+        assertFalse(
+            shouldShowProfileSetup(
+                sessionUserId = "user-a",
+                completedProfileUserId = null,
+                profileOwnerUserId = "user-a",
+                profileHasRequiredDetails = true,
+            ),
+        )
+        assertTrue(
+            shouldShowProfileSetup(
+                sessionUserId = "user-b",
+                completedProfileUserId = "user-a",
+                profileOwnerUserId = "user-a",
+                profileHasRequiredDetails = true,
+            ),
+        )
+        assertFalse(
+            shouldShowProfileSetup(
+                sessionUserId = null,
+                completedProfileUserId = "user-a",
+                profileOwnerUserId = "user-a",
+                profileHasRequiredDetails = true,
+            ),
+        )
+    }
 }

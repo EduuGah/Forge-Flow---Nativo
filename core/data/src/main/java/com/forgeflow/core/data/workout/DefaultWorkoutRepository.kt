@@ -3,6 +3,9 @@ package com.forgeflow.core.data.workout
 import com.forgeflow.core.common.result.AppError
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.common.time.AppClock
+import com.forgeflow.core.data.auth.AuthRepository
+import com.forgeflow.core.data.auth.observeCurrentUserId
+import com.forgeflow.core.data.auth.requireCurrentUserId
 import com.forgeflow.core.database.routine.RoutineDao
 import com.forgeflow.core.database.exercise.ExerciseDao
 import com.forgeflow.core.database.workout.WorkoutDao
@@ -22,29 +25,60 @@ import com.forgeflow.core.model.WorkoutSessionStatus
 import com.forgeflow.core.model.WorkoutSetId
 import com.forgeflow.core.model.WorkoutSetType
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class DefaultWorkoutRepository @Inject constructor(
     private val routineDao: RoutineDao,
     private val exerciseDao: ExerciseDao,
     private val workoutDao: WorkoutDao,
     private val clock: AppClock,
+    private val authRepository: AuthRepository,
 ) : WorkoutRepository {
     override fun observeActiveWorkout(): Flow<DataResult<WorkoutDetails?>> =
-        workoutDao.observeActive()
-            .map { record ->
-                DataResult.Success(record?.asExternalModel()) as DataResult<WorkoutDetails?>
+        authRepository.observeCurrentUserId()
+            .flatMapLatest { ownerUserId ->
+                if (ownerUserId == null) {
+                    flowOf<DataResult<WorkoutDetails?>>(DataResult.Success(null))
+                } else {
+                    flow {
+                        workoutDao.claimUnownedData(ownerUserId)
+                        emitAll(
+                            workoutDao.observeActive(ownerUserId).map { record ->
+                                DataResult.Success(record?.asExternalModel()) as
+                                    DataResult<WorkoutDetails?>
+                            },
+                        )
+                    }
+                }
             }
             .catch {
                 emit(DataResult.Failure(AppError.LocalDataUnavailable))
             }
 
     override fun observeHistory(): Flow<DataResult<List<WorkoutDetails>>> =
-        workoutDao.observeHistory()
-            .map { records ->
-                DataResult.Success(records.map { it.asExternalModel() }) as DataResult<List<WorkoutDetails>>
+        authRepository.observeCurrentUserId()
+            .flatMapLatest { ownerUserId ->
+                if (ownerUserId == null) {
+                    flowOf<DataResult<List<WorkoutDetails>>>(DataResult.Success(emptyList()))
+                } else {
+                    flow {
+                        workoutDao.claimUnownedData(ownerUserId)
+                        emitAll(
+                            workoutDao.observeHistory(ownerUserId).map { records ->
+                                DataResult.Success(records.map { it.asExternalModel() }) as
+                                    DataResult<List<WorkoutDetails>>
+                            },
+                        )
+                    }
+                }
             }
             .catch {
                 emit(DataResult.Failure(AppError.LocalDataUnavailable))
@@ -53,12 +87,15 @@ class DefaultWorkoutRepository @Inject constructor(
     override suspend fun startRoutine(
         routineId: RoutineId,
     ): DataResult<WorkoutSessionId> = runCatching {
-        workoutDao.getActive()?.let { return@runCatching WorkoutSessionId(it.session.id) }
-        val routine = requireNotNull(routineDao.getById(routineId.value))
+        val ownerUserId = authRepository.requireCurrentUserId()
+        workoutDao.getActive(ownerUserId)
+            ?.let { return@runCatching WorkoutSessionId(it.session.id) }
+        val routine = requireNotNull(routineDao.getById(routineId.value, ownerUserId))
         val timestamp = clock.now().toEpochMilli()
         val sessionId = WorkoutSessionId.create()
         val session = WorkoutSessionEntity(
             id = sessionId.value,
+            ownerUserId = ownerUserId,
             routineId = routine.routine.id,
             name = routine.routine.name,
             startedAtEpochMillis = timestamp,
@@ -108,7 +145,7 @@ class DefaultWorkoutRepository @Inject constructor(
                     )
                 }
             }
-        workoutDao.replaceActive(timestamp, session, sessionExercises, sets)
+        workoutDao.replaceActive(ownerUserId, timestamp, session, sessionExercises, sets)
         sessionId
     }.fold(
         onSuccess = { DataResult.Success(it) },
@@ -193,7 +230,8 @@ class DefaultWorkoutRepository @Inject constructor(
         )
         val trimmedNotes = notes.trim()
         workoutDao.updateExerciseNotes(sessionExerciseId.value, trimmedNotes)
-        val routineId = workoutDao.getActive()?.session?.routineId
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val routineId = workoutDao.getActive(ownerUserId)?.session?.routineId
         val exerciseId = sessionExercise.exerciseId
         if (routineId != null && exerciseId != null) {
             routineDao.updateExerciseNotes(
@@ -293,12 +331,14 @@ class DefaultWorkoutRepository @Inject constructor(
         sessionId: WorkoutSessionId,
         location: WorkoutLocation?,
     ): DataResult<Unit> = runCatching {
-        val activeWorkout = requireNotNull(workoutDao.getActive()).asExternalModel()
+        val ownerUserId = authRepository.requireCurrentUserId()
+        val activeWorkout = requireNotNull(workoutDao.getActive(ownerUserId)).asExternalModel()
         check(activeWorkout.session.id == sessionId)
         check(activeWorkout.completedSetCount > 0)
         check(
             workoutDao.finish(
                 sessionId = sessionId.value,
+                ownerUserId = ownerUserId,
                 timestamp = clock.now().toEpochMilli(),
                 locationLatitude = location?.latitude,
                 locationLongitude = location?.longitude,
@@ -315,14 +355,22 @@ class DefaultWorkoutRepository @Inject constructor(
     override suspend fun deleteCompletedWorkout(
         sessionId: WorkoutSessionId,
     ): DataResult<Unit> = runCatching {
-        check(workoutDao.deleteCompletedWorkout(sessionId.value) > 0)
+        check(
+            workoutDao.deleteCompletedWorkout(
+                sessionId.value,
+                authRepository.requireCurrentUserId(),
+            ) > 0,
+        )
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },
     )
 
     override suspend fun discardActiveWorkout(): DataResult<Unit> = runCatching {
-        workoutDao.discardActive(clock.now().toEpochMilli())
+        workoutDao.discardActive(
+            authRepository.requireCurrentUserId(),
+            clock.now().toEpochMilli(),
+        )
     }.fold(
         onSuccess = { DataResult.Success(Unit) },
         onFailure = { DataResult.Failure(AppError.WriteFailed) },

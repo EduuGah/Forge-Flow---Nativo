@@ -197,7 +197,7 @@
     <string name="auth_operation_error">Não foi possível entrar. Confira os dados e se o método está ativo no Firebase.</string>
     <string name="auth_reset_sent">Solicitação enviada. Confira também a caixa de spam.</string>
     <string name="auth_reset_title">Redefinir senha</string>
-    <string name="auth_reset_description">Enviaremos um link para a conta informada. Por segurança, o resultado é o mesmo mesmo quando o endereço não está cadastrado.</string>
+    <string name="auth_reset_description">Enviaremos um link para contas criadas com e-mail e senha. Se sua conta usa somente o Google, entre com o botão do Google. Por segurança, o resultado é o mesmo mesmo quando o endereço não está cadastrado.</string>
     <string name="auth_invalid_email">Informe um endereço de e-mail válido.</string>
     <string name="auth_send_reset">Enviar link</string>
     <string name="auth_cancel">Cancelar</string>

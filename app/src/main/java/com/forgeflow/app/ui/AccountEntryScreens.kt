@@ -115,6 +115,11 @@ internal fun AccountEntryScreen(
         confirmation = ""
         onDismissFeedback()
     }
+    LaunchedEffect(state.notice) {
+        if (state.notice == AppAuthNotice.PASSWORD_RESET_SENT) {
+            showResetDialog = false
+        }
+    }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -279,11 +284,11 @@ internal fun AccountEntryScreen(
         PasswordResetDialog(
             initialEmail = email,
             isWorking = state.isWorking,
+            operationFailed = state.operationFailed,
             onDismiss = { showResetDialog = false },
             onSubmit = { resetEmail ->
                 email = resetEmail
                 onPasswordReset(resetEmail)
-                showResetDialog = false
             },
         )
     }
@@ -401,6 +406,7 @@ private fun AuthMessage(text: String, isError: Boolean) {
 private fun PasswordResetDialog(
     initialEmail: String,
     isWorking: Boolean,
+    operationFailed: Boolean,
     onDismiss: () -> Unit,
     onSubmit: (String) -> Unit,
 ) {
@@ -428,6 +434,9 @@ private fun PasswordResetDialog(
                 )
                 if (validationFailed) {
                     AuthMessage(stringResource(R.string.auth_invalid_email), true)
+                }
+                if (operationFailed) {
+                    AuthMessage(stringResource(R.string.auth_operation_error), true)
                 }
             }
         },
@@ -458,19 +467,25 @@ internal fun ProfileSetupScreen(
     onComplete: (ProfileSetupSubmission) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var displayName by rememberSaveable(state.displayName) { mutableStateOf(state.displayName) }
-    var birthYear by rememberSaveable(state.birthYear) {
+    var displayName by rememberSaveable(state.userId, state.displayName) {
+        mutableStateOf(state.displayName)
+    }
+    var birthYear by rememberSaveable(state.userId, state.birthYear) {
         mutableStateOf(state.birthYear?.toString().orEmpty())
     }
-    var height by rememberSaveable(state.heightCentimeters) {
+    var height by rememberSaveable(state.userId, state.heightCentimeters) {
         mutableStateOf(state.heightCentimeters?.toString().orEmpty())
     }
-    var weight by rememberSaveable(state.bodyWeight) {
+    var weight by rememberSaveable(state.userId, state.bodyWeight) {
         mutableStateOf(state.bodyWeight?.toInputValue().orEmpty())
     }
-    var goal by rememberSaveable { mutableStateOf(state.trainingGoal) }
-    var experience by rememberSaveable { mutableStateOf(state.experienceLevel) }
-    var validationFailed by rememberSaveable { mutableStateOf(false) }
+    var goal by rememberSaveable(state.userId, state.trainingGoal) {
+        mutableStateOf(state.trainingGoal)
+    }
+    var experience by rememberSaveable(state.userId, state.experienceLevel) {
+        mutableStateOf(state.experienceLevel)
+    }
+    var validationFailed by rememberSaveable(state.userId) { mutableStateOf(false) }
 
     Surface(
         modifier = modifier.fillMaxSize(),

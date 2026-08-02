@@ -176,6 +176,7 @@
     <string name="account_password_created">Senha adicionada. Agora você pode usar as duas formas de entrada.</string>
     <string name="account_verified_notice">E-mail verificado. O backup da conta está liberado.</string>
     <string name="account_supporter">APOIADOR FORGEFLOW</string>
+    <string name="account_supporter_admin">ADMIN FORGEFLOW</string>
     <string name="account_supporter_pro">ATLETA PRO</string>
     <string name="account_supporter_founder">APOIADOR FUNDADOR</string>
     <string name="account_supporter_lifetime">APOIADOR VITALÍCIO</string>

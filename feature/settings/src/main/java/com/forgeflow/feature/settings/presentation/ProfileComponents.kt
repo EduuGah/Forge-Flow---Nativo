@@ -851,15 +851,16 @@ private fun PasswordVisibilityButton(
 @Composable
 private fun SupporterBenefitsPanel(tier: SupporterTier) {
     val containerColor = when (tier) {
+        SupporterTier.ADMIN -> MaterialTheme.colorScheme.errorContainer
         SupporterTier.SUPPORTER -> MaterialTheme.colorScheme.secondaryContainer
         SupporterTier.PRO -> MaterialTheme.colorScheme.primaryContainer
         SupporterTier.FOUNDER -> MaterialTheme.colorScheme.tertiaryContainer
         SupporterTier.LIFETIME -> MaterialTheme.colorScheme.inverseSurface
     }
-    val contentColor = if (tier == SupporterTier.LIFETIME) {
-        MaterialTheme.colorScheme.inverseOnSurface
-    } else {
-        MaterialTheme.colorScheme.onSurface
+    val contentColor = when (tier) {
+        SupporterTier.ADMIN -> MaterialTheme.colorScheme.onErrorContainer
+        SupporterTier.LIFETIME -> MaterialTheme.colorScheme.inverseOnSurface
+        else -> MaterialTheme.colorScheme.onSurface
     }
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -1073,6 +1074,7 @@ private fun AccountNoticeUi.messageResource(): Int = when (this) {
 }
 
 private fun SupporterTier.labelResource(): Int = when (this) {
+    SupporterTier.ADMIN -> R.string.account_supporter_admin
     SupporterTier.SUPPORTER -> R.string.account_supporter
     SupporterTier.PRO -> R.string.account_supporter_pro
     SupporterTier.FOUNDER -> R.string.account_supporter_founder

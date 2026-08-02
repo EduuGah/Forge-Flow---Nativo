@@ -6,6 +6,8 @@ import android.provider.OpenableColumns
 import com.forgeflow.core.common.di.IoDispatcher
 import com.forgeflow.core.common.result.AppError
 import com.forgeflow.core.common.result.DataResult
+import com.forgeflow.core.data.auth.AuthRepository
+import com.forgeflow.core.data.auth.requireCurrentUserId
 import com.forgeflow.core.data.profile.ProfileRepository
 import com.forgeflow.core.database.exercise.ExerciseDao
 import com.forgeflow.core.database.exercise.ExerciseEntity
@@ -31,6 +33,7 @@ class HevyImportRepository @Inject constructor(
     private val workoutDao: WorkoutDao,
     private val exerciseDao: ExerciseDao,
     private val profileRepository: ProfileRepository,
+    private val authRepository: AuthRepository,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     suspend fun previewWorkouts(sourceUri: String): DataResult<HevyImportPreview> =
@@ -75,11 +78,16 @@ class HevyImportRepository @Inject constructor(
             var measurementsImported = 0
             var measurementsAlreadyImported = 0
             var skippedRows = 0
+            val ownerUserId = authRepository.requireCurrentUserId()
             workoutSourceUri?.let { source ->
                 val parsed = Uri.parse(source).reader().use(HevyCsvParser::parseWorkouts)
                 val exercises = exerciseDao.getAll()
                 parsed.workouts.forEach { workout ->
-                    if (workoutDao.insertImportedWorkout(workout.asEntities(exercises))) {
+                    if (
+                        workoutDao.insertImportedWorkout(
+                            workout.asEntities(exercises, ownerUserId),
+                        )
+                    ) {
                         workoutsImported += 1
                     } else {
                         workoutsAlreadyImported += 1
@@ -110,8 +118,10 @@ class HevyImportRepository @Inject constructor(
 
     private fun HevyWorkoutImport.asEntities(
         catalog: List<ExerciseEntity>,
+        ownerUserId: String,
     ): ImportedWorkoutEntities {
         val sessionTimestamp = endTime.toEpochMilli()
+        val sessionId = stableId("$ownerUserId|$id")
         val blocks = mutableListOf<MutableList<HevySetImport>>()
         rows.forEach { row ->
             val current = blocks.lastOrNull()
@@ -126,7 +136,9 @@ class HevyImportRepository @Inject constructor(
         blocks.forEachIndexed { exercisePosition, block ->
             val first = block.first()
             val matched = first.exerciseTitle.bestCatalogMatch(catalog)
-            val sessionExerciseId = stableId("$id|exercise|$exercisePosition|${first.exerciseTitle}")
+            val sessionExerciseId = stableId(
+                "$sessionId|exercise|$exercisePosition|${first.exerciseTitle}",
+            )
             val cardioDetails = block.mapNotNull { row ->
                 when {
                     row.distanceKilometers != null -> "${row.distanceKilometers} km"
@@ -136,7 +148,7 @@ class HevyImportRepository @Inject constructor(
             }.distinct()
             exerciseEntities += WorkoutSessionExerciseEntity(
                 id = sessionExerciseId,
-                sessionId = id,
+                sessionId = sessionId,
                 exerciseId = matched?.id,
                 exerciseNameSnapshot = first.exerciseTitle,
                 muscleGroupSnapshot = matched?.primaryMuscleGroup ?: MuscleGroup.FULL_BODY.name,
@@ -171,7 +183,8 @@ class HevyImportRepository @Inject constructor(
         }
         return ImportedWorkoutEntities(
             session = WorkoutSessionEntity(
-                id = id,
+                id = sessionId,
+                ownerUserId = ownerUserId,
                 routineId = null,
                 name = title,
                 startedAtEpochMillis = startTime.toEpochMilli(),

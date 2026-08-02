@@ -43,6 +43,7 @@ data class AppUiState(
     val weeklyWorkoutGoal: Int = 3,
     val compactMode: Boolean = false,
     val auth: AppAuthUiState = AppAuthUiState(),
+    val isAccountDataLoading: Boolean = false,
     val profileSetup: AppProfileSetupUiState = AppProfileSetupUiState(),
     val showProfileSetup: Boolean = false,
     val showTutorial: Boolean = false,
@@ -53,6 +54,7 @@ data class AppUiState(
 
 @Immutable
 data class AppAuthUiState(
+    val isInitializing: Boolean = true,
     val isConfigured: Boolean = false,
     val isSignedIn: Boolean = false,
     val displayName: String? = null,
@@ -69,6 +71,7 @@ enum class AppAuthNotice {
 
 @Immutable
 data class AppProfileSetupUiState(
+    val userId: String? = null,
     val displayName: String = "",
     val email: String? = null,
     val birthYear: Int? = null,
@@ -101,6 +104,7 @@ data class AppActiveWorkoutUiModel(
 )
 
 private data class AppOperationState(
+    val authInitializationComplete: Boolean = false,
     val tutorialRequested: Boolean = false,
     val tutorialDismissedForSession: Boolean = false,
     val guidedWorkoutTutorialRequested: Boolean = false,
@@ -147,8 +151,15 @@ class AppViewModel @Inject constructor(
                     startedAtEpochMillis = workout.session.startedAt.toEpochMilli(),
                 )
             }
-        val profileCompletedForAccount = session != null &&
-            settings.profileCompletedForUserId == session.userId
+        val profileBelongsToAccount = session != null && profile.ownerUserId == session.userId
+        val isAccountDataLoading = session != null && !profileBelongsToAccount
+        val showProfileSetup = shouldShowProfileSetup(
+            sessionUserId = session?.userId,
+            completedProfileUserId = settings.profileCompletedForUserId,
+            profileOwnerUserId = profile.ownerUserId,
+            profileHasRequiredDetails = profile.hasRequiredAccountDetails(),
+        )
+        val profileCompletedForAccount = session != null && !showProfileSetup
         val showTutorial = profileCompletedForAccount && shouldShowTutorial(
             hasCompletedOnboarding = settings.hasCompletedOnboarding,
             requested = currentOperation.tutorialRequested,
@@ -165,12 +176,15 @@ class AppViewModel @Inject constructor(
                 isConfigured = authRepository.isConfigured(),
                 operation = currentOperation,
             ),
-            profileSetup = profile.asSetupUiState(
+            isAccountDataLoading = isAccountDataLoading,
+            profileSetup = profile.takeIf { profileBelongsToAccount }
+                .orEmptyProfileFor(session)
+                .asSetupUiState(
                 session = session,
                 unit = settings.weightUnit,
                 operation = currentOperation,
             ),
-            showProfileSetup = session != null && !profileCompletedForAccount,
+            showProfileSetup = !isAccountDataLoading && showProfileSetup,
             showTutorial = showTutorial,
             showGuidedWorkoutTutorial = profileCompletedForAccount &&
                 currentOperation.guidedWorkoutTutorialRequested &&
@@ -185,6 +199,10 @@ class AppViewModel @Inject constructor(
     )
 
     init {
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(AUTH_INITIALIZATION_DELAY_MILLIS)
+            operation.update { it.copy(authInitializationComplete = true) }
+        }
         viewModelScope.launch {
             settingsRepository.observeSettings()
                 .map { it.accentColor }
@@ -266,11 +284,13 @@ class AppViewModel @Inject constructor(
         viewModelScope.launch {
             operation.update { it.copy(isSavingProfile = true, profileSaveFailed = false) }
             val session = authRepository.observeSession().first()
-            val currentProfile = profileRepository.observeProfile().first()
+            val observedProfile = profileRepository.observeProfile().first()
             if (session == null) {
                 operation.update { it.copy(isSavingProfile = false, profileSaveFailed = true) }
                 return@launch
             }
+            val currentProfile = observedProfile.takeIf { it.ownerUserId == session.userId }
+                ?: UserProfile(ownerUserId = session.userId)
             val unit = uiState.value.weightUnit
             val newWeight = Weight.from(submission.bodyWeight, unit)
             val saveResult = profileRepository.saveProfile(
@@ -387,6 +407,7 @@ class AppViewModel @Inject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val AUTH_INITIALIZATION_DELAY_MILLIS = 700L
     }
 }
 
@@ -395,6 +416,7 @@ private fun AccountSession?.asUiState(
     operation: AppOperationState,
 ): AppAuthUiState =
     AppAuthUiState(
+        isInitializing = !operation.authInitializationComplete,
         isConfigured = isConfigured,
         isSignedIn = this != null,
         displayName = this?.displayName,
@@ -415,6 +437,7 @@ private fun UserProfile.asSetupUiState(
     unit: WeightUnit,
     operation: AppOperationState,
 ): AppProfileSetupUiState = AppProfileSetupUiState(
+    userId = session?.userId,
     displayName = displayName.ifBlank { session?.displayName.orEmpty() },
     email = session?.email,
     birthYear = birthYear,
@@ -425,6 +448,26 @@ private fun UserProfile.asSetupUiState(
     isSaving = operation.isSavingProfile,
     saveFailed = operation.profileSaveFailed,
 )
+
+private fun UserProfile?.orEmptyProfileFor(session: AccountSession?): UserProfile =
+    this ?: UserProfile(
+        ownerUserId = session?.userId,
+        displayName = session?.displayName.orEmpty(),
+    )
+
+private fun UserProfile.hasRequiredAccountDetails(): Boolean =
+    displayName.isNotBlank() && birthYear != null && heightCentimeters != null && bodyWeight != null
+
+internal fun shouldShowProfileSetup(
+    sessionUserId: String?,
+    completedProfileUserId: String?,
+    profileOwnerUserId: String?,
+    profileHasRequiredDetails: Boolean,
+): Boolean {
+    if (sessionUserId == null) return false
+    if (completedProfileUserId == sessionUserId) return false
+    return profileOwnerUserId != sessionUserId || !profileHasRequiredDetails
+}
 
 internal fun ProfileSetupSubmission.isValid(currentYear: Int = LocalDate.now().year): Boolean =
     displayName.trim().length >= 2 &&

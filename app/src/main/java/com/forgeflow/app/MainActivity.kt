@@ -35,6 +35,7 @@ import com.forgeflow.core.model.ThemePreference
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -100,29 +101,14 @@ class MainActivity : ComponentActivity() {
                         } else {
                             scope.launch {
                                 try {
-                                    val googleOption = GetGoogleIdOption.Builder()
-                                        .setFilterByAuthorizedAccounts(false)
-                                        .setServerClientId(clientId)
-                                        .setAutoSelectEnabled(false)
-                                        .build()
-                                    val request = GetCredentialRequest.Builder()
-                                        .addCredentialOption(googleOption)
-                                        .build()
-                                    val credential = credentialManager
-                                        .getCredential(context, request)
-                                        .credential
-                                    val googleCredential = if (
-                                        credential is CustomCredential &&
-                                        credential.type ==
-                                        GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-                                    ) {
-                                        GoogleIdTokenCredential.createFrom(credential.data)
-                                    } else {
-                                        null
+                                    val idToken = try {
+                                        credentialManager.requestGoogleIdToken(context, clientId)
+                                    } catch (_: NoCredentialException) {
+                                        delay(GOOGLE_CREDENTIAL_RETRY_DELAY_MILLIS)
+                                        credentialManager.requestGoogleIdToken(context, clientId)
                                     }
-                                    googleCredential?.let {
-                                        viewModel.onGoogleIdTokenReceived(it.idToken)
-                                    } ?: viewModel.onGoogleSignInFailed()
+                                    idToken?.let(viewModel::onGoogleIdTokenReceived)
+                                        ?: viewModel.onGoogleSignInFailed()
                                 } catch (_: NoCredentialException) {
                                     viewModel.onGoogleSignInFailed()
                                 } catch (_: Exception) {
@@ -153,6 +139,31 @@ class MainActivity : ComponentActivity() {
         launchRequest = intent.toAppLaunchRequest(++launchRequestId)
     }
 }
+
+private suspend fun CredentialManager.requestGoogleIdToken(
+    context: android.content.Context,
+    clientId: String,
+): String? {
+    val googleOption = GetGoogleIdOption.Builder()
+        .setFilterByAuthorizedAccounts(false)
+        .setServerClientId(clientId)
+        .setAutoSelectEnabled(false)
+        .build()
+    val request = GetCredentialRequest.Builder()
+        .addCredentialOption(googleOption)
+        .build()
+    val credential = getCredential(context, request).credential
+    return if (
+        credential is CustomCredential &&
+        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+    ) {
+        GoogleIdTokenCredential.createFrom(credential.data).idToken
+    } else {
+        null
+    }
+}
+
+private const val GOOGLE_CREDENTIAL_RETRY_DELAY_MILLIS = 500L
 
 @SuppressLint("DiscouragedApi")
 private fun android.content.Context.googleWebClientId(): String? =

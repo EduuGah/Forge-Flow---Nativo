@@ -12,11 +12,14 @@ import com.forgeflow.core.database.exercise.ExerciseEntity
     indices = [
         Index(value = ["name"]),
         Index(value = ["folder_id"]),
+        Index(value = ["owner_user_id"]),
     ],
 )
 data class RoutineEntity(
     @PrimaryKey
     val id: String,
+    @ColumnInfo(name = "owner_user_id")
+    val ownerUserId: String,
     @ColumnInfo(name = "folder_id")
     val folderId: String? = null,
     val name: String,
@@ -34,11 +37,16 @@ data class RoutineEntity(
 
 @Entity(
     tableName = "routine_folders",
-    indices = [Index(value = ["position"])],
+    indices = [
+        Index(value = ["position"]),
+        Index(value = ["owner_user_id"]),
+    ],
 )
 data class RoutineFolderEntity(
     @PrimaryKey
     val id: String,
+    @ColumnInfo(name = "owner_user_id")
+    val ownerUserId: String,
     val name: String,
     val position: Int,
     @ColumnInfo(name = "created_at_epoch_millis")

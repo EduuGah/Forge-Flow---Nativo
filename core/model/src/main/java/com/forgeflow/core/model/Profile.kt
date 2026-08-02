@@ -35,6 +35,7 @@ data class BodyWeightEntry(
 )
 
 data class UserProfile(
+    val ownerUserId: String? = null,
     val displayName: String = "",
     val birthYear: Int? = null,
     val heightCentimeters: Int? = null,

@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.forgeflow.core.common.result.AppError
 import com.forgeflow.core.common.result.DataResult
+import com.forgeflow.core.data.auth.AuthRepository
 import com.forgeflow.core.model.AccentColor
 import com.forgeflow.core.model.HealthConnectDataType
 import com.forgeflow.core.model.ThemePreference
@@ -20,10 +21,11 @@ import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 
 class DataStoreSettingsRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,
+    private val authRepository: AuthRepository,
 ) : SettingsRepository {
     override fun observeSettings(): Flow<UserSettings> = dataStore.data
         .catch { error ->
@@ -33,7 +35,9 @@ class DataStoreSettingsRepository @Inject constructor(
                 throw error
             }
         }
-        .map { preferences ->
+        .combine(authRepository.observeSession()) { preferences, session ->
+            val completedUserIds = preferences[PROFILE_COMPLETED_USER_IDS].orEmpty()
+            val currentUserId = session?.userId
             UserSettings(
                 themePreference = preferences[THEME_PREFERENCE]
                     ?.let { storedValue ->
@@ -68,7 +72,10 @@ class DataStoreSettingsRepository @Inject constructor(
                         HealthConnectDataType.entries.firstOrNull { it.name == storedValue }
                     }
                     ?: DEFAULT_HEALTH_CONNECT_READ_DATA_TYPES,
-                profileCompletedForUserId = preferences[PROFILE_COMPLETED_FOR_USER_ID],
+                profileCompletedForUserId = currentUserId?.takeIf { userId ->
+                    userId in completedUserIds ||
+                        preferences[PROFILE_COMPLETED_FOR_USER_ID] == userId
+                },
                 hasCompletedOnboarding = preferences[ONBOARDING_COMPLETED] ?: false,
                 hasRequestedNotificationPermission =
                     preferences[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
@@ -134,6 +141,8 @@ class DataStoreSettingsRepository @Inject constructor(
     override suspend fun setProfileCompletedForUserId(
         userId: String,
     ): DataResult<Unit> = updatePreferences { preferences ->
+        preferences[PROFILE_COMPLETED_USER_IDS] =
+            preferences[PROFILE_COMPLETED_USER_IDS].orEmpty() + userId
         preferences[PROFILE_COMPLETED_FOR_USER_ID] = userId
     }
 
@@ -173,6 +182,8 @@ class DataStoreSettingsRepository @Inject constructor(
             stringSetPreferencesKey("health_connect_read_data_types")
         val PROFILE_COMPLETED_FOR_USER_ID =
             stringPreferencesKey("profile_completed_for_user_id")
+        val PROFILE_COMPLETED_USER_IDS =
+            stringSetPreferencesKey("profile_completed_user_ids")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val NOTIFICATION_PERMISSION_REQUESTED =
             booleanPreferencesKey("notification_permission_requested")

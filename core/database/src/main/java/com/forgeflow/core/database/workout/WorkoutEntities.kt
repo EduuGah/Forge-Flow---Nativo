@@ -22,11 +22,14 @@ import com.forgeflow.core.database.routine.RoutineEntity
         Index(value = ["routine_id"]),
         Index(value = ["status"]),
         Index(value = ["finished_at_epoch_millis"]),
+        Index(value = ["owner_user_id"]),
     ],
 )
 data class WorkoutSessionEntity(
     @PrimaryKey
     val id: String,
+    @ColumnInfo(name = "owner_user_id")
+    val ownerUserId: String,
     @ColumnInfo(name = "routine_id")
     val routineId: String?,
     val name: String,

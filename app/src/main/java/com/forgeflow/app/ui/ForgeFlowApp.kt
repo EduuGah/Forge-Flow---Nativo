@@ -212,6 +212,8 @@ fun ForgeFlowApp(
                         onOpenActiveWorkout = navController::navigateToActiveWorkout,
                         onOpenPlanner = navController::navigateToPlanner,
                         onOpenEvolution = navController::navigateToEvolution,
+                        onOpenTutorial = onOpenTutorial,
+                        onOpenGuidedWorkoutTutorial = onOpenGuidedWorkoutTutorial,
                     )
                     plannerScreen(
                         onBack = navController::popBackStack,

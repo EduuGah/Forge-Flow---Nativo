@@ -49,6 +49,9 @@
     <string name="summary_duration">duração</string>
     <string name="duration_minutes">%1$d min</string>
     <string name="quick_access">Acesso rápido</string>
+    <string name="home_tutorial_eyebrow">Aprenda no seu ritmo</string>
+    <string name="home_tutorial_overview">Conhecer o ForgeFlow</string>
+    <string name="home_tutorial_guided">Praticar treino guiado</string>
     <string name="exercise_library_helper">Explore exercícios, grupos musculares e equipamentos.</string>
     <string name="manage_routines">Gerenciar treinos</string>
     <string name="manage_routines_helper">Crie, edite e organize suas rotinas.</string>

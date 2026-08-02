@@ -53,7 +53,7 @@ O aplicativo lê `entitlements/{uid}` e mostra a tag e seus benefícios em **Per
 ForgeFlow**. O documento aceita:
 
 ```text
-supporterTier: "SUPPORTER" | "FOUNDER" | "LIFETIME"
+supporterTier: "SUPPORTER" | "PRO" | "FOUNDER" | "LIFETIME"
 source: "PLAY_BILLING" | "MANUAL"
 grantedAt: timestamp
 grantedBy: uid do administrador
@@ -70,7 +70,7 @@ esse backend; esconder a página ou verificar `admin` apenas no Android não pro
 2. Abra **Firestore Database > Data**.
 3. Crie a coleção `entitlements`, caso ainda não exista.
 4. Adicione um documento usando exatamente o `UID` como identificador do documento.
-5. Adicione o campo de texto `supporterTier` com `SUPPORTER`, `FOUNDER` ou `LIFETIME`.
+5. Adicione o campo de texto `supporterTier` com `SUPPORTER`, `PRO`, `FOUNDER` ou `LIFETIME`.
 6. Opcionalmente, adicione `source` como `MANUAL`, `grantedAt` como timestamp e `grantedBy` com o
    UID administrativo.
 

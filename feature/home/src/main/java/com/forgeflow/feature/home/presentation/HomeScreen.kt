@@ -20,6 +20,8 @@ fun HomeScreen(
     onOpenActiveWorkout: () -> Unit,
     onOpenPlanner: () -> Unit,
     onOpenEvolution: () -> Unit,
+    onOpenTutorial: () -> Unit,
+    onOpenGuidedWorkoutTutorial: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -35,6 +37,8 @@ fun HomeScreen(
                 onOpenActiveWorkout = onOpenActiveWorkout,
                 onOpenPlanner = onOpenPlanner,
                 onOpenEvolution = onOpenEvolution,
+                onOpenTutorial = onOpenTutorial,
+                onOpenGuidedWorkoutTutorial = onOpenGuidedWorkoutTutorial,
                 contentPadding = innerPadding,
             )
         }
@@ -49,6 +53,8 @@ private fun HomeContent(
     onOpenActiveWorkout: () -> Unit,
     onOpenPlanner: () -> Unit,
     onOpenEvolution: () -> Unit,
+    onOpenTutorial: () -> Unit,
+    onOpenGuidedWorkoutTutorial: () -> Unit,
     contentPadding: PaddingValues,
 ) {
     LazyColumn(
@@ -89,6 +95,12 @@ private fun HomeContent(
             QuickAccessPanel(
                 onOpenExercises = onOpenExercises,
                 onOpenRoutines = onOpenRoutines,
+            )
+        }
+        item {
+            TutorialAccessPanel(
+                onOpenTutorial = onOpenTutorial,
+                onOpenGuidedWorkoutTutorial = onOpenGuidedWorkoutTutorial,
             )
         }
     }

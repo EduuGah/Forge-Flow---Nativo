@@ -43,6 +43,7 @@ data class SettingsUiState(
 
 @Immutable
 data class AccountUiModel(
+    val isLoaded: Boolean = false,
     val isConfigured: Boolean = false,
     val isSignedIn: Boolean = false,
     val displayName: String? = null,

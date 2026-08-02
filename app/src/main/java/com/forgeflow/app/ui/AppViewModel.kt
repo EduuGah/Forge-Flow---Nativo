@@ -104,6 +104,7 @@ private data class AppOperationState(
     val tutorialRequested: Boolean = false,
     val tutorialDismissedForSession: Boolean = false,
     val guidedWorkoutTutorialRequested: Boolean = false,
+    val isRequestingGoogleCredential: Boolean = false,
     val isAuthenticating: Boolean = false,
     val authOperationFailed: Boolean = false,
     val authNotice: AppAuthNotice? = null,
@@ -199,12 +200,31 @@ class AppViewModel @Inject constructor(
     }
 
     fun onGoogleIdTokenReceived(idToken: String) {
+        operation.update { it.copy(isRequestingGoogleCredential = false) }
         authenticate { authRepository.signInWithGoogleIdToken(idToken) }
+    }
+
+    fun onGoogleSignInStarted(): Boolean {
+        val current = operation.value
+        if (current.isRequestingGoogleCredential || current.isAuthenticating) return false
+        operation.update {
+            it.copy(
+                isRequestingGoogleCredential = true,
+                authOperationFailed = false,
+                authNotice = null,
+            )
+        }
+        return true
     }
 
     fun onGoogleSignInFailed() {
         operation.update {
-            it.copy(isAuthenticating = false, authOperationFailed = true, authNotice = null)
+            it.copy(
+                isRequestingGoogleCredential = false,
+                isAuthenticating = false,
+                authOperationFailed = true,
+                authNotice = null,
+            )
         }
     }
 
@@ -217,11 +237,11 @@ class AppViewModel @Inject constructor(
     }
 
     fun onPasswordReset(email: String) {
-        if (operation.value.isAuthenticating) return
+        if (operation.value.isAuthenticating || operation.value.isRequestingGoogleCredential) return
+        operation.update {
+            it.copy(isAuthenticating = true, authOperationFailed = false, authNotice = null)
+        }
         viewModelScope.launch {
-            operation.update {
-                it.copy(isAuthenticating = true, authOperationFailed = false, authNotice = null)
-            }
             val result = authRepository.sendPasswordReset(email)
             operation.update {
                 it.copy(
@@ -321,15 +341,24 @@ class AppViewModel @Inject constructor(
         request: suspend () -> DataResult<AccountSession>,
     ) {
         if (operation.value.isAuthenticating) return
+        operation.update {
+            it.copy(
+                isRequestingGoogleCredential = false,
+                isAuthenticating = true,
+                authOperationFailed = false,
+                authNotice = null,
+            )
+        }
         viewModelScope.launch {
-            operation.update {
-                it.copy(isAuthenticating = true, authOperationFailed = false, authNotice = null)
-            }
             val result = request()
+            val hasActiveSession = authRepository.observeSession().first() != null
             operation.update {
                 it.copy(
                     isAuthenticating = false,
-                    authOperationFailed = result is DataResult.Failure,
+                    authOperationFailed = shouldReportAuthFailure(
+                        requestFailed = result is DataResult.Failure,
+                        hasActiveSession = hasActiveSession,
+                    ),
                 )
             }
         }
@@ -371,10 +400,15 @@ private fun AccountSession?.asUiState(
         displayName = this?.displayName,
         email = this?.email,
         photoUrl = this?.photoUrl,
-        isWorking = operation.isAuthenticating,
-        operationFailed = operation.authOperationFailed,
+        isWorking = operation.isRequestingGoogleCredential || operation.isAuthenticating,
+        operationFailed = this == null && operation.authOperationFailed,
         notice = operation.authNotice,
     )
+
+internal fun shouldReportAuthFailure(
+    requestFailed: Boolean,
+    hasActiveSession: Boolean,
+): Boolean = requestFailed && !hasActiveSession
 
 private fun UserProfile.asSetupUiState(
     session: AccountSession?,

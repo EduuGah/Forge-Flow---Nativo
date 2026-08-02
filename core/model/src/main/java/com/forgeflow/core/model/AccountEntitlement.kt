@@ -2,6 +2,7 @@ package com.forgeflow.core.model
 
 enum class SupporterTier {
     SUPPORTER,
+    PRO,
     FOUNDER,
     LIFETIME,
 }

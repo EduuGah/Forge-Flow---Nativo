@@ -92,7 +92,8 @@ class MainActivity : ComponentActivity() {
                 ForgeFlowApp(
                     state = appState,
                     launchRequest = launchRequest,
-                    onGoogleSignIn = {
+                    onGoogleSignIn = googleSignIn@{
+                        if (!viewModel.onGoogleSignInStarted()) return@googleSignIn
                         val clientId = googleWebClientId
                         if (clientId == null) {
                             viewModel.onGoogleSignInFailed()

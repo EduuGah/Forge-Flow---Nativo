@@ -172,6 +172,7 @@ private fun ProfileHero(
     onSelectAvatar: () -> Unit,
     onEdit: () -> Unit,
 ) {
+    val avatarModel = state.profile.profilePhotoPath?.let(::File) ?: state.account.photoUrl
     ForgeFlowCard(modifier = Modifier.fillMaxWidth()) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -189,9 +190,9 @@ private fun ProfileHero(
                         .clickable(onClick = onSelectAvatar),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (state.profile.profilePhotoPath != null) {
+                    if (avatarModel != null) {
                         AsyncImage(
-                            model = File(state.profile.profilePhotoPath),
+                            model = avatarModel,
                             contentDescription = stringResource(R.string.profile_avatar_description),
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
@@ -211,13 +212,23 @@ private fun ProfileHero(
                 ) {
                     Text(
                         text = state.profile.displayName.ifBlank {
-                            stringResource(R.string.profile_default_name)
+                            state.account.displayName
+                                ?: stringResource(R.string.profile_default_name)
                         },
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 3,
                         overflow = TextOverflow.Visible,
                         style = MaterialTheme.typography.titleLarge,
                     )
+                    state.account.email?.let { email ->
+                        Text(
+                            text = email,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = ForgeFlowDesign.colors.textSecondary,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                     Text(
                         text = stringResource(state.profile.trainingGoal.labelResource()),
                         color = MaterialTheme.colorScheme.primary,

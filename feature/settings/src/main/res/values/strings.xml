@@ -150,6 +150,7 @@
     <string name="account_email_verified">E-MAIL VERIFICADO • BACKUP DISPONÍVEL</string>
     <string name="account_email_pending">E-MAIL AINDA NÃO VERIFICADO</string>
     <string name="account_connected">CONTA CONECTADA</string>
+    <string name="account_loading">Carregando sua conta…</string>
     <string name="account_send_verification">Enviar e-mail de verificação</string>
     <string name="account_check_verification">Já verifiquei meu e-mail</string>
     <string name="account_create_password">Criar senha para esta conta</string>
@@ -175,6 +176,7 @@
     <string name="account_password_created">Senha adicionada. Agora você pode usar as duas formas de entrada.</string>
     <string name="account_verified_notice">E-mail verificado. O backup da conta está liberado.</string>
     <string name="account_supporter">APOIADOR FORGEFLOW</string>
+    <string name="account_supporter_pro">ATLETA PRO</string>
     <string name="account_supporter_founder">APOIADOR FUNDADOR</string>
     <string name="account_supporter_lifetime">APOIADOR VITALÍCIO</string>
     <string name="account_supporter_status">SUA TAG FORGEFLOW</string>
@@ -184,6 +186,21 @@
     <string name="account_supporter_benefit_account">Benefício vinculado à conta e recuperado ao entrar em outro aparelho.</string>
     <string name="account_supporter_benefit_future">Preferência nos benefícios visuais e na experiência sem anúncios quando forem lançados.</string>
     <string name="account_supporter_assignment">As tags são concedidas após um apoio validado ou manualmente pela administração do ForgeFlow.</string>
+    <string name="account_donation_title">Apoie o ForgeFlow</string>
+    <string name="account_donation_description">Conheça as opções de doação e as tags vinculadas à sua conta.</string>
+    <string name="account_donation_action">Ver opções de doação</string>
+    <string name="account_donation_options_title">Opções de apoio</string>
+    <string name="account_donation_options_description">Cada nível terá uma tag própria no Perfil. Os valores abaixo são a proposta inicial.</string>
+    <string name="account_donation_supporter_amount">R$ 5</string>
+    <string name="account_donation_supporter_description">Apoio pontual com a tag Apoiador ForgeFlow.</string>
+    <string name="account_donation_pro_amount">R$ 12</string>
+    <string name="account_donation_pro_description">Apoio ampliado com a tag Atleta Pro.</string>
+    <string name="account_donation_founder_amount">LIMITADA</string>
+    <string name="account_donation_founder_description">Tag reservada aos primeiros apoiadores do projeto.</string>
+    <string name="account_donation_lifetime_amount">R$ 49</string>
+    <string name="account_donation_lifetime_description">Apoio único com tag vitalícia vinculada à conta.</string>
+    <string name="account_donation_payment_pending">Pagamentos ainda não estão ativos. Nenhuma cobrança será realizada nesta versão.</string>
+    <string name="account_donation_close">Fechar</string>
     <string name="hevy_import_eyebrow">Migração</string>
     <string name="hevy_import_title">Importar do Hevy</string>
     <string name="hevy_import_description">Traga treinos e medidas dos arquivos CSV exportados pelo Hevy</string>

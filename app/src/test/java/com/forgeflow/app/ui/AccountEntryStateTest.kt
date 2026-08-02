@@ -54,4 +54,11 @@ class AccountEntryStateTest {
         assertFalse(valid.copy(birthYear = 2027).isValid(currentYear = 2026))
         assertFalse(valid.copy(bodyWeight = 0.0).isValid(currentYear = 2026))
     }
+
+    @Test
+    fun authenticationFailure_isHiddenWhenFirebaseAlreadyHasAnActiveSession() {
+        assertTrue(shouldReportAuthFailure(requestFailed = true, hasActiveSession = false))
+        assertFalse(shouldReportAuthFailure(requestFailed = true, hasActiveSession = true))
+        assertFalse(shouldReportAuthFailure(requestFailed = false, hasActiveSession = false))
+    }
 }

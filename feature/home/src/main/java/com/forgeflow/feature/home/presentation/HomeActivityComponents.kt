@@ -11,6 +11,8 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.PlayCircleOutline
+import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -159,6 +161,33 @@ internal fun QuickAccessPanel(
                 title = stringResource(R.string.manage_routines),
                 icon = Icons.Outlined.FitnessCenter,
                 onClick = onOpenRoutines,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+internal fun TutorialAccessPanel(
+    onOpenTutorial: () -> Unit,
+    onOpenGuidedWorkoutTutorial: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
+        ForgeFlowEyebrow(text = stringResource(R.string.home_tutorial_eyebrow))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+        ) {
+            QuickAccessTile(
+                title = stringResource(R.string.home_tutorial_overview),
+                icon = Icons.Outlined.School,
+                onClick = onOpenTutorial,
+                modifier = Modifier.weight(1f),
+            )
+            QuickAccessTile(
+                title = stringResource(R.string.home_tutorial_guided),
+                icon = Icons.Outlined.PlayCircleOutline,
+                onClick = onOpenGuidedWorkoutTutorial,
                 modifier = Modifier.weight(1f),
             )
         }

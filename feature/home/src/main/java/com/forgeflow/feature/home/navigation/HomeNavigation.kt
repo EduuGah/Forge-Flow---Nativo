@@ -25,6 +25,8 @@ fun NavGraphBuilder.homeScreen(
     onOpenActiveWorkout: () -> Unit,
     onOpenPlanner: () -> Unit,
     onOpenEvolution: () -> Unit,
+    onOpenTutorial: () -> Unit,
+    onOpenGuidedWorkoutTutorial: () -> Unit,
 ) {
     composable<HomeRoute> {
         val viewModel: HomeViewModel = hiltViewModel()
@@ -36,6 +38,8 @@ fun NavGraphBuilder.homeScreen(
             onOpenActiveWorkout = onOpenActiveWorkout,
             onOpenPlanner = onOpenPlanner,
             onOpenEvolution = onOpenEvolution,
+            onOpenTutorial = onOpenTutorial,
+            onOpenGuidedWorkoutTutorial = onOpenGuidedWorkoutTutorial,
         )
     }
 }

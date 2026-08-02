@@ -560,13 +560,27 @@ internal fun AccountSection(
     onGoogleSignIn: () -> Unit,
     onAction: (SettingsAction) -> Unit,
 ) {
+    var showDonationOptions by remember { mutableStateOf(false) }
     SettingsSection(
         eyebrow = stringResource(R.string.account_eyebrow),
         title = stringResource(R.string.account_title),
         description = stringResource(R.string.account_description),
         icon = Icons.Outlined.AccountCircle,
     ) {
-        if (state.account.isSignedIn) {
+        if (!state.account.isLoaded) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                Text(
+                    text = stringResource(R.string.account_loading),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        } else if (state.account.isSignedIn) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.medium),
@@ -591,7 +605,8 @@ internal fun AccountSection(
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = state.account.displayName
+                        text = state.account.displayName?.takeIf(String::isNotBlank)
+                            ?: state.profile.displayName.takeIf(String::isNotBlank)
                             ?: stringResource(R.string.account_google_user),
                         style = MaterialTheme.typography.titleSmall,
                     )
@@ -609,7 +624,10 @@ internal fun AccountSection(
                     )
                 }
             }
-            SupporterBenefitsPanel(state.account.supporterTier)
+            state.account.supporterTier?.let { tier ->
+                SupporterBenefitsPanel(tier)
+            }
+            DonationInvitation(onOpen = { showDonationOptions = true })
             if (!state.account.hasPassword && state.account.email != null) {
                 ForgeFlowOutlinedButton(
                     text = stringResource(R.string.account_create_password),
@@ -698,6 +716,9 @@ internal fun AccountSection(
                 }
             }
         }
+    }
+    if (showDonationOptions) {
+        DonationOptionsDialog(onDismiss = { showDonationOptions = false })
     }
     state.account.editor?.let { editor ->
         AccountAuthDialog(editor = editor, onAction = onAction)
@@ -828,15 +849,23 @@ private fun PasswordVisibilityButton(
 }
 
 @Composable
-private fun SupporterBenefitsPanel(tier: SupporterTier?) {
+private fun SupporterBenefitsPanel(tier: SupporterTier) {
+    val containerColor = when (tier) {
+        SupporterTier.SUPPORTER -> MaterialTheme.colorScheme.secondaryContainer
+        SupporterTier.PRO -> MaterialTheme.colorScheme.primaryContainer
+        SupporterTier.FOUNDER -> MaterialTheme.colorScheme.tertiaryContainer
+        SupporterTier.LIFETIME -> MaterialTheme.colorScheme.inverseSurface
+    }
+    val contentColor = if (tier == SupporterTier.LIFETIME) {
+        MaterialTheme.colorScheme.inverseOnSurface
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = if (tier == null) {
-            MaterialTheme.colorScheme.surfaceVariant
-        } else {
-            MaterialTheme.colorScheme.tertiaryContainer
-        },
+        color = containerColor,
+        contentColor = contentColor,
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -850,11 +879,7 @@ private fun SupporterBenefitsPanel(tier: SupporterTier?) {
                 Icon(
                     imageVector = Icons.Outlined.WorkspacePremium,
                     contentDescription = null,
-                    tint = if (tier == null) {
-                        ForgeFlowDesign.colors.textSecondary
-                    } else {
-                        MaterialTheme.colorScheme.tertiary
-                    },
+                    tint = contentColor,
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -863,8 +888,7 @@ private fun SupporterBenefitsPanel(tier: SupporterTier?) {
                         style = MaterialTheme.typography.labelSmall,
                     )
                     Text(
-                        text = tier?.let { stringResource(it.labelResource()) }
-                            ?: stringResource(R.string.account_supporter_none),
+                        text = stringResource(tier.labelResource()),
                         style = MaterialTheme.typography.titleSmall,
                     )
                 }
@@ -877,16 +901,135 @@ private fun SupporterBenefitsPanel(tier: SupporterTier?) {
             SupporterBenefitRow(stringResource(R.string.account_supporter_benefit_badge))
             SupporterBenefitRow(stringResource(R.string.account_supporter_benefit_account))
             SupporterBenefitRow(stringResource(R.string.account_supporter_benefit_future))
-            if (tier == null) {
-                Text(
-                    text = stringResource(R.string.account_supporter_assignment),
-                    color = ForgeFlowDesign.colors.textSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
         }
     }
 }
+
+@Composable
+private fun DonationInvitation(onOpen: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.account_donation_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                text = stringResource(R.string.account_donation_description),
+                color = ForgeFlowDesign.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            ForgeFlowOutlinedButton(
+                text = stringResource(R.string.account_donation_action),
+                onClick = onOpen,
+                modifier = Modifier.fillMaxWidth(),
+                icon = Icons.Outlined.WorkspacePremium,
+                iconContentDescription = null,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DonationOptionsDialog(onDismiss: () -> Unit) {
+    val options = listOf(
+        DonationOption(
+            tag = R.string.account_supporter,
+            amount = R.string.account_donation_supporter_amount,
+            description = R.string.account_donation_supporter_description,
+        ),
+        DonationOption(
+            tag = R.string.account_supporter_pro,
+            amount = R.string.account_donation_pro_amount,
+            description = R.string.account_donation_pro_description,
+        ),
+        DonationOption(
+            tag = R.string.account_supporter_founder,
+            amount = R.string.account_donation_founder_amount,
+            description = R.string.account_donation_founder_description,
+        ),
+        DonationOption(
+            tag = R.string.account_supporter_lifetime,
+            amount = R.string.account_donation_lifetime_amount,
+            description = R.string.account_donation_lifetime_description,
+        ),
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.account_donation_options_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.account_donation_options_description),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                options.forEach { option -> DonationOptionRow(option) }
+                Text(
+                    text = stringResource(R.string.account_donation_payment_pending),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.account_donation_close))
+            }
+        },
+    )
+}
+
+@Composable
+private fun DonationOptionRow(option: DonationOption) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(option.tag),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Text(
+                    text = stringResource(option.amount),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
+            Text(
+                text = stringResource(option.description),
+                color = ForgeFlowDesign.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+private data class DonationOption(
+    @param:StringRes val tag: Int,
+    @param:StringRes val amount: Int,
+    @param:StringRes val description: Int,
+)
 
 @Composable
 private fun SupporterBenefitRow(text: String) {
@@ -931,6 +1074,7 @@ private fun AccountNoticeUi.messageResource(): Int = when (this) {
 
 private fun SupporterTier.labelResource(): Int = when (this) {
     SupporterTier.SUPPORTER -> R.string.account_supporter
+    SupporterTier.PRO -> R.string.account_supporter_pro
     SupporterTier.FOUNDER -> R.string.account_supporter_founder
     SupporterTier.LIFETIME -> R.string.account_supporter_lifetime
 }

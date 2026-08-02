@@ -145,11 +145,13 @@ class SettingsViewModel @Inject constructor(
     }.combine(authRepository.observeSession()) { state, session ->
         state.copy(
             account = state.account.copy(
+                isLoaded = true,
                 isSignedIn = session != null,
                 displayName = session?.displayName,
                 email = session?.email,
                 photoUrl = session?.photoUrl,
                 hasPassword = session?.hasPassword == true,
+                operationFailed = session == null && state.account.operationFailed,
             ),
         )
     }.combine(entitlementRepository.observeEntitlement()) { state, entitlement ->
@@ -158,7 +160,7 @@ class SettingsViewModel @Inject constructor(
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
+        started = SharingStarted.Eagerly,
         initialValue = SettingsUiState(),
     )
 

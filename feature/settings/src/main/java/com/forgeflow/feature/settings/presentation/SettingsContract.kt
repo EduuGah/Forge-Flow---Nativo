@@ -48,7 +48,6 @@ data class AccountUiModel(
     val displayName: String? = null,
     val email: String? = null,
     val photoUrl: String? = null,
-    val isEmailVerified: Boolean = false,
     val hasPassword: Boolean = false,
     val isSigningIn: Boolean = false,
     val operationFailed: Boolean = false,
@@ -76,10 +75,8 @@ data class AccountAuthEditorUiState(
 
 enum class AccountNoticeUi {
     ACCOUNT_CREATED,
-    VERIFICATION_SENT,
     PASSWORD_RESET_SENT,
     PASSWORD_CREATED,
-    EMAIL_VERIFIED,
 }
 
 enum class DataExportUiResult {
@@ -251,8 +248,6 @@ sealed interface SettingsAction {
     data class AccountPasswordChanged(val value: String) : SettingsAction
     data class AccountPasswordConfirmationChanged(val value: String) : SettingsAction
     data object SubmitAccountAuth : SettingsAction
-    data object SendAccountVerification : SettingsAction
-    data object RefreshAccountVerification : SettingsAction
     data object SignOut : SettingsAction
     data object DismissAccountError : SettingsAction
 }

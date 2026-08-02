@@ -68,6 +68,7 @@ class DataStoreSettingsRepository @Inject constructor(
                         HealthConnectDataType.entries.firstOrNull { it.name == storedValue }
                     }
                     ?: DEFAULT_HEALTH_CONNECT_READ_DATA_TYPES,
+                profileCompletedForUserId = preferences[PROFILE_COMPLETED_FOR_USER_ID],
                 hasCompletedOnboarding = preferences[ONBOARDING_COMPLETED] ?: false,
                 hasRequestedNotificationPermission =
                     preferences[NOTIFICATION_PERMISSION_REQUESTED] ?: false,
@@ -130,6 +131,12 @@ class DataStoreSettingsRepository @Inject constructor(
             dataTypes.mapTo(mutableSetOf(), HealthConnectDataType::name)
     }
 
+    override suspend fun setProfileCompletedForUserId(
+        userId: String,
+    ): DataResult<Unit> = updatePreferences { preferences ->
+        preferences[PROFILE_COMPLETED_FOR_USER_ID] = userId
+    }
+
     override suspend fun setOnboardingCompleted(
         completed: Boolean,
     ): DataResult<Unit> = updatePreferences { preferences ->
@@ -164,6 +171,8 @@ class DataStoreSettingsRepository @Inject constructor(
             booleanPreferencesKey("health_connect_sync_enabled")
         val HEALTH_CONNECT_READ_DATA_TYPES =
             stringSetPreferencesKey("health_connect_read_data_types")
+        val PROFILE_COMPLETED_FOR_USER_ID =
+            stringPreferencesKey("profile_completed_for_user_id")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val NOTIFICATION_PERMISSION_REQUESTED =
             booleanPreferencesKey("notification_permission_requested")

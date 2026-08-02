@@ -32,6 +32,8 @@ interface SettingsRepository {
         dataTypes: Set<HealthConnectDataType>,
     ): DataResult<Unit>
 
+    suspend fun setProfileCompletedForUserId(userId: String): DataResult<Unit>
+
     suspend fun setOnboardingCompleted(completed: Boolean): DataResult<Unit>
 
     suspend fun setNotificationPermissionRequested(requested: Boolean): DataResult<Unit>

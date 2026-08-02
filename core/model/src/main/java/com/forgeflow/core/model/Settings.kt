@@ -60,6 +60,7 @@ data class UserSettings(
         HealthConnectDataType.STEPS,
         HealthConnectDataType.EXERCISE_SESSIONS,
     ),
+    val profileCompletedForUserId: String? = null,
     val hasCompletedOnboarding: Boolean = false,
     val hasRequestedNotificationPermission: Boolean = false,
 )

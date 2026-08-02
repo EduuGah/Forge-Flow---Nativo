@@ -77,8 +77,7 @@ class FirebaseAuthRepository @Inject constructor(
                     }
                 }
         } ?: return DataResult.Failure(AppError.WriteFailed)
-        val verificationSent = user.sendEmailVerification().awaitSuccess()
-        return if (verificationSent) success(user) else DataResult.Failure(AppError.WriteFailed)
+        return success(user)
     }
 
     override suspend fun signInWithEmail(
@@ -96,17 +95,6 @@ class FirebaseAuthRepository @Inject constructor(
                 }
         }
         return user?.let(::success) ?: DataResult.Failure(AppError.WriteFailed)
-    }
-
-    override suspend fun sendEmailVerification(): DataResult<Unit> {
-        if (!isConfigured()) return DataResult.Failure(AppError.WriteFailed)
-        val user = FirebaseAuth.getInstance().currentUser
-            ?: return DataResult.Failure(AppError.WriteFailed)
-        return if (user.sendEmailVerification().awaitSuccess()) {
-            DataResult.Success(Unit)
-        } else {
-            DataResult.Failure(AppError.WriteFailed)
-        }
     }
 
     override suspend fun sendPasswordReset(email: String): DataResult<Unit> {
@@ -134,16 +122,6 @@ class FirebaseAuthRepository @Inject constructor(
             }
         }
         return linkedUser?.let(::success) ?: DataResult.Failure(AppError.WriteFailed)
-    }
-
-    override suspend fun refreshSession(): DataResult<AccountSession> {
-        if (!isConfigured()) return DataResult.Failure(AppError.WriteFailed)
-        val user = FirebaseAuth.getInstance().currentUser
-            ?: return DataResult.Failure(AppError.WriteFailed)
-        if (!user.reload().awaitSuccess()) return DataResult.Failure(AppError.WriteFailed)
-        val refreshed = FirebaseAuth.getInstance().currentUser
-            ?: return DataResult.Failure(AppError.WriteFailed)
-        return success(refreshed)
     }
 
     override suspend fun signOut(): DataResult<Unit> = runCatching {
@@ -197,7 +175,6 @@ private fun FirebaseUser.toAccountSession(): AccountSession {
         email = email,
         photoUrl = photoUrl?.toString(),
         providers = providers,
-        isEmailVerified = isEmailVerified,
         hasPassword = AccountProvider.EMAIL in providers,
         syncState = AccountSyncState.LOCAL_ONLY,
     )

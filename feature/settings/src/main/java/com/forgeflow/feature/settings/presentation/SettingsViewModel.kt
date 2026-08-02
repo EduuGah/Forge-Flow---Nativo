@@ -149,7 +149,6 @@ class SettingsViewModel @Inject constructor(
                 displayName = session?.displayName,
                 email = session?.email,
                 photoUrl = session?.photoUrl,
-                isEmailVerified = session?.isEmailVerified == true,
                 hasPassword = session?.hasPassword == true,
             ),
         )
@@ -291,8 +290,6 @@ class SettingsViewModel @Inject constructor(
                 )
             }
             SettingsAction.SubmitAccountAuth -> submitAccountAuth()
-            SettingsAction.SendAccountVerification -> sendAccountVerification()
-            SettingsAction.RefreshAccountVerification -> refreshAccountVerification()
             SettingsAction.SignOut -> signOut()
             SettingsAction.DismissAccountError -> operation.update {
                 it.copy(accountOperationFailed = false, accountNotice = null)
@@ -396,40 +393,6 @@ class SettingsViewModel @Inject constructor(
                         accountOperationFailed = true,
                     )
                 }
-            }
-        }
-    }
-
-    private fun sendAccountVerification() {
-        viewModelScope.launch {
-            val result = authRepository.sendEmailVerification()
-            operation.update {
-                it.copy(
-                    accountNotice = if (result is DataResult.Success) {
-                        AccountNoticeUi.VERIFICATION_SENT
-                    } else {
-                        null
-                    },
-                    accountOperationFailed = result is DataResult.Failure,
-                )
-            }
-        }
-    }
-
-    private fun refreshAccountVerification() {
-        viewModelScope.launch {
-            val result = authRepository.refreshSession()
-            operation.update {
-                it.copy(
-                    accountNotice = if (
-                        result is DataResult.Success && result.value.isEmailVerified
-                    ) {
-                        AccountNoticeUi.EMAIL_VERIFIED
-                    } else {
-                        null
-                    },
-                    accountOperationFailed = result is DataResult.Failure,
-                )
             }
         }
     }

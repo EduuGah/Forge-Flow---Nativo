@@ -21,13 +21,9 @@ interface AuthRepository {
         password: String,
     ): DataResult<AccountSession>
 
-    suspend fun sendEmailVerification(): DataResult<Unit>
-
     suspend fun sendPasswordReset(email: String): DataResult<Unit>
 
     suspend fun linkPassword(password: String): DataResult<AccountSession>
-
-    suspend fun refreshSession(): DataResult<AccountSession>
 
     suspend fun signOut(): DataResult<Unit>
 

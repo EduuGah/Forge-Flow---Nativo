@@ -2,6 +2,16 @@ package com.forgeflow.app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -53,6 +63,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +73,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -71,6 +83,7 @@ import com.forgeflow.app.R
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.core.model.WeightUnit
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -188,6 +201,11 @@ private fun TutorialPageContent(
     onWeightUnitChanged: (WeightUnit) -> Unit,
     onWeeklyWorkoutGoalChanged: (Int) -> Unit,
 ) {
+    var contentVisible by remember(pageIndex) { mutableStateOf(false) }
+    LaunchedEffect(pageIndex) {
+        delay(90)
+        contentVisible = true
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -196,42 +214,72 @@ private fun TutorialPageContent(
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         TutorialArtwork(page = page, pageIndex = pageIndex)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = stringResource(page.eyebrow).uppercase(),
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelSmall,
-            )
-            Text(
-                text = stringResource(page.title),
-                style = MaterialTheme.typography.headlineMedium,
-            )
-            Text(
-                text = stringResource(page.description),
-                color = ForgeFlowDesign.colors.textSecondary,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        }
-        if (pageIndex == TUTORIAL_SETUP_PAGE) {
-            TutorialSetupControls(
-                weightUnit = weightUnit,
-                weeklyWorkoutGoal = weeklyWorkoutGoal,
-                onWeightUnitChanged = onWeightUnitChanged,
-                onWeeklyWorkoutGoalChanged = onWeeklyWorkoutGoalChanged,
-            )
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                page.features.forEach { feature ->
-                    TutorialFeatureRow(feature)
+        AnimatedVisibility(
+            visible = contentVisible,
+            enter = fadeIn(tween(360)) + slideInVertically(
+                animationSpec = tween(360),
+                initialOffsetY = { it / 8 },
+            ),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(page.eyebrow).uppercase(),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                    Text(
+                        text = stringResource(page.title),
+                        style = MaterialTheme.typography.headlineMedium,
+                    )
+                    Text(
+                        text = stringResource(page.description),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
                 }
+                if (pageIndex == TUTORIAL_SETUP_PAGE) {
+                    TutorialSetupControls(
+                        weightUnit = weightUnit,
+                        weeklyWorkoutGoal = weeklyWorkoutGoal,
+                        onWeightUnitChanged = onWeightUnitChanged,
+                        onWeeklyWorkoutGoalChanged = onWeeklyWorkoutGoalChanged,
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        page.features.forEach { feature ->
+                            TutorialFeatureRow(feature)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
             }
         }
-        Spacer(modifier = Modifier.height(4.dp))
     }
 }
 
 @Composable
 private fun TutorialArtwork(page: TutorialPage, pageIndex: Int) {
+    val infiniteTransition = rememberInfiniteTransition(label = "tutorial-artwork")
+    val iconScale by infiniteTransition.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1_300),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "tutorial-icon-scale",
+    )
+    var metricsVisible by remember(pageIndex) { mutableStateOf(false) }
+    LaunchedEffect(pageIndex) {
+        delay(180)
+        metricsVisible = true
+    }
+    val metricsAlpha by animateFloatAsState(
+        targetValue = if (metricsVisible) 1f else 0f,
+        animationSpec = tween(500),
+        label = "tutorial-metrics-alpha",
+    )
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -263,7 +311,12 @@ private fun TutorialArtwork(page: TutorialPage, pageIndex: Int) {
                     Icon(
                         imageVector = page.heroIcon,
                         contentDescription = null,
-                        modifier = Modifier.size(36.dp),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .graphicsLayer {
+                                scaleX = iconScale
+                                scaleY = iconScale
+                            },
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
@@ -274,7 +327,9 @@ private fun TutorialArtwork(page: TutorialPage, pageIndex: Int) {
                 )
             }
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer { alpha = metricsAlpha },
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -489,13 +544,18 @@ private fun TutorialPageIndicator(currentPage: Int, pageCount: Int) {
         horizontalArrangement = Arrangement.Center,
     ) {
         repeat(pageCount) { index ->
+            val width by animateDpAsState(
+                targetValue = if (index == currentPage) 20.dp else 7.dp,
+                animationSpec = tween(220),
+                label = "tutorial-indicator-width",
+            )
             Box(
                 modifier = Modifier.width(26.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
                     modifier = Modifier
-                        .width(if (index == currentPage) 20.dp else 7.dp)
+                        .width(width)
                         .height(7.dp)
                         .background(
                             color = if (index == currentPage) {

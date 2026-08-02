@@ -108,13 +108,44 @@ import kotlinx.coroutines.launch
 @Composable
 fun ForgeFlowApp(
     state: AppUiState,
+    modifier: Modifier = Modifier,
     launchRequest: AppLaunchRequest? = null,
+    onGoogleSignIn: () -> Unit,
+    onEmailSignIn: (String, String) -> Unit,
+    onCreateAccount: (String, String) -> Unit,
+    onPasswordReset: (String) -> Unit,
+    onDismissAuthFeedback: () -> Unit,
+    onCompleteProfile: (ProfileSetupSubmission) -> Unit,
     onOpenTutorial: () -> Unit,
     onCompleteTutorial: (WeightUnit, Int) -> Unit,
     onOpenGuidedWorkoutTutorial: () -> Unit,
     onDismissGuidedWorkoutTutorial: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
+    if (!state.isSettingsLoaded) {
+        ForgeFlowLoadingScreen(modifier)
+        return
+    }
+    if (!state.auth.isSignedIn) {
+        AccountEntryScreen(
+            state = state.auth,
+            onGoogleSignIn = onGoogleSignIn,
+            onEmailSignIn = onEmailSignIn,
+            onCreateAccount = onCreateAccount,
+            onPasswordReset = onPasswordReset,
+            onDismissFeedback = onDismissAuthFeedback,
+            modifier = modifier,
+        )
+        return
+    }
+    if (state.showProfileSetup) {
+        ProfileSetupScreen(
+            state = state.profileSetup,
+            weightUnit = state.weightUnit,
+            onComplete = onCompleteProfile,
+            modifier = modifier,
+        )
+        return
+    }
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()

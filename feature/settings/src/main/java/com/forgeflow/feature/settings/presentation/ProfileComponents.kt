@@ -30,6 +30,9 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -40,6 +43,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,6 +60,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
@@ -427,7 +432,7 @@ internal fun DataProtectionSection(
             icon = Icons.Outlined.Restore,
             iconContentDescription = null,
         )
-        if (state.account.isSignedIn && state.account.isEmailVerified) {
+        if (state.account.isSignedIn) {
             HorizontalDivider(color = ForgeFlowDesign.colors.divider)
             Text(
                 text = stringResource(R.string.data_cloud_title),
@@ -598,41 +603,13 @@ internal fun AccountSection(
                         )
                     }
                     Text(
-                        text = stringResource(
-                            if (state.account.isEmailVerified) {
-                                R.string.account_email_verified
-                            } else {
-                                R.string.account_email_pending
-                            },
-                        ),
-                        color = if (state.account.isEmailVerified) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.error
-                        },
+                        text = stringResource(R.string.account_connected),
+                        color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelSmall,
                     )
-                    state.account.supporterTier?.let { tier ->
-                        Text(
-                            text = stringResource(tier.labelResource()),
-                            color = MaterialTheme.colorScheme.tertiary,
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    }
                 }
             }
-            if (!state.account.isEmailVerified) {
-                ForgeFlowButton(
-                    text = stringResource(R.string.account_send_verification),
-                    onClick = { onAction(SettingsAction.SendAccountVerification) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                ForgeFlowOutlinedButton(
-                    text = stringResource(R.string.account_check_verification),
-                    onClick = { onAction(SettingsAction.RefreshAccountVerification) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            SupporterBenefitsPanel(state.account.supporterTier)
             if (!state.account.hasPassword && state.account.email != null) {
                 ForgeFlowOutlinedButton(
                     text = stringResource(R.string.account_create_password),
@@ -732,6 +709,8 @@ private fun AccountAuthDialog(
     editor: AccountAuthEditorUiState,
     onAction: (SettingsAction) -> Unit,
 ) {
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmationVisible by remember { mutableStateOf(false) }
     val needsPassword = editor.mode != AccountAuthMode.RESET_PASSWORD
     val needsConfirmation = editor.mode in setOf(
         AccountAuthMode.CREATE_ACCOUNT,
@@ -764,7 +743,17 @@ private fun AccountAuthDialog(
                         label = stringResource(R.string.account_password_label),
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        visualTransformation = PasswordVisualTransformation(),
+                        trailingIcon = {
+                            PasswordVisibilityButton(
+                                visible = passwordVisible,
+                                onClick = { passwordVisible = !passwordVisible },
+                            )
+                        },
+                        visualTransformation = if (passwordVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
                     )
                 }
                 if (needsConfirmation) {
@@ -776,7 +765,17 @@ private fun AccountAuthDialog(
                         label = stringResource(R.string.account_password_confirmation_label),
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        visualTransformation = PasswordVisualTransformation(),
+                        trailingIcon = {
+                            PasswordVisibilityButton(
+                                visible = confirmationVisible,
+                                onClick = { confirmationVisible = !confirmationVisible },
+                            )
+                        },
+                        visualTransformation = if (confirmationVisible) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
                     )
                 }
                 if (editor.validationFailed) {
@@ -813,6 +812,103 @@ private fun AccountAuthDialog(
     )
 }
 
+@Composable
+private fun PasswordVisibilityButton(
+    visible: Boolean,
+    onClick: () -> Unit,
+) {
+    IconButton(onClick = onClick) {
+        Icon(
+            imageVector = if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+            contentDescription = stringResource(
+                if (visible) R.string.account_hide_password else R.string.account_show_password,
+            ),
+        )
+    }
+}
+
+@Composable
+private fun SupporterBenefitsPanel(tier: SupporterTier?) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = if (tier == null) {
+            MaterialTheme.colorScheme.surfaceVariant
+        } else {
+            MaterialTheme.colorScheme.tertiaryContainer
+        },
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.WorkspacePremium,
+                    contentDescription = null,
+                    tint = if (tier == null) {
+                        ForgeFlowDesign.colors.textSecondary
+                    } else {
+                        MaterialTheme.colorScheme.tertiary
+                    },
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.account_supporter_status),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                    Text(
+                        text = tier?.let { stringResource(it.labelResource()) }
+                            ?: stringResource(R.string.account_supporter_none),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
+            }
+            HorizontalDivider(color = ForgeFlowDesign.colors.divider)
+            Text(
+                text = stringResource(R.string.account_supporter_benefits_title),
+                style = MaterialTheme.typography.labelMedium,
+            )
+            SupporterBenefitRow(stringResource(R.string.account_supporter_benefit_badge))
+            SupporterBenefitRow(stringResource(R.string.account_supporter_benefit_account))
+            SupporterBenefitRow(stringResource(R.string.account_supporter_benefit_future))
+            if (tier == null) {
+                Text(
+                    text = stringResource(R.string.account_supporter_assignment),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SupporterBenefitRow(text: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.CheckCircle,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = text,
+            modifier = Modifier.weight(1f),
+            color = ForgeFlowDesign.colors.textSecondary,
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+}
+
 private fun AccountAuthMode.titleResource(): Int = when (this) {
     AccountAuthMode.SIGN_IN -> R.string.account_email_sign_in_title
     AccountAuthMode.CREATE_ACCOUNT -> R.string.account_create_title
@@ -829,10 +925,8 @@ private fun AccountAuthMode.actionResource(): Int = when (this) {
 
 private fun AccountNoticeUi.messageResource(): Int = when (this) {
     AccountNoticeUi.ACCOUNT_CREATED -> R.string.account_created_notice
-    AccountNoticeUi.VERIFICATION_SENT -> R.string.account_verification_sent
     AccountNoticeUi.PASSWORD_RESET_SENT -> R.string.account_reset_sent
     AccountNoticeUi.PASSWORD_CREATED -> R.string.account_password_created
-    AccountNoticeUi.EMAIL_VERIFIED -> R.string.account_verified_notice
 }
 
 private fun SupporterTier.labelResource(): Int = when (this) {

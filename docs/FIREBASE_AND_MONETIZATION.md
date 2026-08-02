@@ -9,8 +9,7 @@ conta de serviço, senha SMTP ou credenciais do Firebase Admin no aplicativo.
 No Firebase Console, ainda é necessário confirmar:
 
 1. Em **Authentication > Sign-in method**, habilitar **Google** e **E-mail/senha**.
-2. Em **Authentication > Templates**, revisar verificação de e-mail, redefinição de senha e
-   alteração de e-mail.
+2. Em **Authentication > Templates**, revisar redefinição de senha e alteração de e-mail.
 3. Em **Storage**, criar o bucket e publicar `storage.rules`.
 4. Em **Firestore**, criar o banco em modo bloqueado e publicar `firestore.rules`.
 
@@ -27,8 +26,9 @@ exportação e a restauração manual por ZIP continuam funcionando sem Firebase
 
 ## Domínio e SMTP
 
-Para os e-mails padrão do Firebase Authentication, comece pelos próprios modelos do Firebase; não
-é necessário contratar SMTP apenas para verificação e redefinição de senha. O melhor acabamento é:
+O ForgeFlow entra automaticamente depois do cadastro e não exige verificação do endereço. Para a
+redefinição de senha, use o modelo padrão do Firebase Authentication; não é necessário contratar
+SMTP. O melhor acabamento opcional é:
 
 - domínio de links: `auth.forgeflow.app`;
 - remetente: `noreply@forgeflow.app`;
@@ -49,7 +49,8 @@ de e-mails.
 
 ## Apoiadores e administração
 
-O aplicativo lê `entitlements/{uid}` e mostra uma tag no Perfil. O documento aceita:
+O aplicativo lê `entitlements/{uid}` e mostra a tag e seus benefícios em **Perfil > Conta
+ForgeFlow**. O documento aceita:
 
 ```text
 supporterTier: "SUPPORTER" | "FOUNDER" | "LIFETIME"
@@ -62,6 +63,19 @@ As regras bloqueiam escrita pelo aplicativo. Durante os testes, uma concessão m
 diretamente no Firebase Console. Para produção, use uma Cloud Function com Firebase Admin SDK e
 exija a custom claim `admin: true`. Uma página administrativa é útil, mas só é segura quando chama
 esse backend; esconder a página ou verificar `admin` apenas no Android não protege nada.
+
+### Conceder uma tag manualmente para teste
+
+1. Abra **Firebase Console > Authentication > Users** e copie o `UID` da conta.
+2. Abra **Firestore Database > Data**.
+3. Crie a coleção `entitlements`, caso ainda não exista.
+4. Adicione um documento usando exatamente o `UID` como identificador do documento.
+5. Adicione o campo de texto `supporterTier` com `SUPPORTER`, `FOUNDER` ou `LIFETIME`.
+6. Opcionalmente, adicione `source` como `MANUAL`, `grantedAt` como timestamp e `grantedBy` com o
+   UID administrativo.
+
+A mudança aparece em tempo real no Perfil enquanto a conta está conectada. Não adicione uma chave
+de administrador ao APK e não permita escrita direta nessa coleção pelas regras do cliente.
 
 ## Doações e Google Play Billing
 

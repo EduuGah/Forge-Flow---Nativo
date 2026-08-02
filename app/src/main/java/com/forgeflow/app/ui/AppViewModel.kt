@@ -246,6 +246,17 @@ class AppViewModel @Inject constructor(
         }
     }
 
+    fun onGoogleSignInCancelled() {
+        operation.update {
+            it.copy(
+                isRequestingGoogleCredential = false,
+                isAuthenticating = false,
+                authOperationFailed = false,
+                authNotice = null,
+            )
+        }
+    }
+
     fun onEmailSignIn(email: String, password: String) {
         authenticate { authRepository.signInWithEmail(email, password) }
     }
@@ -270,6 +281,22 @@ class AppViewModel @Inject constructor(
                     } else {
                         null
                     },
+                )
+            }
+        }
+    }
+
+    fun onSignOut() {
+        if (operation.value.isAuthenticating) return
+        operation.update {
+            it.copy(isAuthenticating = true, authOperationFailed = false, authNotice = null)
+        }
+        viewModelScope.launch {
+            val result = authRepository.signOut()
+            operation.update {
+                it.copy(
+                    isAuthenticating = false,
+                    authOperationFailed = result is DataResult.Failure,
                 )
             }
         }

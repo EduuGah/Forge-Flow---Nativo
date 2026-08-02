@@ -11,6 +11,15 @@
     <string name="drawer_close">Fechar menu</string>
     <string name="drawer_progress">Progresso</string>
     <string name="drawer_tools">Ferramentas</string>
+    <string name="drawer_account">Sua conta</string>
+    <string name="drawer_account_fallback">F</string>
+    <string name="drawer_open_profile">Abrir perfil</string>
+    <string name="drawer_sign_out">Sair da conta</string>
+    <string name="drawer_support">Apoiar o ForgeFlow</string>
+    <string name="drawer_sign_out_title">Sair da conta?</string>
+    <string name="drawer_sign_out_description">Seus dados permanecem salvos neste aparelho e continuarão separados desta conta.</string>
+    <string name="drawer_sign_out_confirm">Sair</string>
+    <string name="drawer_sign_out_cancel">Cancelar</string>
     <string name="drawer_evolution">Evolução geral</string>
     <string name="drawer_photos">Fotos de progresso</string>
     <string name="drawer_nutrition">Nutrição</string>

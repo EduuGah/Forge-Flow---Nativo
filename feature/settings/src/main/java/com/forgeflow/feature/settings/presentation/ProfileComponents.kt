@@ -899,9 +899,13 @@ private fun SupporterBenefitsPanel(tier: SupporterTier) {
                 text = stringResource(R.string.account_supporter_benefits_title),
                 style = MaterialTheme.typography.labelMedium,
             )
-            SupporterBenefitRow(stringResource(R.string.account_supporter_benefit_badge))
-            SupporterBenefitRow(stringResource(R.string.account_supporter_benefit_account))
-            SupporterBenefitRow(stringResource(R.string.account_supporter_benefit_future))
+            tier.benefitResources().forEach { benefit ->
+                SupporterBenefitRow(
+                    text = stringResource(benefit),
+                    tint = contentColor,
+                    textColor = contentColor,
+                )
+            }
         }
     }
 }
@@ -941,24 +945,40 @@ private fun DonationInvitation(onOpen: () -> Unit) {
 private fun DonationOptionsDialog(onDismiss: () -> Unit) {
     val options = listOf(
         DonationOption(
+            tier = SupporterTier.SUPPORTER,
             tag = R.string.account_supporter,
             amount = R.string.account_donation_supporter_amount,
             description = R.string.account_donation_supporter_description,
+            benefits = listOf(
+                R.string.account_supporter_benefit_badge,
+                R.string.account_supporter_benefit_account,
+            ),
         ),
         DonationOption(
+            tier = SupporterTier.PRO,
             tag = R.string.account_supporter_pro,
             amount = R.string.account_donation_pro_amount,
             description = R.string.account_donation_pro_description,
+            benefits = listOf(
+                R.string.account_supporter_benefit_badge,
+                R.string.account_supporter_benefit_account,
+                R.string.account_supporter_benefit_no_ads,
+                R.string.account_supporter_benefit_early_access,
+            ),
+            recommended = true,
         ),
         DonationOption(
-            tag = R.string.account_supporter_founder,
-            amount = R.string.account_donation_founder_amount,
-            description = R.string.account_donation_founder_description,
-        ),
-        DonationOption(
+            tier = SupporterTier.LIFETIME,
             tag = R.string.account_supporter_lifetime,
             amount = R.string.account_donation_lifetime_amount,
             description = R.string.account_donation_lifetime_description,
+            benefits = listOf(
+                R.string.account_supporter_benefit_badge,
+                R.string.account_supporter_benefit_account,
+                R.string.account_supporter_benefit_no_ads,
+                R.string.account_supporter_benefit_early_access,
+                R.string.account_supporter_benefit_lifetime,
+            ),
         ),
     )
     AlertDialog(
@@ -976,6 +996,11 @@ private fun DonationOptionsDialog(onDismiss: () -> Unit) {
                 )
                 options.forEach { option -> DonationOptionRow(option) }
                 Text(
+                    text = stringResource(R.string.account_donation_manual_tags),
+                    color = ForgeFlowDesign.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
                     text = stringResource(R.string.account_donation_payment_pending),
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelMedium,
@@ -992,15 +1017,27 @@ private fun DonationOptionsDialog(onDismiss: () -> Unit) {
 
 @Composable
 private fun DonationOptionRow(option: DonationOption) {
+    val containerColor = when (option.tier) {
+        SupporterTier.PRO -> MaterialTheme.colorScheme.primaryContainer
+        SupporterTier.LIFETIME -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = containerColor,
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            if (option.recommended) {
+                Text(
+                    text = stringResource(R.string.account_donation_recommended),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1022,18 +1059,34 @@ private fun DonationOptionRow(option: DonationOption) {
                 color = ForgeFlowDesign.colors.textSecondary,
                 style = MaterialTheme.typography.bodySmall,
             )
+            option.benefits.forEach { benefit ->
+                SupporterBenefitRow(stringResource(benefit))
+            }
+            ForgeFlowOutlinedButton(
+                text = stringResource(R.string.account_donation_coming_soon),
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+                enabled = false,
+            )
         }
     }
 }
 
 private data class DonationOption(
+    val tier: SupporterTier,
     @param:StringRes val tag: Int,
     @param:StringRes val amount: Int,
     @param:StringRes val description: Int,
+    val benefits: List<Int>,
+    val recommended: Boolean = false,
 )
 
 @Composable
-private fun SupporterBenefitRow(text: String) {
+private fun SupporterBenefitRow(
+    text: String,
+    tint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary,
+    textColor: androidx.compose.ui.graphics.Color = ForgeFlowDesign.colors.textSecondary,
+) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.Top,
@@ -1042,15 +1095,46 @@ private fun SupporterBenefitRow(text: String) {
             imageVector = Icons.Outlined.CheckCircle,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.primary,
+            tint = tint,
         )
         Text(
             text = text,
             modifier = Modifier.weight(1f),
-            color = ForgeFlowDesign.colors.textSecondary,
+            color = textColor,
             style = MaterialTheme.typography.bodySmall,
         )
     }
+}
+
+private fun SupporterTier.benefitResources(): List<Int> = when (this) {
+    SupporterTier.ADMIN -> listOf(
+        R.string.account_supporter_benefit_admin,
+        R.string.account_supporter_benefit_account,
+        R.string.account_supporter_benefit_all_access,
+    )
+    SupporterTier.SUPPORTER -> listOf(
+        R.string.account_supporter_benefit_badge,
+        R.string.account_supporter_benefit_account,
+    )
+    SupporterTier.PRO -> listOf(
+        R.string.account_supporter_benefit_badge,
+        R.string.account_supporter_benefit_account,
+        R.string.account_supporter_benefit_no_ads,
+        R.string.account_supporter_benefit_early_access,
+    )
+    SupporterTier.FOUNDER -> listOf(
+        R.string.account_supporter_benefit_founder,
+        R.string.account_supporter_benefit_account,
+        R.string.account_supporter_benefit_no_ads,
+        R.string.account_supporter_benefit_early_access,
+    )
+    SupporterTier.LIFETIME -> listOf(
+        R.string.account_supporter_benefit_badge,
+        R.string.account_supporter_benefit_account,
+        R.string.account_supporter_benefit_no_ads,
+        R.string.account_supporter_benefit_early_access,
+        R.string.account_supporter_benefit_lifetime,
+    )
 }
 
 private fun AccountAuthMode.titleResource(): Int = when (this) {

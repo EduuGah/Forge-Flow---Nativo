@@ -9,7 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
@@ -26,6 +30,9 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Logout
+import androidx.compose.material.icons.outlined.WorkspacePremium
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
@@ -40,10 +47,12 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.rememberDrawerState
@@ -114,6 +123,7 @@ fun ForgeFlowApp(
     onEmailSignIn: (String, String) -> Unit,
     onCreateAccount: (String, String) -> Unit,
     onPasswordReset: (String) -> Unit,
+    onSignOut: () -> Unit,
     onDismissAuthFeedback: () -> Unit,
     onCompleteProfile: (ProfileSetupSubmission) -> Unit,
     onOpenTutorial: () -> Unit,
@@ -179,11 +189,20 @@ fun ForgeFlowApp(
             gesturesEnabled = !state.showTutorial && !state.showGuidedWorkoutTutorial,
             drawerContent = {
                 ForgeFlowDrawer(
+                    account = state.auth,
                     currentDestination = currentDestination,
                     onClose = { scope.launch { drawerState.close() } },
+                    onOpenProfile = {
+                        scope.launch { drawerState.close() }
+                        navController.navigateTopLevelRoute(ProfileRoute)
+                    },
                     onDestinationSelected = { destination ->
                         scope.launch { drawerState.close() }
                         navController.navigateToDrawerDestination(destination)
+                    },
+                    onSignOut = {
+                        scope.launch { drawerState.close() }
+                        onSignOut()
                     },
                 )
             },
@@ -280,10 +299,14 @@ fun ForgeFlowApp(
 
 @Composable
 private fun ForgeFlowDrawer(
+    account: AppAuthUiState,
     currentDestination: NavDestination?,
     onClose: () -> Unit,
+    onOpenProfile: () -> Unit,
     onDestinationSelected: (DrawerDestination) -> Unit,
+    onSignOut: () -> Unit,
 ) {
+    var showSignOutConfirmation by remember { mutableStateOf(false) }
     ModalDrawerSheet(
         modifier = Modifier.fillMaxWidth(0.82f),
         drawerContainerColor = MaterialTheme.colorScheme.surface,
@@ -315,33 +338,153 @@ private fun ForgeFlowDrawer(
             }
         }
         HorizontalDivider()
-        Text(
-            text = stringResource(R.string.drawer_progress).uppercase(),
-            modifier = Modifier.padding(start = 28.dp, top = 18.dp, bottom = 6.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall,
-        )
-        DrawerDestination.entries.take(5).forEach { destination ->
-            ForgeFlowDrawerItem(
-                destination = destination,
-                selected = currentDestination.matches(destination),
-                onClick = { onDestinationSelected(destination) },
-            )
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpenProfile)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    modifier = Modifier.size(44.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = account.displayName
+                                ?.trim()
+                                ?.firstOrNull()
+                                ?.uppercase()
+                                ?: stringResource(R.string.drawer_account_fallback),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = account.displayName?.takeIf(String::isNotBlank)
+                            ?: stringResource(R.string.drawer_account),
+                        maxLines = 1,
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        text = account.email ?: stringResource(R.string.drawer_open_profile),
+                        maxLines = 1,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Outlined.Person,
+                    contentDescription = stringResource(R.string.drawer_open_profile),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
-        Text(
-            text = stringResource(R.string.drawer_tools).uppercase(),
-            modifier = Modifier.padding(start = 28.dp, top = 18.dp, bottom = 6.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall,
-        )
-        DrawerDestination.entries.drop(5).forEach { destination ->
-            ForgeFlowDrawerItem(
-                destination = destination,
-                selected = currentDestination.matches(destination),
-                onClick = { onDestinationSelected(destination) },
-            )
+        HorizontalDivider()
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            DrawerSectionLabel(R.string.drawer_progress)
+            DrawerDestination.entries.take(5).forEach { destination ->
+                ForgeFlowDrawerItem(
+                    destination = destination,
+                    selected = currentDestination.matches(destination),
+                    onClick = { onDestinationSelected(destination) },
+                )
+            }
+            DrawerSectionLabel(R.string.drawer_tools)
+            DrawerDestination.entries.drop(5)
+                .filterNot { it == DrawerDestination.SETTINGS }
+                .forEach { destination ->
+                    ForgeFlowDrawerItem(
+                        destination = destination,
+                        selected = currentDestination.matches(destination),
+                        onClick = { onDestinationSelected(destination) },
+                    )
+                }
         }
+        HorizontalDivider()
+        NavigationDrawerItem(
+            label = { Text(stringResource(R.string.drawer_support)) },
+            selected = false,
+            onClick = onOpenProfile,
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.WorkspacePremium,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            },
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+        )
+        ForgeFlowDrawerItem(
+            destination = DrawerDestination.SETTINGS,
+            selected = currentDestination.matches(DrawerDestination.SETTINGS),
+            onClick = { onDestinationSelected(DrawerDestination.SETTINGS) },
+        )
+        NavigationDrawerItem(
+            label = {
+                Text(
+                    text = stringResource(R.string.drawer_sign_out),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            },
+            selected = false,
+            onClick = { showSignOutConfirmation = true },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Logout,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            },
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+        )
     }
+    if (showSignOutConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showSignOutConfirmation = false },
+            title = { Text(stringResource(R.string.drawer_sign_out_title)) },
+            text = { Text(stringResource(R.string.drawer_sign_out_description)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSignOutConfirmation = false
+                        onSignOut()
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.drawer_sign_out_confirm),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSignOutConfirmation = false }) {
+                    Text(stringResource(R.string.drawer_sign_out_cancel))
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun DrawerSectionLabel(@StringRes label: Int) {
+    Text(
+        text = stringResource(label).uppercase(),
+        modifier = Modifier.padding(start = 28.dp, top = 18.dp, bottom = 6.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelSmall,
+    )
 }
 
 @Composable

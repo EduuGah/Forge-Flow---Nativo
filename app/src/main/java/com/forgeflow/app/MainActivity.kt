@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -35,6 +36,7 @@ import com.forgeflow.core.model.ThemePreference
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -101,16 +103,14 @@ class MainActivity : ComponentActivity() {
                         } else {
                             scope.launch {
                                 try {
-                                    val idToken = try {
-                                        credentialManager.requestGoogleIdToken(context, clientId)
-                                    } catch (_: NoCredentialException) {
-                                        delay(GOOGLE_CREDENTIAL_RETRY_DELAY_MILLIS)
-                                        credentialManager.requestGoogleIdToken(context, clientId)
-                                    }
+                                    val idToken = credentialManager
+                                        .requestGoogleIdTokenWithRetry(context, clientId)
                                     idToken?.let(viewModel::onGoogleIdTokenReceived)
                                         ?: viewModel.onGoogleSignInFailed()
-                                } catch (_: NoCredentialException) {
-                                    viewModel.onGoogleSignInFailed()
+                                } catch (_: GetCredentialCancellationException) {
+                                    viewModel.onGoogleSignInCancelled()
+                                } catch (_: CancellationException) {
+                                    viewModel.onGoogleSignInCancelled()
                                 } catch (_: Exception) {
                                     viewModel.onGoogleSignInFailed()
                                 }
@@ -120,6 +120,7 @@ class MainActivity : ComponentActivity() {
                     onEmailSignIn = viewModel::onEmailSignIn,
                     onCreateAccount = viewModel::onCreateAccount,
                     onPasswordReset = viewModel::onPasswordReset,
+                    onSignOut = viewModel::onSignOut,
                     onDismissAuthFeedback = viewModel::onAuthFeedbackDismissed,
                     onCompleteProfile = viewModel::onProfileCompleted,
                     onOpenTutorial = viewModel::onTutorialRequested,
@@ -163,7 +164,35 @@ private suspend fun CredentialManager.requestGoogleIdToken(
     }
 }
 
-private const val GOOGLE_CREDENTIAL_RETRY_DELAY_MILLIS = 500L
+private suspend fun CredentialManager.requestGoogleIdTokenWithRetry(
+    context: android.content.Context,
+    clientId: String,
+): String? {
+    var lastFailure: Exception? = null
+    repeat(GOOGLE_CREDENTIAL_ATTEMPTS) { attempt ->
+        try {
+            return requestGoogleIdToken(context, clientId)
+        } catch (error: GetCredentialCancellationException) {
+            throw error
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: NoCredentialException) {
+            lastFailure = error
+            if (attempt < GOOGLE_CREDENTIAL_ATTEMPTS - 1) {
+                delay(GOOGLE_CREDENTIAL_RETRY_DELAY_MILLIS * (attempt + 1))
+            }
+        } catch (error: Exception) {
+            lastFailure = error
+            if (attempt < GOOGLE_CREDENTIAL_ATTEMPTS - 1) {
+                delay(GOOGLE_CREDENTIAL_RETRY_DELAY_MILLIS * (attempt + 1))
+            }
+        }
+    }
+    throw lastFailure ?: IllegalStateException("Google credential request failed")
+}
+
+private const val GOOGLE_CREDENTIAL_ATTEMPTS = 3
+private const val GOOGLE_CREDENTIAL_RETRY_DELAY_MILLIS = 700L
 
 @SuppressLint("DiscouragedApi")
 private fun android.content.Context.googleWebClientId(): String? =

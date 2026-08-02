@@ -10,6 +10,7 @@ import com.forgeflow.core.model.AccountSyncState
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
 import dagger.Binds
@@ -23,6 +24,7 @@ import kotlin.coroutines.resume
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 @Singleton
@@ -51,13 +53,11 @@ class FirebaseAuthRepository @Inject constructor(
     ): DataResult<AccountSession> {
         if (!isConfigured()) return DataResult.Failure(AppError.WriteFailed)
         val credential = GoogleAuthProvider.getCredential(idToken, null)
-        val result = suspendCancellableCoroutine { continuation ->
-            FirebaseAuth.getInstance().signInWithCredential(credential)
-                .addOnCompleteListener { task ->
-                    if (continuation.isActive) {
-                        continuation.resume(task.takeIf { it.isSuccessful }?.result?.user)
-                    }
-                }
+        val auth = FirebaseAuth.getInstance()
+        var result = auth.signInWithCredentialUser(credential)
+        if (result == null) {
+            delay(GOOGLE_FIREBASE_RETRY_DELAY_MILLIS)
+            result = auth.signInWithCredentialUser(credential)
         }
         return result?.let { user -> success(user) }
             ?: DataResult.Failure(AppError.WriteFailed)
@@ -153,6 +153,18 @@ class FirebaseAuthRepository @Inject constructor(
         return DataResult.Success(accountSession)
     }
 }
+
+private suspend fun FirebaseAuth.signInWithCredentialUser(
+    credential: AuthCredential,
+): FirebaseUser? = suspendCancellableCoroutine { continuation ->
+    signInWithCredential(credential).addOnCompleteListener { task ->
+        if (continuation.isActive) {
+            continuation.resume(task.takeIf { it.isSuccessful }?.result?.user)
+        }
+    }
+}
+
+private const val GOOGLE_FIREBASE_RETRY_DELAY_MILLIS = 700L
 
 private suspend fun com.google.android.gms.tasks.Task<*>.awaitSuccess(): Boolean =
     suspendCancellableCoroutine { continuation ->

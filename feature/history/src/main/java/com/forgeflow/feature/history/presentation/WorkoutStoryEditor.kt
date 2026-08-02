@@ -1,6 +1,7 @@
 package com.forgeflow.feature.history.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -96,6 +97,7 @@ internal fun WorkoutStoryEditor(
     var contentScale by remember { mutableFloatStateOf(1f) }
     var panelOpacity by remember { mutableFloatStateOf(0.9f) }
     var storyAccent by remember { mutableStateOf(StoryAccent.THEME) }
+    var preset by remember { mutableStateOf(StoryPreset.COMPLETE) }
     var photoScale by remember { mutableFloatStateOf(1f) }
     var photoRotation by remember { mutableFloatStateOf(0f) }
     var photoPan by remember { mutableStateOf(Offset.Zero) }
@@ -229,6 +231,40 @@ internal fun WorkoutStoryEditor(
                     }
                     item {
                         StoryControls(
+                            preset = preset,
+                            onPresetChanged = { selected ->
+                                preset = selected
+                                when (selected) {
+                                    StoryPreset.PERFORMANCE -> {
+                                        showDate = true
+                                        showLocation = workout.hasLocation
+                                        showMetrics = true
+                                        showExercises = false
+                                        showProgress = true
+                                        centered = false
+                                        contentScale = 1.04f
+                                    }
+                                    StoryPreset.COMPLETE -> {
+                                        showDate = true
+                                        showLocation = workout.hasLocation
+                                        showMetrics = true
+                                        showExercises = true
+                                        showProgress = true
+                                        centered = false
+                                        contentScale = 0.92f
+                                    }
+                                    StoryPreset.MINIMAL -> {
+                                        showDate = true
+                                        showLocation = false
+                                        showMetrics = true
+                                        showExercises = false
+                                        showProgress = false
+                                        centered = true
+                                        contentScale = 1.06f
+                                    }
+                                    StoryPreset.CUSTOM -> Unit
+                                }
+                            },
                             theme = theme,
                             onThemeChanged = { theme = it },
                             message = message,
@@ -247,24 +283,45 @@ internal fun WorkoutStoryEditor(
                             photoFit = photoFit,
                             onPhotoFitChanged = { photoFit = it },
                             contentScale = contentScale,
-                            onContentScaleChanged = { contentScale = it },
+                            onContentScaleChanged = {
+                                contentScale = it
+                                preset = StoryPreset.CUSTOM
+                            },
                             panelOpacity = panelOpacity,
                             onPanelOpacityChanged = { panelOpacity = it },
                             storyAccent = storyAccent,
                             onStoryAccentChanged = { storyAccent = it },
                             showDate = showDate,
-                            onShowDateChanged = { showDate = it },
+                            onShowDateChanged = {
+                                showDate = it
+                                preset = StoryPreset.CUSTOM
+                            },
                             showLocation = showLocation,
-                            onShowLocationChanged = { showLocation = it },
+                            onShowLocationChanged = {
+                                showLocation = it
+                                preset = StoryPreset.CUSTOM
+                            },
                             locationAvailable = workout.hasLocation,
                             showMetrics = showMetrics,
-                            onShowMetricsChanged = { showMetrics = it },
+                            onShowMetricsChanged = {
+                                showMetrics = it
+                                preset = StoryPreset.CUSTOM
+                            },
                             showExercises = showExercises,
-                            onShowExercisesChanged = { showExercises = it },
+                            onShowExercisesChanged = {
+                                showExercises = it
+                                preset = StoryPreset.CUSTOM
+                            },
                             showProgress = showProgress,
-                            onShowProgressChanged = { showProgress = it },
+                            onShowProgressChanged = {
+                                showProgress = it
+                                preset = StoryPreset.CUSTOM
+                            },
                             centered = centered,
-                            onCenteredChanged = { centered = it },
+                            onCenteredChanged = {
+                                centered = it
+                                preset = StoryPreset.CUSTOM
+                            },
                             onResetContent = { contentPan = Offset.Zero },
                         )
                     }
@@ -307,7 +364,19 @@ private fun WorkoutStoryCanvas(
     )
     val personalRecords = workout.exercises.sumOf(HistoryExerciseUiModel::personalRecordCount)
     Box(
-        modifier = modifier.background(palette.background),
+        modifier = modifier
+            .background(palette.background)
+            .then(
+                if (backgroundUri != null) {
+                    Modifier.pointerInput(Unit) {
+                        detectTwoFingerTransformGestures { _, pan, zoom, rotation ->
+                            onTransformPhoto(pan, zoom, rotation)
+                        }
+                    }
+                } else {
+                    Modifier
+                },
+            ),
     ) {
         if (backgroundUri != null) {
             AsyncImage(
@@ -327,12 +396,7 @@ private fun WorkoutStoryCanvas(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(palette.photoScrim)
-                    .pointerInput(backgroundUri) {
-                        detectTwoFingerTransformGestures { _, pan, zoom, rotation ->
-                            onTransformPhoto(pan, zoom, rotation)
-                        }
-                    },
+                    .background(palette.photoScrim),
             )
         }
         Column(
@@ -368,73 +432,102 @@ private fun WorkoutStoryCanvas(
                         scaleX = contentScale,
                         scaleY = contentScale,
                     )
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(palette.panel)
                     .pointerInput(workout.id) {
                         detectDragGestures { change, dragAmount ->
                             change.consume()
                             onMoveContent(dragAmount)
                         }
-                    }
-                    .padding(18.dp),
+                    },
                 horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(
-                    text = workout.name,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = palette.text,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Black,
-                    lineHeight = 30.sp,
-                    textAlign = if (centered) TextAlign.Center else TextAlign.Start,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (showDate || (showLocation && workout.hasLocation)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .storyCard(palette)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
                     Text(
-                        text = buildList {
-                            if (showDate) add("${workout.day} ${workout.month} • ${workout.time}")
-                            if (showLocation && workout.hasLocation) {
-                                add(workout.locationLabel ?: "Local registrado")
-                            }
-                        }.joinToString("  |  "),
-                        modifier = Modifier.fillMaxWidth(),
-                        color = palette.secondaryText,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = if (centered) TextAlign.Center else TextAlign.Start,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                if (message.isNotBlank()) {
-                    Text(
-                        text = message,
+                        text = workout.name,
                         modifier = Modifier.fillMaxWidth(),
                         color = palette.text,
-                        fontSize = 13.sp,
-                        lineHeight = 17.sp,
+                        fontSize = 27.sp,
+                        fontWeight = FontWeight.Black,
+                        lineHeight = 29.sp,
                         textAlign = if (centered) TextAlign.Center else TextAlign.Start,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
                     )
+                    if (showDate || (showLocation && workout.hasLocation)) {
+                        Text(
+                            text = buildList {
+                                if (showDate) {
+                                    add("${workout.day} ${workout.month} • ${workout.time}")
+                                }
+                                if (showLocation && workout.hasLocation) {
+                                    add(workout.locationLabel ?: "Local registrado")
+                                }
+                            }.joinToString("  |  "),
+                            modifier = Modifier.fillMaxWidth(),
+                            color = palette.secondaryText,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = if (centered) TextAlign.Center else TextAlign.Start,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (message.isNotBlank()) {
+                        Text(
+                            text = message,
+                            modifier = Modifier.fillMaxWidth(),
+                            color = palette.text,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp,
+                            textAlign = if (centered) TextAlign.Center else TextAlign.Start,
+                        )
+                    }
                 }
                 if (showMetrics) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        StoryMetric(workout.durationMinutes.asDuration(), "TEMPO", palette)
-                        StoryMetric(
-                            "${workout.volume.asDisplayValue()} ${weightUnit.symbol}",
-                            "VOLUME",
-                            palette,
+                        StoryMetricCard(
+                            value = workout.durationMinutes.asDuration(),
+                            label = "TEMPO",
+                            palette = palette,
+                            modifier = Modifier.weight(1f),
                         )
-                        StoryMetric(workout.completedSets.toString(), "SÉRIES", palette)
+                        StoryMetricCard(
+                            value = "${workout.volume.asDisplayValue()} ${weightUnit.symbol}",
+                            label = "VOLUME",
+                            palette = palette,
+                            modifier = Modifier.weight(1f),
+                        )
+                        StoryMetricCard(
+                            value = workout.completedSets.toString(),
+                            label = "SÉRIES",
+                            palette = palette,
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
                 if (showExercises && workout.exercises.isNotEmpty()) {
-                    HorizontalDivider(color = palette.divider)
-                    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .storyCard(palette)
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Text(
+                            text = "EXERCÍCIOS",
+                            color = palette.accent,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Black,
+                        )
                         workout.exercises.take(MAX_STORY_EXERCISES).forEachIndexed { index, exercise ->
                             Text(
                                 text = "%02d  %s  •  %d séries".format(
@@ -459,17 +552,25 @@ private fun WorkoutStoryCanvas(
                     }
                 }
                 if (showProgress) {
-                    HorizontalDivider(color = palette.divider)
-                    Text(
-                        text = if (personalRecords > 0) {
-                            "PROGRESSO  •  $personalRecords ${if (personalRecords == 1) "novo PR" else "novos PRs"}"
-                        } else {
-                            "PROGRESSO  •  CONSISTÊNCIA REGISTRADA"
-                        },
-                        color = palette.accent,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black,
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .storyCard(palette)
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                    ) {
+                        Text(
+                            text = if (personalRecords > 0) {
+                                "PROGRESSO  •  $personalRecords ${
+                                    if (personalRecords == 1) "novo PR" else "novos PRs"
+                                }"
+                            } else {
+                                "PROGRESSO  •  CONSISTÊNCIA REGISTRADA"
+                            },
+                            color = palette.accent,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
                 }
             }
             Row(
@@ -494,8 +595,18 @@ private fun WorkoutStoryCanvas(
 }
 
 @Composable
-private fun StoryMetric(value: String, label: String, palette: StoryPalette) {
-    Column(horizontalAlignment = Alignment.Start) {
+private fun StoryMetricCard(
+    value: String,
+    label: String,
+    palette: StoryPalette,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .storyCard(palette)
+            .padding(horizontal = 10.dp, vertical = 9.dp),
+        horizontalAlignment = Alignment.Start,
+    ) {
         Text(
             text = value,
             color = palette.text,
@@ -512,8 +623,15 @@ private fun StoryMetric(value: String, label: String, palette: StoryPalette) {
     }
 }
 
+private fun Modifier.storyCard(palette: StoryPalette): Modifier =
+    clip(RoundedCornerShape(8.dp))
+        .background(palette.panel)
+        .border(1.dp, palette.divider, RoundedCornerShape(8.dp))
+
 @Composable
 private fun StoryControls(
+    preset: StoryPreset,
+    onPresetChanged: (StoryPreset) -> Unit,
     theme: WorkoutStoryTheme,
     onThemeChanged: (WorkoutStoryTheme) -> Unit,
     message: String,
@@ -556,6 +674,20 @@ private fun StoryControls(
             title = stringResource(R.string.story_style),
             description = stringResource(R.string.story_style_description),
         )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            StoryPreset.entries.forEach { option ->
+                FilterChip(
+                    selected = option == preset,
+                    onClick = { onPresetChanged(option) },
+                    label = { Text(stringResource(option.labelResource)) },
+                )
+            }
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -771,6 +903,13 @@ private enum class WorkoutStoryTheme(val labelResource: Int) {
     FORGE(R.string.story_theme_forge),
     PULSE(R.string.story_theme_pulse),
     MINIMAL(R.string.story_theme_minimal),
+}
+
+private enum class StoryPreset(val labelResource: Int) {
+    PERFORMANCE(R.string.story_preset_performance),
+    COMPLETE(R.string.story_preset_complete),
+    MINIMAL(R.string.story_preset_minimal),
+    CUSTOM(R.string.story_preset_custom),
 }
 
 private enum class StoryAccent(val labelResource: Int, val color: Color?) {

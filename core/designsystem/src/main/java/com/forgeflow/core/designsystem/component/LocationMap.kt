@@ -23,13 +23,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -48,6 +51,7 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.forgeflow.core.designsystem.R
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.floor
@@ -82,6 +86,7 @@ fun ForgeFlowLocationMap(
         mutableDoubleStateOf(initialViewport.centerY)
     }
     var visualScale by remember(initialViewport) { mutableFloatStateOf(1f) }
+    var pendingPan by remember(initialViewport) { mutableStateOf(Offset.Zero) }
     val tileSize = 192.dp
     val tileSizePx = with(density) { tileSize.toPx() }
     val headers = remember {
@@ -95,9 +100,24 @@ fun ForgeFlowLocationMap(
         centerTileX = initialViewport.centerX
         centerTileY = initialViewport.centerY
         visualScale = 1f
+        pendingPan = Offset.Zero
+    }
+
+    fun commitPendingPan() {
+        if (pendingPan == Offset.Zero) return
+        val tileCount = (1 shl mapZoom).toDouble()
+        centerTileX = wrapTileX(
+            centerTileX - pendingPan.x / (tileSizePx * visualScale),
+            tileCount,
+        )
+        centerTileY = (
+            centerTileY - pendingPan.y / (tileSizePx * visualScale)
+            ).coerceIn(0.0, tileCount)
+        pendingPan = Offset.Zero
     }
 
     fun changeZoom(targetZoom: Int) {
+        commitPendingPan()
         val nextZoom = targetZoom.coerceIn(MIN_MAP_ZOOM, MAX_MAP_ZOOM)
         if (nextZoom == mapZoom) return
         val factor = 1 shl kotlin.math.abs(nextZoom - mapZoom)
@@ -116,34 +136,37 @@ fun ForgeFlowLocationMap(
         modifier = modifier
             .clip(MaterialTheme.shapes.large)
             .background(Color(0xFFE8ECEF))
-            .pointerInput(initialViewport) {
+            .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoomChange, _ ->
-                    val tileCount = (1 shl mapZoom).toDouble()
-                    centerTileX = wrapTileX(
-                        centerTileX - pan.x / (tileSizePx * visualScale),
-                        tileCount,
-                    )
-                    centerTileY = (
-                        centerTileY - pan.y / (tileSizePx * visualScale)
-                        ).coerceIn(0.0, tileCount)
+                    pendingPan += pan
                     val nextScale = visualScale * zoomChange
                     when {
                         nextScale >= ZOOM_IN_THRESHOLD && mapZoom < MAX_MAP_ZOOM -> {
+                            commitPendingPan()
                             centerTileX *= 2.0
                             centerTileY *= 2.0
                             mapZoom += 1
                             visualScale = (nextScale / 2f).coerceAtLeast(MIN_VISUAL_SCALE)
                         }
                         nextScale <= ZOOM_OUT_THRESHOLD && mapZoom > MIN_MAP_ZOOM -> {
+                            commitPendingPan()
                             centerTileX /= 2.0
                             centerTileY /= 2.0
                             mapZoom -= 1
                             visualScale = (nextScale * 2f).coerceAtMost(MAX_VISUAL_SCALE)
                         }
-                        else -> visualScale = nextScale.coerceIn(
-                            MIN_VISUAL_SCALE,
-                            MAX_VISUAL_SCALE,
-                        )
+                        else -> {
+                            visualScale = nextScale.coerceIn(
+                                MIN_VISUAL_SCALE,
+                                MAX_VISUAL_SCALE,
+                            )
+                            if (
+                                abs(pendingPan.x) >= PAN_COMMIT_THRESHOLD_PX ||
+                                abs(pendingPan.y) >= PAN_COMMIT_THRESHOLD_PX
+                            ) {
+                                commitPendingPan()
+                            }
+                        }
                     }
                 }
             },
@@ -153,13 +176,18 @@ fun ForgeFlowLocationMap(
         val tileCount = 1 shl mapZoom
         val baseTileX = floor(centerTileX).toInt()
         val baseTileY = floor(centerTileY).toInt()
-        val horizontalRadius = ceil(viewportWidth.value / tileSize.value / 2f).toInt() + 2
-        val verticalRadius = ceil(viewportHeight.value / tileSize.value / 2f).toInt() + 2
+        val horizontalRadius = ceil(viewportWidth.value / tileSize.value / 2f).toInt() + 1
+        val verticalRadius = ceil(viewportHeight.value / tileSize.value / 2f).toInt() + 1
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer(scaleX = visualScale, scaleY = visualScale),
+                .graphicsLayer(
+                    scaleX = visualScale,
+                    scaleY = visualScale,
+                    translationX = pendingPan.x,
+                    translationY = pendingPan.y,
+                ),
         ) {
             for (rawY in (baseTileY - verticalRadius)..(baseTileY + verticalRadius)) {
                 if (rawY !in 0 until tileCount) continue
@@ -171,25 +199,27 @@ fun ForgeFlowLocationMap(
                             .httpHeaders(headers)
                             .build()
                     }
-                    AsyncImage(
-                        model = model,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .offset {
-                                IntOffset(
-                                    x = (
-                                        viewportWidth / 2 +
-                                            tileSize * (rawX - centerTileX).toFloat()
-                                        ).roundToPx(),
-                                    y = (
-                                        viewportHeight / 2 +
-                                            tileSize * (rawY - centerTileY).toFloat()
-                                        ).roundToPx(),
-                                )
-                            }
-                            .size(tileSize),
-                        contentScale = ContentScale.FillBounds,
-                    )
+                    key(mapZoom, tileX, rawY) {
+                        AsyncImage(
+                            model = model,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .offset {
+                                    IntOffset(
+                                        x = (
+                                            viewportWidth / 2 +
+                                                tileSize * (rawX - centerTileX).toFloat()
+                                            ).roundToPx(),
+                                        y = (
+                                            viewportHeight / 2 +
+                                                tileSize * (rawY - centerTileY).toFloat()
+                                            ).roundToPx(),
+                                    )
+                                }
+                                .size(tileSize),
+                            contentScale = ContentScale.FillBounds,
+                        )
+                    }
                 }
             }
             points.forEach { point ->
@@ -291,6 +321,7 @@ private const val MIN_VISUAL_SCALE = 0.72f
 private const val MAX_VISUAL_SCALE = 1.4f
 private const val ZOOM_IN_THRESHOLD = 1.35f
 private const val ZOOM_OUT_THRESHOLD = 0.76f
+private const val PAN_COMMIT_THRESHOLD_PX = 72f
 
 private data class MapViewport(
     val zoom: Int,

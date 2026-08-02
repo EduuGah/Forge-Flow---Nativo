@@ -7,6 +7,8 @@
     <string name="navigation_settings">Ajustes</string>
     <string name="forgeflow_navigation_menu">Menu</string>
     <string name="drawer_brand">ForgeFlow</string>
+    <string name="drawer_app_icon">Ícone do ForgeFlow</string>
+    <string name="drawer_profile_photo">Foto do perfil</string>
     <string name="drawer_subtitle">Seu treino, seu progresso</string>
     <string name="drawer_close">Fechar menu</string>
     <string name="drawer_progress">Progresso</string>
@@ -16,6 +18,11 @@
     <string name="drawer_open_profile">Abrir perfil</string>
     <string name="drawer_sign_out">Sair da conta</string>
     <string name="drawer_support">Apoiar o ForgeFlow</string>
+    <string name="drawer_tag_admin">ADMIN FORGEFLOW</string>
+    <string name="drawer_tag_supporter">APOIADOR FORGEFLOW</string>
+    <string name="drawer_tag_pro">ATLETA PRO</string>
+    <string name="drawer_tag_founder">APOIADOR FUNDADOR</string>
+    <string name="drawer_tag_lifetime">APOIADOR VITALÍCIO</string>
     <string name="drawer_sign_out_title">Sair da conta?</string>
     <string name="drawer_sign_out_description">Seus dados permanecem salvos neste aparelho e continuarão separados desta conta.</string>
     <string name="drawer_sign_out_confirm">Sair</string>
@@ -187,6 +194,7 @@
     <string name="tutorial_metric_sync_value">Local + backup</string>
 
     <string name="auth_brand">FORGEFLOW</string>
+    <string name="auth_app_icon">Ícone do ForgeFlow</string>
     <string name="auth_title">Entre no seu espaço de treino.</string>
     <string name="auth_description">Sua conta mantém sua identidade, seus benefícios e o caminho para restaurar seus dados em outros aparelhos.</string>
     <string name="auth_mode_sign_in">Entrar</string>

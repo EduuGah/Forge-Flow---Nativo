@@ -945,40 +945,21 @@ private fun DonationInvitation(onOpen: () -> Unit) {
 private fun DonationOptionsDialog(onDismiss: () -> Unit) {
     val options = listOf(
         DonationOption(
-            tier = SupporterTier.SUPPORTER,
-            tag = R.string.account_supporter,
-            amount = R.string.account_donation_supporter_amount,
-            description = R.string.account_donation_supporter_description,
-            benefits = listOf(
-                R.string.account_supporter_benefit_badge,
-                R.string.account_supporter_benefit_account,
-            ),
+            title = R.string.account_pro_monthly,
+            amount = R.string.account_pro_monthly_amount,
+            description = R.string.account_pro_monthly_description,
         ),
         DonationOption(
-            tier = SupporterTier.PRO,
-            tag = R.string.account_supporter_pro,
-            amount = R.string.account_donation_pro_amount,
-            description = R.string.account_donation_pro_description,
-            benefits = listOf(
-                R.string.account_supporter_benefit_badge,
-                R.string.account_supporter_benefit_account,
-                R.string.account_supporter_benefit_no_ads,
-                R.string.account_supporter_benefit_early_access,
-            ),
+            title = R.string.account_pro_yearly,
+            amount = R.string.account_pro_yearly_amount,
+            description = R.string.account_pro_yearly_description,
             recommended = true,
         ),
         DonationOption(
-            tier = SupporterTier.LIFETIME,
-            tag = R.string.account_supporter_lifetime,
-            amount = R.string.account_donation_lifetime_amount,
-            description = R.string.account_donation_lifetime_description,
-            benefits = listOf(
-                R.string.account_supporter_benefit_badge,
-                R.string.account_supporter_benefit_account,
-                R.string.account_supporter_benefit_no_ads,
-                R.string.account_supporter_benefit_early_access,
-                R.string.account_supporter_benefit_lifetime,
-            ),
+            title = R.string.account_pro_lifetime,
+            amount = R.string.account_pro_lifetime_amount,
+            description = R.string.account_pro_lifetime_description,
+            lifetime = true,
         ),
     )
     AlertDialog(
@@ -994,17 +975,25 @@ private fun DonationOptionsDialog(onDismiss: () -> Unit) {
                     color = ForgeFlowDesign.colors.textSecondary,
                     style = MaterialTheme.typography.bodySmall,
                 )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(9.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.account_pro_includes),
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                        PRO_BENEFIT_RESOURCES.forEach { benefit ->
+                            SupporterBenefitRow(stringResource(benefit))
+                        }
+                    }
+                }
                 options.forEach { option -> DonationOptionRow(option) }
-                Text(
-                    text = stringResource(R.string.account_donation_manual_tags),
-                    color = ForgeFlowDesign.colors.textSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Text(
-                    text = stringResource(R.string.account_donation_payment_pending),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelMedium,
-                )
             }
         },
         confirmButton = {
@@ -1017,9 +1006,9 @@ private fun DonationOptionsDialog(onDismiss: () -> Unit) {
 
 @Composable
 private fun DonationOptionRow(option: DonationOption) {
-    val containerColor = when (option.tier) {
-        SupporterTier.PRO -> MaterialTheme.colorScheme.primaryContainer
-        SupporterTier.LIFETIME -> MaterialTheme.colorScheme.tertiaryContainer
+    val containerColor = when {
+        option.recommended -> MaterialTheme.colorScheme.primaryContainer
+        option.lifetime -> MaterialTheme.colorScheme.tertiaryContainer
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
     Surface(
@@ -1044,7 +1033,7 @@ private fun DonationOptionRow(option: DonationOption) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(option.tag),
+                    text = stringResource(option.title),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.labelLarge,
                 )
@@ -1059,26 +1048,16 @@ private fun DonationOptionRow(option: DonationOption) {
                 color = ForgeFlowDesign.colors.textSecondary,
                 style = MaterialTheme.typography.bodySmall,
             )
-            option.benefits.forEach { benefit ->
-                SupporterBenefitRow(stringResource(benefit))
-            }
-            ForgeFlowOutlinedButton(
-                text = stringResource(R.string.account_donation_coming_soon),
-                onClick = {},
-                modifier = Modifier.fillMaxWidth(),
-                enabled = false,
-            )
         }
     }
 }
 
 private data class DonationOption(
-    val tier: SupporterTier,
-    @param:StringRes val tag: Int,
+    @param:StringRes val title: Int,
     @param:StringRes val amount: Int,
     @param:StringRes val description: Int,
-    val benefits: List<Int>,
     val recommended: Boolean = false,
+    val lifetime: Boolean = false,
 )
 
 @Composable
@@ -1108,34 +1087,35 @@ private fun SupporterBenefitRow(
 
 private fun SupporterTier.benefitResources(): List<Int> = when (this) {
     SupporterTier.ADMIN -> listOf(
-        R.string.account_supporter_benefit_admin,
-        R.string.account_supporter_benefit_account,
-        R.string.account_supporter_benefit_all_access,
+        *PRO_BENEFIT_RESOURCES.toTypedArray(),
+        R.string.account_supporter_benefit_lifetime,
     )
     SupporterTier.SUPPORTER -> listOf(
         R.string.account_supporter_benefit_badge,
         R.string.account_supporter_benefit_account,
     )
     SupporterTier.PRO -> listOf(
-        R.string.account_supporter_benefit_badge,
-        R.string.account_supporter_benefit_account,
-        R.string.account_supporter_benefit_no_ads,
-        R.string.account_supporter_benefit_early_access,
+        *PRO_BENEFIT_RESOURCES.toTypedArray(),
     )
     SupporterTier.FOUNDER -> listOf(
-        R.string.account_supporter_benefit_founder,
-        R.string.account_supporter_benefit_account,
-        R.string.account_supporter_benefit_no_ads,
-        R.string.account_supporter_benefit_early_access,
+        *PRO_BENEFIT_RESOURCES.toTypedArray(),
+        R.string.account_supporter_benefit_lifetime,
     )
     SupporterTier.LIFETIME -> listOf(
-        R.string.account_supporter_benefit_badge,
-        R.string.account_supporter_benefit_account,
-        R.string.account_supporter_benefit_no_ads,
-        R.string.account_supporter_benefit_early_access,
+        *PRO_BENEFIT_RESOURCES.toTypedArray(),
         R.string.account_supporter_benefit_lifetime,
     )
 }
+
+private val PRO_BENEFIT_RESOURCES = listOf(
+    R.string.account_pro_benefit_routines,
+    R.string.account_pro_benefit_history,
+    R.string.account_pro_benefit_exercises,
+    R.string.account_pro_benefit_measurements,
+    R.string.account_pro_benefit_cloud,
+    R.string.account_supporter_benefit_no_ads,
+    R.string.account_pro_benefit_development,
+)
 
 private fun AccountAuthMode.titleResource(): Int = when (this) {
     AccountAuthMode.SIGN_IN -> R.string.account_email_sign_in_title

@@ -4,8 +4,10 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.forgeflow.app.icon.LauncherIconManager
+import com.forgeflow.app.auth.FirebaseProfileSyncRepository
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.data.auth.AuthRepository
+import com.forgeflow.core.data.auth.EntitlementRepository
 import com.forgeflow.core.data.profile.ProfileRepository
 import com.forgeflow.core.data.settings.SettingsRepository
 import com.forgeflow.core.data.workout.WorkoutRepository
@@ -13,6 +15,7 @@ import com.forgeflow.core.model.AccentColor
 import com.forgeflow.core.model.AccountSession
 import com.forgeflow.core.model.ExperienceLevel
 import com.forgeflow.core.model.ThemePreference
+import com.forgeflow.core.model.SupporterTier
 import com.forgeflow.core.model.TrainingGoal
 import com.forgeflow.core.model.UserProfile
 import com.forgeflow.core.model.Weight
@@ -27,12 +30,14 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 @Immutable
 data class AppUiState(
@@ -60,6 +65,8 @@ data class AppAuthUiState(
     val displayName: String? = null,
     val email: String? = null,
     val photoUrl: String? = null,
+    val profilePhotoPath: String? = null,
+    val supporterTier: SupporterTier? = null,
     val isWorking: Boolean = false,
     val operationFailed: Boolean = false,
     val notice: AppAuthNotice? = null,
@@ -114,6 +121,7 @@ private data class AppOperationState(
     val authNotice: AppAuthNotice? = null,
     val isSavingProfile: Boolean = false,
     val profileSaveFailed: Boolean = false,
+    val cloudProfileReadyForUserId: String? = null,
 )
 
 @HiltViewModel
@@ -121,6 +129,8 @@ class AppViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val profileRepository: ProfileRepository,
     private val authRepository: AuthRepository,
+    private val entitlementRepository: EntitlementRepository,
+    private val firebaseProfileSyncRepository: FirebaseProfileSyncRepository,
     workoutRepository: WorkoutRepository,
     private val activeWorkoutNotifier: ActiveWorkoutNotifier,
     private val launcherIconManager: LauncherIconManager,
@@ -152,7 +162,10 @@ class AppViewModel @Inject constructor(
                 )
             }
         val profileBelongsToAccount = session != null && profile.ownerUserId == session.userId
-        val isAccountDataLoading = session != null && !profileBelongsToAccount
+        val isAccountDataLoading = session != null && (
+            !profileBelongsToAccount ||
+                currentOperation.cloudProfileReadyForUserId != session.userId
+            )
         val showProfileSetup = shouldShowProfileSetup(
             sessionUserId = session?.userId,
             completedProfileUserId = settings.profileCompletedForUserId,
@@ -175,6 +188,10 @@ class AppViewModel @Inject constructor(
             auth = session.asUiState(
                 isConfigured = authRepository.isConfigured(),
                 operation = currentOperation,
+            ).copy(
+                profilePhotoPath = profile
+                    .takeIf { profileBelongsToAccount }
+                    ?.profilePhotoPath,
             ),
             isAccountDataLoading = isAccountDataLoading,
             profileSetup = profile.takeIf { profileBelongsToAccount }
@@ -192,6 +209,10 @@ class AppViewModel @Inject constructor(
             hasRequestedNotificationPermission = settings.hasRequestedNotificationPermission,
             activeWorkout = activeWorkout,
         )
+    }.combine(entitlementRepository.observeEntitlement()) { state, entitlement ->
+        state.copy(
+            auth = state.auth.copy(supporterTier = entitlement?.supporterTier),
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -202,6 +223,53 @@ class AppViewModel @Inject constructor(
         viewModelScope.launch {
             kotlinx.coroutines.delay(AUTH_INITIALIZATION_DELAY_MILLIS)
             operation.update { it.copy(authInitializationComplete = true) }
+        }
+        viewModelScope.launch {
+            authRepository.observeSession()
+                .map { session -> session?.userId }
+                .distinctUntilChanged()
+                .collectLatest { userId ->
+                    operation.update { it.copy(cloudProfileReadyForUserId = null) }
+                    if (userId == null) return@collectLatest
+                    val localProfile = profileRepository.observeProfile()
+                        .first { profile -> profile.ownerUserId == userId }
+                    val remoteProfile = withTimeoutOrNull(CLOUD_PROFILE_TIMEOUT_MILLIS) {
+                        firebaseProfileSyncRepository.download(userId)
+                    }
+                    when {
+                        remoteProfile?.hasRequiredAccountDetails() == true -> {
+                            if (profileRepository.saveProfile(remoteProfile) is DataResult.Success) {
+                                settingsRepository.setProfileCompletedForUserId(userId)
+                            }
+                        }
+                        localProfile.hasRequiredAccountDetails() -> {
+                            firebaseProfileSyncRepository.upload(userId, localProfile)
+                        }
+                    }
+                    operation.update { it.copy(cloudProfileReadyForUserId = userId) }
+                }
+        }
+        viewModelScope.launch {
+            combine(
+                authRepository.observeSession(),
+                profileRepository.observeProfile(),
+                operation.map { it.cloudProfileReadyForUserId }.distinctUntilChanged(),
+            ) { session, profile, readyUserId ->
+                if (
+                    session != null &&
+                    readyUserId == session.userId &&
+                    profile.ownerUserId == session.userId &&
+                    profile.hasRequiredAccountDetails()
+                ) {
+                    CloudProfileUpload(session.userId, profile)
+                } else {
+                    null
+                }
+            }.distinctUntilChanged().collectLatest { pending ->
+                pending?.let { upload ->
+                    firebaseProfileSyncRepository.upload(upload.userId, upload.profile)
+                }
+            }
         }
         viewModelScope.launch {
             settingsRepository.observeSettings()
@@ -435,8 +503,14 @@ class AppViewModel @Inject constructor(
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val AUTH_INITIALIZATION_DELAY_MILLIS = 700L
+        const val CLOUD_PROFILE_TIMEOUT_MILLIS = 8_000L
     }
 }
+
+private data class CloudProfileUpload(
+    val userId: String,
+    val profile: UserProfile,
+)
 
 private fun AccountSession?.asUiState(
     isConfigured: Boolean,

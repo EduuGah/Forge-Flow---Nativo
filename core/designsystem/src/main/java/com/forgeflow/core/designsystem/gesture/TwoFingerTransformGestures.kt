@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateRotation
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
 
 suspend fun PointerInputScope.detectTwoFingerTransformGestures(
@@ -18,9 +19,9 @@ suspend fun PointerInputScope.detectTwoFingerTransformGestures(
 ) {
     awaitEachGesture {
         do {
-            val event = awaitPointerEvent()
+            val event = awaitPointerEvent(PointerEventPass.Initial)
             val activePointers = event.changes.count { it.pressed }
-            if (activePointers >= 2 && event.changes.none { it.isConsumed }) {
+            if (activePointers >= 2) {
                 onGesture(
                     event.calculateCentroid(useCurrent = true),
                     event.calculatePan(),

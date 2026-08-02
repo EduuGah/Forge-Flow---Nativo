@@ -98,6 +98,10 @@
     <string name="story_share">Compartilhar</string>
     <string name="story_style">Estilo</string>
     <string name="story_style_description">Escolha a aparência e uma foto de fundo.</string>
+    <string name="story_preset_performance">Desempenho</string>
+    <string name="story_preset_complete">Completo</string>
+    <string name="story_preset_minimal">Minimalista</string>
+    <string name="story_preset_custom">Personalizado</string>
     <string name="story_choose_photo">Escolher foto</string>
     <string name="story_change_photo">Trocar foto</string>
     <string name="story_rotate_photo">Girar foto</string>

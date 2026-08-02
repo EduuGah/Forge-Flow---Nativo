@@ -1,6 +1,8 @@
 package com.forgeflow.app.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FitnessCenter
@@ -58,9 +61,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -88,6 +95,7 @@ import com.forgeflow.core.navigation.RoutinesRoute
 import com.forgeflow.core.navigation.SettingsRoute
 import com.forgeflow.core.navigation.TrainingMapRoute
 import com.forgeflow.core.model.WeightUnit
+import com.forgeflow.core.model.SupporterTier
 import com.forgeflow.feature.exercises.navigation.exerciseDetailsScreen
 import com.forgeflow.feature.exercises.navigation.exercisesScreen
 import com.forgeflow.feature.exercises.navigation.navigateToExerciseDetails
@@ -111,6 +119,8 @@ import com.forgeflow.feature.settings.navigation.progressPhotosScreen
 import com.forgeflow.feature.settings.navigation.navigateToProgressPhotos
 import com.forgeflow.feature.workout.navigation.activeWorkoutScreen
 import com.forgeflow.feature.workout.navigation.navigateToActiveWorkout
+import coil3.compose.AsyncImage
+import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -307,6 +317,11 @@ private fun ForgeFlowDrawer(
     onSignOut: () -> Unit,
 ) {
     var showSignOutConfirmation by remember { mutableStateOf(false) }
+    val supporterColor = account.supporterTier?.drawerColor()
+    val avatarModel = account.profilePhotoPath
+        ?.let(::File)
+        ?.takeIf(File::isFile)
+        ?: account.photoUrl
     ModalDrawerSheet(
         modifier = Modifier.fillMaxWidth(0.82f),
         drawerContainerColor = MaterialTheme.colorScheme.surface,
@@ -318,17 +333,35 @@ private fun ForgeFlowDrawer(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.drawer_brand),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-                Text(
-                    text = stringResource(R.string.drawer_subtitle),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelMedium,
-                )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    modifier = Modifier.size(38.dp),
+                    color = Color(0xFF090A0C),
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Image(
+                        painter = painterResource(R.mipmap.ic_launcher_foreground),
+                        contentDescription = stringResource(R.string.drawer_app_icon),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(2.dp),
+                    )
+                }
+                Column {
+                    Text(
+                        text = stringResource(R.string.drawer_brand),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        text = stringResource(R.string.drawer_subtitle),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
             }
             IconButton(onClick = onClose) {
                 Icon(
@@ -354,16 +387,28 @@ private fun ForgeFlowDrawer(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    border = supporterColor?.let { color -> BorderStroke(2.dp, color) },
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = account.displayName
-                                ?.trim()
-                                ?.firstOrNull()
-                                ?.uppercase()
-                                ?: stringResource(R.string.drawer_account_fallback),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
+                        if (avatarModel != null) {
+                            AsyncImage(
+                                model = avatarModel,
+                                contentDescription = stringResource(R.string.drawer_profile_photo),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop,
+                            )
+                        } else {
+                            Text(
+                                text = account.displayName
+                                    ?.trim()
+                                    ?.firstOrNull()
+                                    ?.uppercase()
+                                    ?: stringResource(R.string.drawer_account_fallback),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
                     }
                 }
                 Column(modifier = Modifier.weight(1f)) {
@@ -379,6 +424,24 @@ private fun ForgeFlowDrawer(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
                     )
+                    account.supporterTier?.let { tier ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.WorkspacePremium,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = supporterColor ?: MaterialTheme.colorScheme.primary,
+                            )
+                            Text(
+                                text = stringResource(tier.drawerLabelResource()),
+                                color = supporterColor ?: MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                    }
                 }
                 Icon(
                     imageVector = Icons.Outlined.Person,
@@ -721,4 +784,21 @@ private enum class DrawerDestination(
     PLANNER(R.string.drawer_planner, Icons.Outlined.CalendarMonth, PlannerRoute::class.qualifiedName),
     EXERCISES(R.string.drawer_exercises, Icons.Outlined.FitnessCenter, ExercisesRoute::class.qualifiedName),
     SETTINGS(R.string.navigation_settings, Icons.Outlined.Settings, SettingsRoute::class.qualifiedName),
+}
+
+@Composable
+private fun SupporterTier.drawerColor() = when (this) {
+    SupporterTier.ADMIN -> MaterialTheme.colorScheme.error
+    SupporterTier.SUPPORTER -> MaterialTheme.colorScheme.secondary
+    SupporterTier.PRO -> MaterialTheme.colorScheme.primary
+    SupporterTier.FOUNDER -> MaterialTheme.colorScheme.tertiary
+    SupporterTier.LIFETIME -> MaterialTheme.colorScheme.tertiary
+}
+
+private fun SupporterTier.drawerLabelResource(): Int = when (this) {
+    SupporterTier.ADMIN -> R.string.drawer_tag_admin
+    SupporterTier.SUPPORTER -> R.string.drawer_tag_supporter
+    SupporterTier.PRO -> R.string.drawer_tag_pro
+    SupporterTier.FOUNDER -> R.string.drawer_tag_founder
+    SupporterTier.LIFETIME -> R.string.drawer_tag_lifetime
 }

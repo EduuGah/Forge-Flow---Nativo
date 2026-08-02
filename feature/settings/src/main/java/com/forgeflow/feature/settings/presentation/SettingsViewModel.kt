@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.forgeflow.core.common.result.DataResult
 import com.forgeflow.core.data.importer.HevyImportPreview
 import com.forgeflow.core.data.backup.LocalDataExportRepository
+import com.forgeflow.core.data.backup.CloudBackupRepository
 import com.forgeflow.core.data.auth.AuthRepository
+import com.forgeflow.core.data.auth.EntitlementRepository
 import com.forgeflow.core.data.importer.HevyImportRepository
 import com.forgeflow.core.data.importer.HevyImportResult
 import com.forgeflow.core.data.profile.ProfileRepository
@@ -45,7 +47,9 @@ class SettingsViewModel @Inject constructor(
     private val hevyImportRepository: HevyImportRepository,
     private val healthConnectManager: HealthConnectManager,
     private val localDataExportRepository: LocalDataExportRepository,
+    private val cloudBackupRepository: CloudBackupRepository,
     private val authRepository: AuthRepository,
+    private val entitlementRepository: EntitlementRepository,
 ) : ViewModel() {
     private val healthStatus = MutableStateFlow(
         HealthConnectStatus(HealthConnectAvailability.UNAVAILABLE),
@@ -126,10 +130,16 @@ class SettingsViewModel @Inject constructor(
             healthReadResult = currentOperation.healthReadResult,
             isExportingData = currentOperation.isExportingData,
             dataExportResult = currentOperation.dataExportResult,
+            isRestoringData = currentOperation.isRestoringData,
+            isCloudBackupRunning = currentOperation.isCloudBackupRunning,
+            dataRestoreResult = currentOperation.dataRestoreResult,
+            cloudBackupResult = currentOperation.cloudBackupResult,
             account = AccountUiModel(
                 isConfigured = authRepository.isConfigured(),
                 isSigningIn = currentOperation.isSigningIn,
                 operationFailed = currentOperation.accountOperationFailed,
+                editor = currentOperation.accountEditor,
+                notice = currentOperation.accountNotice,
             ),
         )
     }.combine(authRepository.observeSession()) { state, session ->
@@ -139,7 +149,13 @@ class SettingsViewModel @Inject constructor(
                 displayName = session?.displayName,
                 email = session?.email,
                 photoUrl = session?.photoUrl,
+                isEmailVerified = session?.isEmailVerified == true,
+                hasPassword = session?.hasPassword == true,
             ),
+        )
+    }.combine(entitlementRepository.observeEntitlement()) { state, entitlement ->
+        state.copy(
+            account = state.account.copy(supporterTier = entitlement?.supporterTier),
         )
     }.stateIn(
         scope = viewModelScope,
@@ -246,16 +262,40 @@ class SettingsViewModel @Inject constructor(
                 inspectHevyMeasurementFile(action.sourceUri)
             SettingsAction.ImportHevyData -> importHevyData()
             is SettingsAction.ExportData -> exportData(action.targetUri)
+            is SettingsAction.RestoreData -> restoreData(action.sourceUri)
+            SettingsAction.SaveCloudBackup -> saveCloudBackup()
+            SettingsAction.RestoreCloudBackup -> restoreCloudBackup()
             SettingsAction.DismissDataExportResult -> operation.update {
-                it.copy(dataExportResult = null)
+                it.copy(
+                    dataExportResult = null,
+                    dataRestoreResult = null,
+                    cloudBackupResult = null,
+                )
             }
             is SettingsAction.GoogleIdTokenReceived -> signInWithGoogle(action.idToken)
             SettingsAction.GoogleSignInFailed -> operation.update {
                 it.copy(isSigningIn = false, accountOperationFailed = true)
             }
+            is SettingsAction.OpenAccountAuth -> openAccountAuth(action.mode)
+            SettingsAction.CloseAccountAuth -> operation.update { it.copy(accountEditor = null) }
+            is SettingsAction.AccountEmailChanged -> updateAccountEditor {
+                copy(email = action.value.trimStart().take(MAX_EMAIL_LENGTH), validationFailed = false)
+            }
+            is SettingsAction.AccountPasswordChanged -> updateAccountEditor {
+                copy(password = action.value.take(MAX_PASSWORD_LENGTH), validationFailed = false)
+            }
+            is SettingsAction.AccountPasswordConfirmationChanged -> updateAccountEditor {
+                copy(
+                    passwordConfirmation = action.value.take(MAX_PASSWORD_LENGTH),
+                    validationFailed = false,
+                )
+            }
+            SettingsAction.SubmitAccountAuth -> submitAccountAuth()
+            SettingsAction.SendAccountVerification -> sendAccountVerification()
+            SettingsAction.RefreshAccountVerification -> refreshAccountVerification()
             SettingsAction.SignOut -> signOut()
             SettingsAction.DismissAccountError -> operation.update {
-                it.copy(accountOperationFailed = false)
+                it.copy(accountOperationFailed = false, accountNotice = null)
             }
         }
     }
@@ -283,6 +323,117 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    private fun openAccountAuth(mode: AccountAuthMode) {
+        operation.update {
+            it.copy(
+                accountEditor = AccountAuthEditorUiState(
+                    mode = mode,
+                    email = if (mode == AccountAuthMode.CREATE_PASSWORD) {
+                        uiState.value.account.email.orEmpty()
+                    } else {
+                        ""
+                    },
+                ),
+                accountOperationFailed = false,
+                accountNotice = null,
+            )
+        }
+    }
+
+    private fun updateAccountEditor(
+        transform: AccountAuthEditorUiState.() -> AccountAuthEditorUiState,
+    ) {
+        operation.update { current ->
+            current.copy(accountEditor = current.accountEditor?.transform())
+        }
+    }
+
+    private fun submitAccountAuth() {
+        val editor = operation.value.accountEditor ?: return
+        if (editor.isSaving) return
+        val needsEmail = editor.mode != AccountAuthMode.CREATE_PASSWORD
+        val needsPassword = editor.mode != AccountAuthMode.RESET_PASSWORD
+        val needsConfirmation = editor.mode in setOf(
+            AccountAuthMode.CREATE_ACCOUNT,
+            AccountAuthMode.CREATE_PASSWORD,
+        )
+        val isValid = (!needsEmail || android.util.Patterns.EMAIL_ADDRESS.matcher(editor.email).matches()) &&
+            (!needsPassword || editor.password.length >= MIN_PASSWORD_LENGTH) &&
+            (!needsConfirmation || editor.password == editor.passwordConfirmation)
+        if (!isValid) {
+            updateAccountEditor { copy(validationFailed = true) }
+            return
+        }
+        viewModelScope.launch {
+            updateAccountEditor { copy(isSaving = true, validationFailed = false) }
+            val result = when (editor.mode) {
+                AccountAuthMode.SIGN_IN -> authRepository.signInWithEmail(
+                    editor.email,
+                    editor.password,
+                )
+                AccountAuthMode.CREATE_ACCOUNT -> authRepository.createAccountWithEmail(
+                    editor.email,
+                    editor.password,
+                )
+                AccountAuthMode.RESET_PASSWORD -> authRepository.sendPasswordReset(editor.email)
+                AccountAuthMode.CREATE_PASSWORD -> authRepository.linkPassword(editor.password)
+            }
+            operation.update { current ->
+                if (result is DataResult.Success) {
+                    current.copy(
+                        accountEditor = null,
+                        accountOperationFailed = false,
+                        accountNotice = when (editor.mode) {
+                            AccountAuthMode.SIGN_IN -> null
+                            AccountAuthMode.CREATE_ACCOUNT -> AccountNoticeUi.ACCOUNT_CREATED
+                            AccountAuthMode.RESET_PASSWORD -> AccountNoticeUi.PASSWORD_RESET_SENT
+                            AccountAuthMode.CREATE_PASSWORD -> AccountNoticeUi.PASSWORD_CREATED
+                        },
+                    )
+                } else {
+                    current.copy(
+                        accountEditor = current.accountEditor?.copy(isSaving = false),
+                        accountOperationFailed = true,
+                    )
+                }
+            }
+        }
+    }
+
+    private fun sendAccountVerification() {
+        viewModelScope.launch {
+            val result = authRepository.sendEmailVerification()
+            operation.update {
+                it.copy(
+                    accountNotice = if (result is DataResult.Success) {
+                        AccountNoticeUi.VERIFICATION_SENT
+                    } else {
+                        null
+                    },
+                    accountOperationFailed = result is DataResult.Failure,
+                )
+            }
+        }
+    }
+
+    private fun refreshAccountVerification() {
+        viewModelScope.launch {
+            val result = authRepository.refreshSession()
+            operation.update {
+                it.copy(
+                    accountNotice = if (
+                        result is DataResult.Success && result.value.isEmailVerified
+                    ) {
+                        AccountNoticeUi.EMAIL_VERIFIED
+                    } else {
+                        null
+                    },
+                    accountOperationFailed = result is DataResult.Failure,
+                )
+            }
+        }
+    }
+
     private fun exportData(targetUri: String) {
         if (operation.value.isExportingData) return
         viewModelScope.launch {
@@ -297,6 +448,66 @@ class SettingsViewModel @Inject constructor(
                         DataExportUiResult.SUCCESS
                     } else {
                         DataExportUiResult.FAILED
+                    },
+                )
+            }
+        }
+    }
+
+    private fun restoreData(sourceUri: String) {
+        if (operation.value.isRestoringData) return
+        viewModelScope.launch {
+            operation.update {
+                it.copy(isRestoringData = true, dataRestoreResult = null)
+            }
+            val result = localDataExportRepository.prepareRestore(sourceUri)
+            operation.update {
+                it.copy(
+                    isRestoringData = false,
+                    dataRestoreResult = if (result is DataResult.Success) {
+                        DataRestoreUiResult.READY_TO_RESTART
+                    } else {
+                        DataRestoreUiResult.FAILED
+                    },
+                )
+            }
+        }
+    }
+
+    private fun saveCloudBackup() {
+        if (operation.value.isCloudBackupRunning || !cloudBackupRepository.isConfigured()) return
+        viewModelScope.launch {
+            operation.update {
+                it.copy(isCloudBackupRunning = true, cloudBackupResult = null)
+            }
+            val result = cloudBackupRepository.uploadLatest()
+            operation.update {
+                it.copy(
+                    isCloudBackupRunning = false,
+                    cloudBackupResult = if (result is DataResult.Success) {
+                        CloudBackupUiResult.BACKUP_SAVED
+                    } else {
+                        CloudBackupUiResult.FAILED
+                    },
+                )
+            }
+        }
+    }
+
+    private fun restoreCloudBackup() {
+        if (operation.value.isCloudBackupRunning || !cloudBackupRepository.isConfigured()) return
+        viewModelScope.launch {
+            operation.update {
+                it.copy(isCloudBackupRunning = true, cloudBackupResult = null)
+            }
+            val result = cloudBackupRepository.prepareLatestRestore()
+            operation.update {
+                it.copy(
+                    isCloudBackupRunning = false,
+                    cloudBackupResult = if (result is DataResult.Success) {
+                        CloudBackupUiResult.RESTORE_READY_TO_RESTART
+                    } else {
+                        CloudBackupUiResult.FAILED
                     },
                 )
             }
@@ -682,8 +893,14 @@ class SettingsViewModel @Inject constructor(
         val hevyImportResult: HevyImportResult? = null,
         val isExportingData: Boolean = false,
         val dataExportResult: DataExportUiResult? = null,
+        val isRestoringData: Boolean = false,
+        val dataRestoreResult: DataRestoreUiResult? = null,
+        val isCloudBackupRunning: Boolean = false,
+        val cloudBackupResult: CloudBackupUiResult? = null,
         val isSigningIn: Boolean = false,
         val accountOperationFailed: Boolean = false,
+        val accountEditor: AccountAuthEditorUiState? = null,
+        val accountNotice: AccountNoticeUi? = null,
     )
 
     private fun Double.toInputValue(): String =
@@ -715,6 +932,9 @@ class SettingsViewModel @Inject constructor(
 
     private companion object {
         const val MAX_PROFILE_NAME_LENGTH = 80
+        const val MAX_EMAIL_LENGTH = 254
+        const val MIN_PASSWORD_LENGTH = 8
+        const val MAX_PASSWORD_LENGTH = 128
         const val MAX_WEIGHT_INPUT_LENGTH = 6
         const val MIN_BIRTH_YEAR = 1900
         const val MIN_HEIGHT_CENTIMETERS = 100

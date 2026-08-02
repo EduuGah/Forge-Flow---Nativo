@@ -5,6 +5,7 @@ import com.forgeflow.core.model.AccentColor
 import com.forgeflow.core.model.ExperienceLevel
 import com.forgeflow.core.model.HealthConnectDataType
 import com.forgeflow.core.model.ThemePreference
+import com.forgeflow.core.model.SupporterTier
 import com.forgeflow.core.model.TrainingGoal
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.platform.health.HealthConnectAvailability
@@ -33,6 +34,10 @@ data class SettingsUiState(
     val healthReadResult: HealthReadUiResult? = null,
     val isExportingData: Boolean = false,
     val dataExportResult: DataExportUiResult? = null,
+    val isRestoringData: Boolean = false,
+    val isCloudBackupRunning: Boolean = false,
+    val dataRestoreResult: DataRestoreUiResult? = null,
+    val cloudBackupResult: CloudBackupUiResult? = null,
     val account: AccountUiModel = AccountUiModel(),
 )
 
@@ -43,12 +48,53 @@ data class AccountUiModel(
     val displayName: String? = null,
     val email: String? = null,
     val photoUrl: String? = null,
+    val isEmailVerified: Boolean = false,
+    val hasPassword: Boolean = false,
     val isSigningIn: Boolean = false,
     val operationFailed: Boolean = false,
+    val editor: AccountAuthEditorUiState? = null,
+    val notice: AccountNoticeUi? = null,
+    val supporterTier: SupporterTier? = null,
 )
+
+enum class AccountAuthMode {
+    SIGN_IN,
+    CREATE_ACCOUNT,
+    RESET_PASSWORD,
+    CREATE_PASSWORD,
+}
+
+@Immutable
+data class AccountAuthEditorUiState(
+    val mode: AccountAuthMode,
+    val email: String = "",
+    val password: String = "",
+    val passwordConfirmation: String = "",
+    val isSaving: Boolean = false,
+    val validationFailed: Boolean = false,
+)
+
+enum class AccountNoticeUi {
+    ACCOUNT_CREATED,
+    VERIFICATION_SENT,
+    PASSWORD_RESET_SENT,
+    PASSWORD_CREATED,
+    EMAIL_VERIFIED,
+}
 
 enum class DataExportUiResult {
     SUCCESS,
+    FAILED,
+}
+
+enum class DataRestoreUiResult {
+    READY_TO_RESTART,
+    FAILED,
+}
+
+enum class CloudBackupUiResult {
+    BACKUP_SAVED,
+    RESTORE_READY_TO_RESTART,
     FAILED,
 }
 
@@ -193,9 +239,20 @@ sealed interface SettingsAction {
     data class HevyMeasurementFileSelected(val sourceUri: String) : SettingsAction
     data object ImportHevyData : SettingsAction
     data class ExportData(val targetUri: String) : SettingsAction
+    data class RestoreData(val sourceUri: String) : SettingsAction
+    data object SaveCloudBackup : SettingsAction
+    data object RestoreCloudBackup : SettingsAction
     data object DismissDataExportResult : SettingsAction
     data class GoogleIdTokenReceived(val idToken: String) : SettingsAction
     data object GoogleSignInFailed : SettingsAction
+    data class OpenAccountAuth(val mode: AccountAuthMode) : SettingsAction
+    data object CloseAccountAuth : SettingsAction
+    data class AccountEmailChanged(val value: String) : SettingsAction
+    data class AccountPasswordChanged(val value: String) : SettingsAction
+    data class AccountPasswordConfirmationChanged(val value: String) : SettingsAction
+    data object SubmitAccountAuth : SettingsAction
+    data object SendAccountVerification : SettingsAction
+    data object RefreshAccountVerification : SettingsAction
     data object SignOut : SettingsAction
     data object DismissAccountError : SettingsAction
 }

@@ -22,9 +22,12 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.AlertDialog
@@ -42,6 +45,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,13 +55,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.forgeflow.core.designsystem.component.ForgeFlowButton
 import com.forgeflow.core.designsystem.component.ForgeFlowOutlinedButton
+import com.forgeflow.core.designsystem.component.ForgeFlowTextField
 import com.forgeflow.core.designsystem.theme.ForgeFlowDesign
 import com.forgeflow.core.model.ExperienceLevel
 import com.forgeflow.core.model.TrainingGoal
+import com.forgeflow.core.model.SupporterTier
 import com.forgeflow.feature.settings.R
 import java.io.File
 
@@ -374,8 +381,12 @@ private fun ProgressPhotoFrame(
 internal fun DataProtectionSection(
     state: SettingsUiState,
     onExport: () -> Unit,
+    onRestore: () -> Unit,
+    onRestart: () -> Unit,
+    onAction: (SettingsAction) -> Unit,
     onDismissResult: () -> Unit,
 ) {
+    var confirmCloudRestore by remember { mutableStateOf(false) }
     SettingsSection(
         eyebrow = stringResource(R.string.data_eyebrow),
         title = stringResource(R.string.data_title),
@@ -404,6 +415,56 @@ internal fun DataProtectionSection(
             icon = Icons.Outlined.Download,
             iconContentDescription = null,
         )
+        ForgeFlowOutlinedButton(
+            text = if (state.isRestoringData) {
+                stringResource(R.string.data_restoring)
+            } else {
+                stringResource(R.string.data_restore_action)
+            },
+            onClick = onRestore,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !state.isRestoringData,
+            icon = Icons.Outlined.Restore,
+            iconContentDescription = null,
+        )
+        if (state.account.isSignedIn && state.account.isEmailVerified) {
+            HorizontalDivider(color = ForgeFlowDesign.colors.divider)
+            Text(
+                text = stringResource(R.string.data_cloud_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                text = stringResource(R.string.data_cloud_description),
+                color = ForgeFlowDesign.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            ForgeFlowButton(
+                text = if (state.isCloudBackupRunning) {
+                    stringResource(R.string.data_cloud_working)
+                } else {
+                    stringResource(R.string.data_cloud_save)
+                },
+                onClick = { onAction(SettingsAction.SaveCloudBackup) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isCloudBackupRunning,
+                icon = Icons.Outlined.CloudUpload,
+                iconContentDescription = null,
+            )
+            ForgeFlowOutlinedButton(
+                text = stringResource(R.string.data_cloud_restore),
+                onClick = { confirmCloudRestore = true },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isCloudBackupRunning,
+                icon = Icons.Outlined.Restore,
+                iconContentDescription = null,
+            )
+        } else {
+            Text(
+                text = stringResource(R.string.data_cloud_requires_account),
+                color = ForgeFlowDesign.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
         state.dataExportResult?.let { result ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -433,6 +494,58 @@ internal fun DataProtectionSection(
                 }
             }
         }
+        val restoreReady = state.dataRestoreResult == DataRestoreUiResult.READY_TO_RESTART ||
+            state.cloudBackupResult == CloudBackupUiResult.RESTORE_READY_TO_RESTART
+        val operationMessage = when {
+            restoreReady -> R.string.data_restore_ready
+            state.dataRestoreResult == DataRestoreUiResult.FAILED -> R.string.data_restore_failed
+            state.cloudBackupResult == CloudBackupUiResult.BACKUP_SAVED ->
+                R.string.data_cloud_saved
+            state.cloudBackupResult == CloudBackupUiResult.FAILED -> R.string.data_cloud_failed
+            else -> null
+        }
+        operationMessage?.let { message ->
+            Text(
+                text = stringResource(message),
+                color = if (restoreReady || state.cloudBackupResult == CloudBackupUiResult.BACKUP_SAVED) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        if (restoreReady) {
+            ForgeFlowButton(
+                text = stringResource(R.string.data_restart_now),
+                onClick = onRestart,
+                modifier = Modifier.fillMaxWidth(),
+                icon = Icons.Outlined.Restore,
+                iconContentDescription = null,
+            )
+        }
+    }
+    if (confirmCloudRestore) {
+        AlertDialog(
+            onDismissRequest = { confirmCloudRestore = false },
+            title = { Text(stringResource(R.string.data_restore_confirm_title)) },
+            text = { Text(stringResource(R.string.data_restore_confirm_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmCloudRestore = false
+                        onAction(SettingsAction.RestoreCloudBackup)
+                    },
+                ) {
+                    Text(stringResource(R.string.data_restore_confirm_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmCloudRestore = false }) {
+                    Text(stringResource(R.string.data_restore_cancel))
+                }
+            },
+        )
     }
 }
 
@@ -485,11 +598,51 @@ internal fun AccountSection(
                         )
                     }
                     Text(
-                        text = stringResource(R.string.account_local_only),
-                        color = MaterialTheme.colorScheme.primary,
+                        text = stringResource(
+                            if (state.account.isEmailVerified) {
+                                R.string.account_email_verified
+                            } else {
+                                R.string.account_email_pending
+                            },
+                        ),
+                        color = if (state.account.isEmailVerified) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        },
                         style = MaterialTheme.typography.labelSmall,
                     )
+                    state.account.supporterTier?.let { tier ->
+                        Text(
+                            text = stringResource(tier.labelResource()),
+                            color = MaterialTheme.colorScheme.tertiary,
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
                 }
+            }
+            if (!state.account.isEmailVerified) {
+                ForgeFlowButton(
+                    text = stringResource(R.string.account_send_verification),
+                    onClick = { onAction(SettingsAction.SendAccountVerification) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ForgeFlowOutlinedButton(
+                    text = stringResource(R.string.account_check_verification),
+                    onClick = { onAction(SettingsAction.RefreshAccountVerification) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (!state.account.hasPassword && state.account.email != null) {
+                ForgeFlowOutlinedButton(
+                    text = stringResource(R.string.account_create_password),
+                    onClick = {
+                        onAction(SettingsAction.OpenAccountAuth(AccountAuthMode.CREATE_PASSWORD))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = Icons.Outlined.Lock,
+                    iconContentDescription = null,
+                )
             }
             ForgeFlowOutlinedButton(
                 text = stringResource(R.string.account_sign_out),
@@ -520,6 +673,40 @@ internal fun AccountSection(
                 icon = Icons.Outlined.AccountCircle,
                 iconContentDescription = null,
             )
+            ForgeFlowOutlinedButton(
+                text = stringResource(R.string.account_sign_in_email),
+                onClick = { onAction(SettingsAction.OpenAccountAuth(AccountAuthMode.SIGN_IN)) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.account.isConfigured && !state.account.isSigningIn,
+                icon = Icons.Outlined.Lock,
+                iconContentDescription = null,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                TextButton(
+                    onClick = {
+                        onAction(SettingsAction.OpenAccountAuth(AccountAuthMode.CREATE_ACCOUNT))
+                    },
+                ) {
+                    Text(stringResource(R.string.account_create_account))
+                }
+                TextButton(
+                    onClick = {
+                        onAction(SettingsAction.OpenAccountAuth(AccountAuthMode.RESET_PASSWORD))
+                    },
+                ) {
+                    Text(stringResource(R.string.account_forgot_password))
+                }
+            }
+        }
+        state.account.notice?.let { notice ->
+            Text(
+                text = stringResource(notice.messageResource()),
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
         if (state.account.operationFailed) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -535,6 +722,123 @@ internal fun AccountSection(
             }
         }
     }
+    state.account.editor?.let { editor ->
+        AccountAuthDialog(editor = editor, onAction = onAction)
+    }
+}
+
+@Composable
+private fun AccountAuthDialog(
+    editor: AccountAuthEditorUiState,
+    onAction: (SettingsAction) -> Unit,
+) {
+    val needsPassword = editor.mode != AccountAuthMode.RESET_PASSWORD
+    val needsConfirmation = editor.mode in setOf(
+        AccountAuthMode.CREATE_ACCOUNT,
+        AccountAuthMode.CREATE_PASSWORD,
+    )
+    AlertDialog(
+        onDismissRequest = { if (!editor.isSaving) onAction(SettingsAction.CloseAccountAuth) },
+        title = { Text(stringResource(editor.mode.titleResource())) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(ForgeFlowDesign.spacing.small)) {
+                if (editor.mode != AccountAuthMode.CREATE_PASSWORD) {
+                    ForgeFlowTextField(
+                        value = editor.email,
+                        onValueChange = { onAction(SettingsAction.AccountEmailChanged(it)) },
+                        label = stringResource(R.string.account_email_label),
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.account_create_password_explanation),
+                        color = ForgeFlowDesign.colors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                if (needsPassword) {
+                    ForgeFlowTextField(
+                        value = editor.password,
+                        onValueChange = { onAction(SettingsAction.AccountPasswordChanged(it)) },
+                        label = stringResource(R.string.account_password_label),
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        visualTransformation = PasswordVisualTransformation(),
+                    )
+                }
+                if (needsConfirmation) {
+                    ForgeFlowTextField(
+                        value = editor.passwordConfirmation,
+                        onValueChange = {
+                            onAction(SettingsAction.AccountPasswordConfirmationChanged(it))
+                        },
+                        label = stringResource(R.string.account_password_confirmation_label),
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        visualTransformation = PasswordVisualTransformation(),
+                    )
+                }
+                if (editor.validationFailed) {
+                    Text(
+                        text = stringResource(R.string.account_validation_failed),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onAction(SettingsAction.SubmitAccountAuth) },
+                enabled = !editor.isSaving,
+            ) {
+                Text(
+                    if (editor.isSaving) {
+                        stringResource(R.string.account_saving)
+                    } else {
+                        stringResource(editor.mode.actionResource())
+                    },
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onAction(SettingsAction.CloseAccountAuth) },
+                enabled = !editor.isSaving,
+            ) {
+                Text(stringResource(R.string.data_restore_cancel))
+            }
+        },
+    )
+}
+
+private fun AccountAuthMode.titleResource(): Int = when (this) {
+    AccountAuthMode.SIGN_IN -> R.string.account_email_sign_in_title
+    AccountAuthMode.CREATE_ACCOUNT -> R.string.account_create_title
+    AccountAuthMode.RESET_PASSWORD -> R.string.account_reset_title
+    AccountAuthMode.CREATE_PASSWORD -> R.string.account_create_password_title
+}
+
+private fun AccountAuthMode.actionResource(): Int = when (this) {
+    AccountAuthMode.SIGN_IN -> R.string.account_sign_in_action
+    AccountAuthMode.CREATE_ACCOUNT -> R.string.account_create_action
+    AccountAuthMode.RESET_PASSWORD -> R.string.account_reset_action
+    AccountAuthMode.CREATE_PASSWORD -> R.string.account_create_password_action
+}
+
+private fun AccountNoticeUi.messageResource(): Int = when (this) {
+    AccountNoticeUi.ACCOUNT_CREATED -> R.string.account_created_notice
+    AccountNoticeUi.VERIFICATION_SENT -> R.string.account_verification_sent
+    AccountNoticeUi.PASSWORD_RESET_SENT -> R.string.account_reset_sent
+    AccountNoticeUi.PASSWORD_CREATED -> R.string.account_password_created
+    AccountNoticeUi.EMAIL_VERIFIED -> R.string.account_verified_notice
+}
+
+private fun SupporterTier.labelResource(): Int = when (this) {
+    SupporterTier.SUPPORTER -> R.string.account_supporter
+    SupporterTier.FOUNDER -> R.string.account_supporter_founder
+    SupporterTier.LIFETIME -> R.string.account_supporter_lifetime
 }
 
 @Composable

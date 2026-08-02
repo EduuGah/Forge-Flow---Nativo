@@ -2,13 +2,13 @@
 
 ## Estado atual
 
-A entrada nativa pelo Google Credential Manager e a sessão do Firebase Authentication estão
-implementadas no Perfil. A conta continua opcional e o banco local continua sendo a fonte
-principal durante o treino.
+A entrada nativa pelo Google Credential Manager, conta por e-mail e senha, verificação de e-mail,
+recuperação de senha e vínculo de senha à conta Google estão implementados no Perfil. A conta
+continua opcional e o banco local continua sendo a fonte principal durante o treino.
 
 Sem `app/google-services.json`, a seção de conta permanece visível para orientar a configuração,
-mas o botão de entrada fica desativado. A sincronização de dados com Cloud Firestore e Cloud
-Storage ainda não está ativa; entrar identifica o usuário, mas não envia dados locais.
+mas o botão de entrada fica desativado. O backup integral no Cloud Storage está implementado; a
+sincronização granular com resolução de conflitos no Firestore ainda não está ativa.
 
 ## Onde colocar a configuração do Google
 
@@ -53,9 +53,10 @@ ser colocados no APK ou no repositório.
   fotos de progresso e fotos de nutrição.
 - **Backup Android:** banco e arquivos elegíveis podem ser restaurados pelo Android durante a
   configuração ou transferência de um aparelho, conforme disponibilidade e limites do sistema.
-- **Conta Google:** autentica o usuário, mas ainda não é uma cópia remota dos dados do ForgeFlow.
-- **Importação do `.zip`:** o pacote já inclui versão de formato; o fluxo seguro de restauração
-  será implementado junto da mesclagem da Fase 5.
+- **Restauração manual:** valida o formato e os limites do `.zip`, pede confirmação e substitui os
+  dados somente após reiniciar o aplicativo.
+- **Conta ForgeFlow:** salva e restaura `users/{uid}/backups/latest.zip` no Cloud Storage.
+- **Recuperação:** mantém uma cópia temporária para desfazer uma restauração interrompida.
 
 Estrutura remota inicial:
 
@@ -84,11 +85,11 @@ consultar ou escrever no namespace de outro usuário.
 
 ## Próxima implementação
 
-1. Criar regras e emuladores de Auth, Firestore e Storage.
+1. Testar as regras no Emulator Suite e publicá-las.
 2. Sincronizar primeiro perfil e rotinas.
 3. Adicionar histórico, peso, nutrição e fotos em lotes separados.
 4. Implementar mesclagem e exclusão remota de conta.
-5. Implementar importação validada dos pacotes exportados.
+5. Manter o backup integral como recuperação independente da sincronização granular.
 
 ## Checklist antes de ativar
 

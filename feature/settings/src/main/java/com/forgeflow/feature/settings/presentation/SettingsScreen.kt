@@ -23,6 +23,8 @@ fun SettingsScreen(
     onOpenTutorial: () -> Unit,
     onOpenGuidedWorkoutTutorial: () -> Unit,
     onCreateDataExport: () -> Unit,
+    onSelectDataRestore: () -> Unit,
+    onRestartApp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ForgeFlowScaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
@@ -53,6 +55,9 @@ fun SettingsScreen(
                 DataProtectionSection(
                     state = state,
                     onExport = onCreateDataExport,
+                    onRestore = onSelectDataRestore,
+                    onRestart = onRestartApp,
+                    onAction = onAction,
                     onDismissResult = {
                         onAction(SettingsAction.DismissDataExportResult)
                     },

@@ -16,6 +16,8 @@ local.properties
 app/google-services.json
 **/service-account*.json
 **/*firebase-admin*.json
+.firebase/
+firebase-debug.log
 
 # Gradle
 .gradle/

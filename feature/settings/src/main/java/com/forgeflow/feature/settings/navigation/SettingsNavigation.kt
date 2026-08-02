@@ -1,5 +1,10 @@
 package com.forgeflow.feature.settings.navigation
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.os.Process
+import android.os.SystemClock
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -7,6 +12,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.credentials.CredentialManager
@@ -34,6 +43,7 @@ import com.forgeflow.feature.settings.presentation.ProgressPhotosScreen
 import com.forgeflow.feature.settings.presentation.SettingsAction
 import com.forgeflow.feature.settings.presentation.SettingsScreen
 import com.forgeflow.feature.settings.presentation.SettingsViewModel
+import com.forgeflow.feature.settings.R
 
 fun NavController.navigateToProgressPhotos() {
     navigate(ProgressPhotosRoute)
@@ -47,6 +57,7 @@ fun NavGraphBuilder.settingsScreen(
     composable<SettingsRoute> {
         val viewModel: SettingsViewModel = hiltViewModel()
         val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val context = LocalContext.current
         val permissionContract = remember(viewModel) {
             viewModel.createHealthPermissionContract()
         }
@@ -70,6 +81,12 @@ fun NavGraphBuilder.settingsScreen(
         ) { uri ->
             uri?.let { viewModel.onAction(SettingsAction.ExportData(it.toString())) }
         }
+        var pendingRestoreUri by remember { mutableStateOf<String?>(null) }
+        val dataRestoreLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            pendingRestoreUri = uri?.toString()
+        }
         LifecycleResumeEffect(viewModel) {
             viewModel.onAction(SettingsAction.HealthConnectRefresh)
             onPauseOrDispose {}
@@ -88,7 +105,33 @@ fun NavGraphBuilder.settingsScreen(
             onCreateDataExport = {
                 dataExportLauncher.launch("forgeflow-backup-${LocalDate.now()}.zip")
             },
+            onSelectDataRestore = {
+                dataRestoreLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
+            },
+            onRestartApp = context::restartApplication,
         )
+        pendingRestoreUri?.let { sourceUri ->
+            AlertDialog(
+                onDismissRequest = { pendingRestoreUri = null },
+                title = { Text(stringResource(R.string.data_restore_confirm_title)) },
+                text = { Text(stringResource(R.string.data_restore_confirm_message)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            pendingRestoreUri = null
+                            viewModel.onAction(SettingsAction.RestoreData(sourceUri))
+                        },
+                    ) {
+                        Text(stringResource(R.string.data_restore_confirm_action))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingRestoreUri = null }) {
+                        Text(stringResource(R.string.data_restore_cancel))
+                    }
+                },
+            )
+        }
     }
 }
 
@@ -241,3 +284,20 @@ private val CSV_MIME_TYPES = arrayOf(
     "text/plain",
     "application/csv",
 )
+
+private fun Context.restartApplication() {
+    val launchIntent = packageManager.getLaunchIntentForPackage(packageName) ?: return
+    launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    val restartIntent = PendingIntent.getActivity(
+        this,
+        41_401,
+        launchIntent,
+        PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+    getSystemService(AlarmManager::class.java).set(
+        AlarmManager.ELAPSED_REALTIME,
+        SystemClock.elapsedRealtime() + 400L,
+        restartIntent,
+    )
+    Process.killProcess(Process.myPid())
+}

@@ -20,6 +20,8 @@ private fun SettingsScreenPreview() {
             onOpenTutorial = {},
             onOpenGuidedWorkoutTutorial = {},
             onCreateDataExport = {},
+            onSelectDataRestore = {},
+            onRestartApp = {},
         )
     }
 }

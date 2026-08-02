@@ -13,6 +13,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
+import java.io.OutputStream
 import java.time.Instant
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -24,6 +25,10 @@ import kotlinx.coroutines.withContext
 
 interface LocalDataExportRepository {
     suspend fun export(targetUri: String): DataResult<Unit>
+
+    suspend fun createTemporaryExport(): DataResult<File>
+
+    suspend fun prepareRestore(sourceUri: String): DataResult<Unit>
 }
 
 @Singleton
@@ -35,38 +40,73 @@ class DefaultLocalDataExportRepository @Inject constructor(
 ) : LocalDataExportRepository {
     override suspend fun export(targetUri: String): DataResult<Unit> = withContext(ioDispatcher) {
         runCatching {
-            dataStore.data.first()
-            database.openHelper.writableDatabase
-                .query("PRAGMA wal_checkpoint(FULL)")
-                .close()
             val output = requireNotNull(
                 context.contentResolver.openOutputStream(Uri.parse(targetUri), "w"),
             )
-            ZipOutputStream(BufferedOutputStream(output)).use { archive ->
-                archive.putNextEntry(ZipEntry("forgeflow-export.txt"))
-                archive.write(
-                    "ForgeFlow local export\ncreatedAt=${Instant.now()}\nformatVersion=1\n"
-                        .toByteArray(),
-                )
-                archive.closeEntry()
-                exportDatabaseFiles(archive)
-                exportFile(
-                    file = context.preferencesDataStoreFile(SETTINGS_FILE_NAME),
-                    entryName = "datastore/$SETTINGS_FILE_NAME",
-                    archive = archive,
-                )
-                EXPORT_DIRECTORIES.forEach { directoryName ->
-                    exportDirectory(
-                        root = File(context.filesDir, directoryName),
-                        entryPrefix = "files/$directoryName",
-                        archive = archive,
-                    )
-                }
-            }
+            writeExport(output)
         }.fold(
             onSuccess = { DataResult.Success(Unit) },
             onFailure = { DataResult.Failure(AppError.WriteFailed) },
         )
+    }
+
+    override suspend fun createTemporaryExport(): DataResult<File> = withContext(ioDispatcher) {
+        runCatching {
+            val directory = File(context.cacheDir, "cloud_backups").apply { mkdirs() }
+            val target = File(directory, "forgeflow-${System.currentTimeMillis()}.zip")
+            target.outputStream().use { output -> writeExport(output) }
+            target
+        }.fold(
+            onSuccess = { DataResult.Success(it) },
+            onFailure = { DataResult.Failure(AppError.WriteFailed) },
+        )
+    }
+
+    override suspend fun prepareRestore(sourceUri: String): DataResult<Unit> =
+        withContext(ioDispatcher) {
+            runCatching {
+                val source = requireNotNull(
+                    context.contentResolver.openInputStream(Uri.parse(sourceUri)),
+                )
+                val temporary = File.createTempFile("forgeflow-restore-", ".zip", context.cacheDir)
+                try {
+                    source.use { input -> temporary.outputStream().use(input::copyTo) }
+                    PendingLocalDataRestore.prepare(context, temporary)
+                } finally {
+                    temporary.delete()
+                }
+            }.fold(
+                onSuccess = { DataResult.Success(Unit) },
+                onFailure = { DataResult.Failure(AppError.WriteFailed) },
+            )
+        }
+
+    private suspend fun writeExport(output: OutputStream) {
+        dataStore.data.first()
+        database.openHelper.writableDatabase
+            .query("PRAGMA wal_checkpoint(FULL)")
+            .close()
+        ZipOutputStream(BufferedOutputStream(output)).use { archive ->
+            archive.putNextEntry(ZipEntry("forgeflow-export.txt"))
+            archive.write(
+                "ForgeFlow local export\ncreatedAt=${Instant.now()}\nformatVersion=1\n"
+                    .toByteArray(),
+            )
+            archive.closeEntry()
+            exportDatabaseFiles(archive)
+            exportFile(
+                file = context.preferencesDataStoreFile(SETTINGS_FILE_NAME),
+                entryName = "datastore/$SETTINGS_FILE_NAME",
+                archive = archive,
+            )
+            EXPORT_DIRECTORIES.forEach { directoryName ->
+                exportDirectory(
+                    root = File(context.filesDir, directoryName),
+                    entryPrefix = "files/$directoryName",
+                    archive = archive,
+                )
+            }
+        }
     }
 
     private fun exportDatabaseFiles(archive: ZipOutputStream) {

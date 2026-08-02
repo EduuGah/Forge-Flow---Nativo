@@ -18,5 +18,7 @@ data class AccountSession(
     val email: String?,
     val photoUrl: String?,
     val providers: Set<AccountProvider>,
+    val isEmailVerified: Boolean,
+    val hasPassword: Boolean,
     val syncState: AccountSyncState,
 )

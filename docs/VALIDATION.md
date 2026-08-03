@@ -139,3 +139,25 @@ P3: mensagens técnicas e documentação desatualizada corrigidas
 Observações: ações destrutivas, login remoto, Health Connect, câmera, localização, widgets e
 pagamentos exigem nova validação manual com aparelho conectado e conta de homologação.
 ```
+
+## Revalidação de Ajustes e ForgeFlow Pro
+
+```text
+APK/commit: app-debug.apk / trabalho atual
+Dispositivo previsto: Samsung Galaxy A14 (SM-A146M)
+Android: 15 (API 35)
+Testes locais: 49 aprovados, 0 falhas, 0 erros, 0 ignorados
+Android Lint completo: 0 erros, 48 avisos, 1 sugestão
+Android Lint de Ajustes: 0 erros, 11 avisos, 1 sugestão
+Build principal: aprovado
+Build dos testes de Ajustes e Exercícios: aprovado
+SHA-256 do APK: 19FE47A24BADE0E57527ECBC86414B85CEACACB98FC38547DD0870E9C4439D3F
+Testes instrumentados confirmados nesta rodada: 1 de dados e 1 de banco de dados aprovados
+Testes instrumentados de Ajustes: pacote corrigido e compilado; execução final pendente porque o
+aparelho deixou de ser detectado pelo ADB e pelo Windows antes da instalação
+P0: nenhum encontrado na análise automatizada
+P1: nenhum encontrado na análise automatizada
+Compras: apenas prévia; sem Google Play Billing, botão de compra, preço ou possibilidade de cobrança
+Observações: tema, cor, modo compacto e unidade de peso estão conectados ao repositório de
+preferências; Health Connect só é ativado depois da concessão das permissões necessárias.
+```

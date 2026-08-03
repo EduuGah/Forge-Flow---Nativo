@@ -1,18 +1,21 @@
 package com.forgeflow.feature.settings.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import com.forgeflow.core.designsystem.theme.ForgeFlowTheme
+import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.feature.settings.R
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Assert.assertEquals
 
 class SettingsScreensTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<SettingsTestActivity>()
 
     @Test
     fun supportScreen_opensProCatalogDirectly() {
@@ -29,6 +32,8 @@ class SettingsScreensTest {
         composeRule.onNodeWithText(context.getString(R.string.support_top_bar))
             .assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.account_pro_includes))
+            .assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.support_preview_title))
             .assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.account_pro_yearly))
             .performScrollTo()
@@ -64,11 +69,12 @@ class SettingsScreensTest {
     @Test
     fun settings_keepsVisualAndTrainingPreferencesDiscoverable() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val actions = mutableListOf<SettingsAction>()
         composeRule.setContent {
             ForgeFlowTheme {
                 SettingsScreen(
                     state = SettingsUiState(),
-                    onAction = {},
+                    onAction = actions::add,
                     onRequestHealthPermissions = {},
                     onSelectWorkoutCsv = {},
                     onSelectMeasurementCsv = {},
@@ -87,8 +93,22 @@ class SettingsScreensTest {
         composeRule.onNodeWithText(context.getString(R.string.compact_mode_title))
             .performScrollTo()
             .assertIsDisplayed()
+            .performClick()
         composeRule.onNodeWithText(context.getString(R.string.training_title))
             .performScrollTo()
             .assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.weight_lb))
+            .performScrollTo()
+            .performClick()
+
+        composeRule.runOnIdle {
+            assertEquals(
+                listOf(
+                    SettingsAction.CompactModeChanged(true),
+                    SettingsAction.WeightUnitChanged(WeightUnit.POUND),
+                ),
+                actions,
+            )
+        }
     }
 }

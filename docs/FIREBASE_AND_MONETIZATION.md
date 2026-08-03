@@ -79,6 +79,9 @@ de administrador ao APK e não permita escrita direta nessa coleção pelas regr
 
 ## Doações e Google Play Billing
 
+A tela ForgeFlow Pro é apenas uma prévia nesta versão: os cartões não iniciam compra nem cobrança.
+Os passos abaixo descrevem a ativação futura, depois que os produtos forem publicados.
+
 Se o pagamento liberar tag, remoção de anúncios, nuvem ampliada ou qualquer benefício digital,
 trate-o como produto digital. Crie no Play Console um produto não consumível, por exemplo
 `forgeflow_supporter_lifetime`, e siga este fluxo:

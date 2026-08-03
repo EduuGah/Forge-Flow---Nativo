@@ -1,7 +1,7 @@
 package com.forgeflow.feature.exercises.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import com.forgeflow.core.designsystem.theme.ForgeFlowTheme
@@ -13,7 +13,7 @@ import org.junit.Test
 
 class ExercisesScreenTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ExercisesTestActivity>()
 
     @Test
     fun emptyState_isDisplayed() {

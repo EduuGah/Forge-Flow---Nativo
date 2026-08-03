@@ -2,13 +2,13 @@
 
 ## Estado atual
 
-A entrada nativa pelo Google Credential Manager, conta por e-mail e senha, verificação de e-mail,
-recuperação de senha e vínculo de senha à conta Google estão implementados no Perfil. A conta
-continua opcional e o banco local continua sendo a fonte principal durante o treino.
+A entrada nativa pelo Google Credential Manager, conta por e-mail e senha, recuperação de senha e
+vínculo de senha à conta Google estão implementados. O banco local continua sendo a fonte principal
+durante o treino.
 
-Sem `app/google-services.json`, a seção de conta permanece visível para orientar a configuração,
-mas o botão de entrada fica desativado. O backup integral no Cloud Storage está implementado; a
-sincronização granular com resolução de conflitos no Firestore ainda não está ativa.
+Sem `app/google-services.json`, o aplicativo informa que o login não está disponível nesta
+instalação. O backup integral no Cloud Firestore está implementado; a sincronização granular com
+resolução de conflitos ainda não está ativa.
 
 ## Onde colocar a configuração do Google
 
@@ -43,7 +43,7 @@ ser colocados no APK ou no repositório.
 - **Entrada:** Credential Manager com Sign in with Google.
 - **Identidade:** Firebase Authentication.
 - **Dados sincronizados:** Cloud Firestore, separados por `uid`.
-- **Fotos:** Cloud Storage, privadas por `uid` e por categoria.
+- **Backup remoto:** Cloud Firestore, privado e separado por `uid`.
 - **Offline:** Room e DataStore continuam atendendo toda a experiência local.
 - **Fila:** WorkManager enviará alterações finalizadas quando houver conta e rede.
 
@@ -55,40 +55,39 @@ ser colocados no APK ou no repositório.
   configuração ou transferência de um aparelho, conforme disponibilidade e limites do sistema.
 - **Restauração manual:** valida o formato e os limites do `.zip`, pede confirmação e substitui os
   dados somente após reiniciar o aplicativo.
-- **Conta ForgeFlow:** salva e restaura `users/{uid}/backups/latest.zip` no Cloud Storage.
+- **Conta ForgeFlow:** salva metadados em `users/{uid}/backups/latest` e o pacote em uma versão
+  dividida em blocos no Firestore. Tamanho, dono e SHA-256 são verificados na restauração.
 - **Recuperação:** mantém uma cópia temporária para desfazer uma restauração interrompida.
 
 Estrutura remota inicial:
 
 ```text
-users/{uid}
-users/{uid}/routines/{routineId}
-users/{uid}/workouts/{workoutId}
-users/{uid}/bodyWeights/{entryId}
-users/{uid}/nutritionMeals/{mealId}
-users/{uid}/progressPhotos/{photoId}
+users/{uid}/backups/latest
+users/{uid}/backups/latest/versions/{versionId}
+users/{uid}/backups/latest/versions/{versionId}/chunks/{chunkId}
+entitlements/{uid}
 ```
 
-As regras do Firestore e Storage devem exigir `request.auth.uid == uid`. Nenhum usuário pode
-consultar ou escrever no namespace de outro usuário.
+As regras do Firestore exigem `request.auth.uid == uid`. Nenhum usuário pode consultar ou escrever
+no namespace de outro usuário. O cliente pode ler a própria tag em `entitlements/{uid}`, mas nunca
+gravá-la.
 
 ## Regras de produto
 
-- É possível treinar sem conta e sem internet.
-- Entrar não substitui dados locais automaticamente.
-- A primeira conexão mostra uma etapa explícita de mesclagem.
+- Depois da autenticação inicial, é possível treinar sem internet.
+- Entrar não restaura nem substitui dados locais automaticamente.
+- Backup e restauração são ações explícitas em Ajustes.
 - Treino ativo permanece local; só entra na fila depois de finalizado.
 - Logout preserva os dados locais por padrão.
-- Fotos, nutrição e localização possuem consentimentos de sincronização separados.
-- Exclusões são sincronizadas com marcadores persistentes para não reaparecerem em outro aparelho.
-- A conta oferece exportação e exclusão dos dados remotos.
+- O pacote integral inclui banco, preferências e mídias privadas.
+- A sincronização granular futura terá consentimentos separados para fotos, nutrição e localização.
 
 ## Próxima implementação
 
-1. Testar as regras no Emulator Suite e publicá-las.
-2. Sincronizar primeiro perfil e rotinas.
-3. Adicionar histórico, peso, nutrição e fotos em lotes separados.
-4. Implementar mesclagem e exclusão remota de conta.
+1. Testar as regras no Emulator Suite e em um projeto de homologação.
+2. Implementar exclusão remota de conta e backup.
+3. Sincronizar perfil e rotinas com resolução explícita de conflitos.
+4. Adicionar histórico, peso, nutrição e fotos em lotes separados.
 5. Manter o backup integral como recuperação independente da sincronização granular.
 
 ## Checklist antes de ativar
@@ -96,7 +95,7 @@ consultar ou escrever no namespace de outro usuário.
 - [ ] `app/google-services.json` de desenvolvimento presente
 - [ ] SHA-1 e SHA-256 de debug cadastrados
 - [ ] provedor Google habilitado
-- [ ] Firestore e Storage criados em modo bloqueado
+- [ ] Firestore criado em modo bloqueado
 - [ ] regras testadas no Emulator Suite
 - [ ] política de privacidade descrevendo saúde, fotos, nutrição e localização
-- [ ] cotas e retenção de mídia definidas
+- [ ] cotas, tamanho máximo e retenção de backups revisados

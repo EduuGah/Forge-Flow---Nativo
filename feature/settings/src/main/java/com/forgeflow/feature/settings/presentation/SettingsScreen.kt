@@ -46,9 +46,17 @@ fun SettingsScreen(
                 )
             }
             item {
-                TutorialSection(
-                    onOpenTutorial = onOpenTutorial,
-                    onOpenGuidedWorkoutTutorial = onOpenGuidedWorkoutTutorial,
+                AppearanceSection(state = state, onAction = onAction)
+            }
+            item {
+                TrainingSection(state = state, onAction = onAction)
+            }
+            item {
+                HealthConnectSection(
+                    state = state,
+                    onAction = onAction,
+                    onRequestPermissions = onRequestHealthPermissions,
+                    onOpenDashboard = onOpenHealthDashboard,
                 )
             }
             item {
@@ -72,20 +80,9 @@ fun SettingsScreen(
                 )
             }
             item {
-                AppearanceSection(state = state, onAction = onAction)
-            }
-            item {
-                LayoutSection(state = state, onAction = onAction)
-            }
-            item {
-                TrainingSection(state = state, onAction = onAction)
-            }
-            item {
-                HealthConnectSection(
-                    state = state,
-                    onAction = onAction,
-                    onRequestPermissions = onRequestHealthPermissions,
-                    onOpenDashboard = onOpenHealthDashboard,
+                TutorialSection(
+                    onOpenTutorial = onOpenTutorial,
+                    onOpenGuidedWorkoutTutorial = onOpenGuidedWorkoutTutorial,
                 )
             }
         }

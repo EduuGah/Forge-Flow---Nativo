@@ -119,3 +119,23 @@ P2:
 P3:
 Observações:
 ```
+
+## Auditoria de 3 de agosto de 2026
+
+```text
+APK/commit: app-debug.apk / auditoria local
+Dispositivo: Samsung Galaxy A14 (SM-A146M), detectado no início da rodada
+Android: 15 (API 35)
+Testes locais: 49 aprovados, 0 falhas, 0 ignorados
+Android Lint: 0 erros, 48 avisos, 1 sugestão
+Build principal: aprovado
+Build dos testes de Ajustes: aprovado
+SHA-256 do APK: 56D663181ED109B411C130357FF420BAC338BD2EAFC598ECB424BDA310ED925A
+Testes instrumentados: não executados; o aparelho desconectou antes da instalação
+P0: nenhum encontrado na análise automatizada
+P1: nenhum encontrado na análise automatizada
+P2: fluxo de apoio indireto e organização de Perfil/Ajustes corrigidos
+P3: mensagens técnicas e documentação desatualizada corrigidas
+Observações: ações destrutivas, login remoto, Health Connect, câmera, localização, widgets e
+pagamentos exigem nova validação manual com aparelho conectado e conta de homologação.
+```

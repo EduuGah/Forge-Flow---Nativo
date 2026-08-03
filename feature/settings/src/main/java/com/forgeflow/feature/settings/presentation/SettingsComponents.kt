@@ -14,14 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.HealthAndSafety
-import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Sync
-import androidx.compose.material.icons.outlined.ViewCompact
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
@@ -116,20 +115,7 @@ internal fun AppearanceSection(
             selected = state.accent,
             onSelected = { onAction(SettingsAction.AccentChanged(it)) },
         )
-    }
-}
-
-@Composable
-internal fun LayoutSection(
-    state: SettingsUiState,
-    onAction: (SettingsAction) -> Unit,
-) {
-    SettingsSection(
-        eyebrow = stringResource(R.string.layout_eyebrow),
-        title = stringResource(R.string.layout_title),
-        description = stringResource(R.string.layout_description),
-        icon = Icons.Outlined.ViewCompact,
-    ) {
+        HorizontalDivider(color = ForgeFlowDesign.colors.divider)
         PreferenceToggle(
             title = stringResource(R.string.compact_mode_title),
             description = stringResource(R.string.compact_mode_description),
@@ -212,7 +198,7 @@ internal fun HealthConnectSection(
                     onClick = { onAction(SettingsAction.InstallHealthConnect) },
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.OpenInNew,
+                        imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
                         contentDescription = null,
                     )
                     Text(
@@ -331,7 +317,7 @@ internal fun HealthConnectSection(
                     onClick = { onAction(SettingsAction.OpenHealthConnect) },
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.OpenInNew,
+                        imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
                         contentDescription = null,
                     )
                     Text(

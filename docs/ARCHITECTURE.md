@@ -2,8 +2,8 @@
 
 ## Objetivos
 
-O ForgeFlow é offline-first. A interface não conhece detalhes de Room, DataStore ou de
-uma futura API. A organização favorece entregas verticais pequenas sem criar camadas vazias.
+O ForgeFlow é offline-first. A interface não conhece detalhes de Room, DataStore ou Firebase.
+A organização favorece entregas verticais pequenas sem criar camadas vazias.
 
 ## Camadas
 
@@ -37,9 +37,9 @@ de tela são imutáveis e as ações da interface são explícitas.
 
 ## Navegação
 
-O aplicativo usa uma única `MainActivity` e destinos tipados. Home, Rotinas, Histórico e
-Configurações são destinos de topo. A navegação entre abas usa `saveState`, `restoreState`
-e `launchSingleTop`.
+O aplicativo usa uma única `MainActivity` e destinos tipados. Início, Rotinas, Histórico e Perfil
+ficam na barra inferior. Evolução, fotos, nutrição, saúde, mapas, metas, agenda, biblioteca,
+ForgeFlow Pro e Ajustes ficam no menu lateral.
 
 Exercícios e Treino Ativo ficam fora da barra inferior. O botão voltar remove esses
 destinos e retorna ao ponto de origem. Deep links não são declarados até existirem URLs
@@ -65,12 +65,12 @@ manual nem Service Locator.
 
 ## Offline-first
 
-Room é a fonte de verdade para exercícios, rotinas, sessões e histórico. A futura fonte
-remota será combinada dentro dos repositories; as telas e ViewModels não precisarão
-mudar de origem de dados.
+Room é a fonte de verdade para exercícios, rotinas, sessões e histórico. DataStore mantém perfil,
+preferências, nutrição e metadados locais. O backup remoto integral é uma opção de recuperação e
+não participa da leitura durante o treino.
 
-Escritas relacionais são `suspend`. Observações são `Flow`. Sincronização e WorkManager
-estão fora da Fase 0; apenas a dependência está catalogada.
+Escritas relacionais são `suspend` e observações são `Flow`. A sincronização granular futura será
+combinada dentro dos repositories para não alterar as telas e ViewModels.
 
 ## Recursos nativos e permissões
 
@@ -83,23 +83,22 @@ descanso, sessão ativa, treino programado, progresso e atualizações. A permis
 notificação só deve ser solicitada quando o usuário ativar uma função que realmente
 envie alertas, como o cronômetro de descanso.
 
-A localização é opcional e solicitada ao ativar "Salvar local no histórico" no treino
-ativo. O aplicativo captura apenas uma posição ao finalizar a sessão; não acompanha o
-usuário em segundo plano. Coordenadas, precisão e horário ficam no Room para permitir
-um mapa futuro sem alterar sessões antigas.
+A localização é opcional e solicitada ao ativar "Salvar local no histórico" no treino ativo. O
+aplicativo captura apenas uma posição ao finalizar a sessão e não acompanha o usuário em segundo
+plano. Coordenadas, precisão e horário ficam no Room e alimentam os mapas individual e geral.
 
-## Tutorial futuro
+## Tutoriais
 
-`ForgeFlowTestTags` centraliza identificadores estáveis. A implementação futura deve:
+`ForgeFlowTestTags` centraliza identificadores estáveis. O tutorial inicial e o treino guiado:
 
 1. registrar âncoras por identificador e coordenadas de layout;
 2. observar o estado real e a presença da âncora com Flow/snapshot state;
 3. usar `BringIntoViewRequester` antes de medir;
 4. calcular a posição da caixa pelo espaço disponível;
 5. desenhar overlay e recorte acima de toda a árvore;
-6. avançar por eventos reais, nunca por delays fixos;
+6. avançam por ações controladas e não alteram dados reais;
 7. persistir o progresso separadamente no DataStore;
-8. usar sessão `TUTORIAL`, isolada do histórico comum.
+8. usam uma sessão demonstrativa isolada do histórico comum.
 
 ## Criar uma feature
 

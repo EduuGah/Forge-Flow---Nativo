@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.MonitorHeart
@@ -33,7 +34,6 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
@@ -93,6 +93,7 @@ import com.forgeflow.core.navigation.ProfileRoute
 import com.forgeflow.core.navigation.ProgressPhotosRoute
 import com.forgeflow.core.navigation.RoutinesRoute
 import com.forgeflow.core.navigation.SettingsRoute
+import com.forgeflow.core.navigation.SupportRoute
 import com.forgeflow.core.navigation.TrainingMapRoute
 import com.forgeflow.core.model.WeightUnit
 import com.forgeflow.core.model.SupporterTier
@@ -113,6 +114,7 @@ import com.forgeflow.feature.home.navigation.plannerScreen
 import com.forgeflow.feature.nutrition.navigation.nutritionScreen
 import com.forgeflow.feature.routines.navigation.routinesScreen
 import com.forgeflow.feature.settings.navigation.settingsScreen
+import com.forgeflow.feature.settings.navigation.supportScreen
 import com.forgeflow.feature.settings.navigation.healthDashboardScreen
 import com.forgeflow.feature.settings.navigation.profileScreen
 import com.forgeflow.feature.settings.navigation.progressPhotosScreen
@@ -206,6 +208,10 @@ fun ForgeFlowApp(
                         scope.launch { drawerState.close() }
                         navController.navigateTopLevelRoute(ProfileRoute)
                     },
+                    onOpenSupport = {
+                        scope.launch { drawerState.close() }
+                        navController.navigateDrawerRoute(SupportRoute)
+                    },
                     onDestinationSelected = { destination ->
                         scope.launch { drawerState.close() }
                         navController.navigateToDrawerDestination(destination)
@@ -272,6 +278,7 @@ fun ForgeFlowApp(
                     )
                     trainingMapScreen(onBack = navController::popBackStack)
                     profileScreen(onOpenProgressPhotos = navController::navigateToProgressPhotos)
+                    supportScreen(onBack = navController::popBackStack)
                     progressPhotosScreen(onBack = navController::popBackStack)
                     settingsScreen(
                         onOpenHealthDashboard = {
@@ -313,6 +320,7 @@ private fun ForgeFlowDrawer(
     currentDestination: NavDestination?,
     onClose: () -> Unit,
     onOpenProfile: () -> Unit,
+    onOpenSupport: () -> Unit,
     onDestinationSelected: (DrawerDestination) -> Unit,
     onSignOut: () -> Unit,
 ) {
@@ -478,8 +486,8 @@ private fun ForgeFlowDrawer(
         HorizontalDivider()
         NavigationDrawerItem(
             label = { Text(stringResource(R.string.drawer_support)) },
-            selected = false,
-            onClick = onOpenProfile,
+            selected = currentDestination?.route == SupportRoute::class.qualifiedName,
+            onClick = onOpenSupport,
             icon = {
                 Icon(
                     imageVector = Icons.Outlined.WorkspacePremium,
@@ -505,7 +513,7 @@ private fun ForgeFlowDrawer(
             onClick = { showSignOutConfirmation = true },
             icon = {
                 Icon(
-                    imageVector = Icons.Outlined.Logout,
+                    imageVector = Icons.AutoMirrored.Outlined.Logout,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                 )

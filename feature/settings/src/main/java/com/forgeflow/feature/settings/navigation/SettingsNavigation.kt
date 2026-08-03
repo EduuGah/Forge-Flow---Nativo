@@ -35,6 +35,7 @@ import com.forgeflow.core.navigation.ProfileRoute
 import com.forgeflow.core.navigation.HealthDashboardRoute
 import com.forgeflow.core.navigation.ProgressPhotosRoute
 import com.forgeflow.core.navigation.SettingsRoute
+import com.forgeflow.core.navigation.SupportRoute
 import com.forgeflow.feature.settings.presentation.ProfileScreen
 import com.forgeflow.feature.settings.presentation.HealthDashboardAction
 import com.forgeflow.feature.settings.presentation.HealthDashboardScreen
@@ -43,10 +44,24 @@ import com.forgeflow.feature.settings.presentation.ProgressPhotosScreen
 import com.forgeflow.feature.settings.presentation.SettingsAction
 import com.forgeflow.feature.settings.presentation.SettingsScreen
 import com.forgeflow.feature.settings.presentation.SettingsViewModel
+import com.forgeflow.feature.settings.presentation.SupportScreen
 import com.forgeflow.feature.settings.R
 
 fun NavController.navigateToProgressPhotos() {
     navigate(ProgressPhotosRoute)
+}
+
+fun NavGraphBuilder.supportScreen(
+    onBack: () -> Unit,
+) {
+    composable<SupportRoute> {
+        val viewModel: SettingsViewModel = hiltViewModel()
+        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        SupportScreen(
+            state = state,
+            onBack = onBack,
+        )
+    }
 }
 
 fun NavGraphBuilder.settingsScreen(

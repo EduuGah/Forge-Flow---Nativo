@@ -60,7 +60,6 @@
     <string name="widget_ready">Hora de treinar</string>
     <string name="widget_continue">Continuar</string>
     <string name="widget_train">Treinar</string>
-    <string name="widget_latest_workout">Último: %1$s</string>
     <string name="widget_latest_workout_details">Último: %1$s • %2$s • %3$s %4$s</string>
     <string name="widget_duration_minutes">%1$d min</string>
     <string name="widget_duration_hours">%1$dh%2$02d</string>
@@ -93,7 +92,6 @@
     <string name="hydration_widget_preview_value">1.500 / 2.500 ml</string>
     <string name="hydration_widget_add">+250 ml</string>
     <string name="hydration_widget_add_description">Registrar 250 ml de água</string>
-    <string name="hydration_widget_open_description">Abrir hidratação no ForgeFlow</string>
     <string name="tutorial_brand">FORGEFLOW</string>
     <string name="tutorial_page_progress">ETAPA %1$d DE %2$d</string>
     <string name="tutorial_skip">Pular</string>
@@ -209,12 +207,12 @@
     <string name="auth_forgot_password">Esqueci minha senha</string>
     <string name="auth_sign_in_action">Entrar no ForgeFlow</string>
     <string name="auth_create_action">Criar conta e continuar</string>
-    <string name="auth_not_configured">O Firebase ainda não está configurado neste APK.</string>
+    <string name="auth_not_configured">O login não está disponível nesta instalação.</string>
     <string name="auth_validation_error">Confira o e-mail, use pelo menos 8 caracteres e confirme a mesma senha.</string>
-    <string name="auth_operation_error">Não foi possível entrar. Confira os dados e se o método está ativo no Firebase.</string>
+    <string name="auth_operation_error">Não foi possível entrar. Confira seus dados e tente novamente.</string>
     <string name="auth_reset_sent">Solicitação enviada. Confira também a caixa de spam.</string>
     <string name="auth_reset_title">Redefinir senha</string>
-    <string name="auth_reset_description">Enviaremos um link para contas criadas com e-mail e senha. Se sua conta usa somente o Google, entre com o botão do Google. Por segurança, o resultado é o mesmo mesmo quando o endereço não está cadastrado.</string>
+    <string name="auth_reset_description">Enviaremos um link para contas criadas com e-mail e senha. Se sua conta usa somente o Google, entre com o botão do Google. Por segurança, a confirmação é igual mesmo quando o endereço não está cadastrado.</string>
     <string name="auth_invalid_email">Informe um endereço de e-mail válido.</string>
     <string name="auth_send_reset">Enviar link</string>
     <string name="auth_cancel">Cancelar</string>

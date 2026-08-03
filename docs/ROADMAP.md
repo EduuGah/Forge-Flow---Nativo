@@ -2,7 +2,7 @@
 
 ## Posição atual
 
-**Fase 4 de 6 - Identidade, evolução pessoal e nutrição (em andamento).**
+**Fase 6 de 6 - Estabilização, privacidade e preparação para distribuição.**
 
 | Fase | Entrega | Estado |
 | --- | --- | --- |
@@ -10,9 +10,9 @@
 | 1 | Rotinas, treino ativo e histórico | Concluída |
 | 2 | Métricas, calendário, mapas e progresso | Concluída |
 | 3 | Integrações Android, Health Connect e importação | Concluída |
-| 4 | Perfil, fotos, navegação, evolução geral e nutrição | Em andamento |
-| 5 | Conta Google, sincronização e recuperação entre aparelhos | Em andamento |
-| 6 | Produção, privacidade, monitoramento e Play Store | Planejada |
+| 4 | Perfil, fotos, navegação, evolução geral e nutrição | Concluída |
+| 5 | Conta, backup e recuperação entre aparelhos | Concluída com sincronização granular pendente |
+| 6 | Produção, privacidade, monitoramento e Play Store | Em andamento |
 
 ## Concluído
 
@@ -72,6 +72,7 @@
 - [x] Backup criptografado e transferência entre dispositivos elegíveis
 - [x] Ícone adaptativo com variações de cor sem reinicialização imediata
 - [x] Barra inferior compacta e menu lateral para áreas secundárias
+- [x] Destino próprio para ForgeFlow Pro e apoio ao desenvolvimento
 
 ### Nutrição
 
@@ -84,11 +85,24 @@
 - [ ] Análise automática da refeição por foto
 - [ ] Banco de alimentos e leitura de código de barras
 
+### Conta e recuperação
+
+- [x] Login com Google pelo Credential Manager
+- [x] Cadastro e login com e-mail e senha
+- [x] Redefinição de senha e vínculo de senha à conta Google
+- [x] Dados locais isolados ao trocar de conta
+- [x] Perfil básico recuperado ao entrar em outro aparelho
+- [x] Exportação e restauração integral por ZIP
+- [x] Backup privado, versionado e validado no Cloud Firestore
+- [x] Tags de apoiador atualizadas em tempo real
+
 ## Próxima rodada
 
-### Prioridade 1 - Fechar a Fase 4
+### Prioridade 1 - Fechar a validação de produção
 
-- [ ] Validar dashboard, perfil, fotos, filtros e rotinas em aparelho real
+- [x] Executar testes locais, Lint e geração dos APKs principal e de teste
+- [ ] Executar testes instrumentados e smoke test completo em aparelho real estável
+- [ ] Concluir validação manual destrutiva com uma conta dedicada de homologação
 - [ ] Registrar falhas reproduzíveis no roteiro `docs/VALIDATION.md`
 - [ ] Revisar estados vazios, teclado, acessibilidade e telas pequenas
 - [ ] Adicionar testes de interface para perfil, histórico e rotinas
@@ -99,18 +113,18 @@
 - [ ] Unificar peso, fotos, treinos e nutrição em comparações por período
 - [ ] Definir fonte nutricional e estratégia da análise por imagem
 
-### Prioridade 2 - Iniciar a Fase 5
+### Prioridade 2 - Sincronização e conta
 
 - [x] Escolher Firebase e documentar segurança, custos e limites
 - [x] Preparar contratos `AuthRepository`, `AccountSession` e `SyncRepository`
 - [x] Preparar Credential Manager e dependências Firebase por ambiente
 - [x] Implementar `FirebaseAuthRepository` e sessão opcional
-- [x] Login nativo com Google
-- [ ] Login opcional por e-mail
+- [x] Login nativo com Google e e-mail
+- [x] Backup integral privado da conta no Firestore
 - [ ] Fila persistente de sincronização com WorkManager
 - [ ] Mesclagem explícita entre dados locais e remotos
-- [x] Exportação integral dos dados locais
-- [ ] Importação validada do pacote local e exclusão de conta
+- [x] Exportação e restauração validadas dos dados locais
+- [ ] Exclusão remota de conta e dados
 
 ### Prioridade 3 - Comparações e análises
 
@@ -135,6 +149,8 @@
 - [x] Tutorial guiado
 - [ ] Wear OS
 - [ ] Ícone e splash finais
+- [ ] Google Play Billing e validação de compras no backend
+- [ ] Crashlytics, métricas de desempenho e trilha de auditoria do backup
 - [ ] Assinatura e build de produção
 - [ ] Política de privacidade e publicação na Play Store
 - [ ] Monitoramento de erros e desempenho

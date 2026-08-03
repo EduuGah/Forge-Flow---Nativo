@@ -10,19 +10,18 @@ No Firebase Console, ainda é necessário confirmar:
 
 1. Em **Authentication > Sign-in method**, habilitar **Google** e **E-mail/senha**.
 2. Em **Authentication > Templates**, revisar redefinição de senha e alteração de e-mail.
-3. Em **Storage**, criar o bucket e publicar `storage.rules`.
-4. Em **Firestore**, criar o banco em modo bloqueado e publicar `firestore.rules`.
+3. Em **Firestore**, criar o banco em modo bloqueado e publicar `firestore.rules`.
 
 Para publicar as regras:
 
 ```powershell
 firebase login
-firebase deploy --only firestore:rules,storage --project SEU_PROJECT_ID
+firebase deploy --only firestore:rules --project SEU_PROJECT_ID
 ```
 
-O Cloud Storage para Firebase exige o plano Blaze. O uso pequeno pode permanecer dentro das cotas
-sem custo em regiões elegíveis, mas a conta de faturamento ainda é obrigatória. Sem Blaze, a
-exportação e a restauração manual por ZIP continuam funcionando sem Firebase Storage.
+O backup atual não usa Cloud Storage. O pacote é dividido em documentos menores e salvo no
+Firestore, mantendo compatibilidade com o plano Spark dentro das cotas do projeto. Exportação e
+restauração manual por ZIP continuam independentes do Firebase.
 
 ## Domínio e SMTP
 
@@ -49,8 +48,8 @@ de e-mails.
 
 ## Apoiadores e administração
 
-O aplicativo lê `entitlements/{uid}` e mostra a tag e seus benefícios em **Perfil > Conta
-ForgeFlow**. O documento aceita:
+O aplicativo lê `entitlements/{uid}` e mostra a tag no Perfil, na barra lateral e na tela
+**Apoiar o ForgeFlow**. O documento aceita:
 
 ```text
 supporterTier: "ADMIN" | "SUPPORTER" | "PRO" | "FOUNDER" | "LIFETIME"

@@ -122,13 +122,6 @@ fun ProfileScreen(
                 )
             }
             item {
-                AccountSection(
-                    state = state,
-                    onGoogleSignIn = onGoogleSignIn,
-                    onAction = onAction,
-                )
-            }
-            item {
                 WeightEvolutionSection(
                     state = state,
                     onAddWeight = { onAction(SettingsAction.OpenBodyWeightEditor) },
@@ -138,6 +131,13 @@ fun ProfileScreen(
                 ProgressPhotosShortcut(
                     state = state,
                     onOpen = onOpenProgressPhotos,
+                )
+            }
+            item {
+                AccountSection(
+                    state = state,
+                    onGoogleSignIn = onGoogleSignIn,
+                    onAction = onAction,
                 )
             }
         }

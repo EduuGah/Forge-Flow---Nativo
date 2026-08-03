@@ -39,6 +39,9 @@ data object ProfileRoute
 data object ProgressPhotosRoute
 
 @Serializable
+data object SupportRoute
+
+@Serializable
 data object SettingsRoute
 
 @Serializable

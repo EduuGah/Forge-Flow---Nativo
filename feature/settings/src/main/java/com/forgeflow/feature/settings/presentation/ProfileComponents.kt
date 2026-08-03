@@ -560,7 +560,6 @@ internal fun AccountSection(
     onGoogleSignIn: () -> Unit,
     onAction: (SettingsAction) -> Unit,
 ) {
-    var showDonationOptions by remember { mutableStateOf(false) }
     SettingsSection(
         eyebrow = stringResource(R.string.account_eyebrow),
         title = stringResource(R.string.account_title),
@@ -627,7 +626,6 @@ internal fun AccountSection(
             state.account.supporterTier?.let { tier ->
                 SupporterBenefitsPanel(tier)
             }
-            DonationInvitation(onOpen = { showDonationOptions = true })
             if (!state.account.hasPassword && state.account.email != null) {
                 ForgeFlowOutlinedButton(
                     text = stringResource(R.string.account_create_password),
@@ -716,9 +714,6 @@ internal fun AccountSection(
                 }
             }
         }
-    }
-    if (showDonationOptions) {
-        DonationOptionsDialog(onDismiss = { showDonationOptions = false })
     }
     state.account.editor?.let { editor ->
         AccountAuthDialog(editor = editor, onAction = onAction)
@@ -909,156 +904,6 @@ private fun SupporterBenefitsPanel(tier: SupporterTier) {
         }
     }
 }
-
-@Composable
-private fun DonationInvitation(onOpen: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.account_donation_title),
-                style = MaterialTheme.typography.titleSmall,
-            )
-            Text(
-                text = stringResource(R.string.account_donation_description),
-                color = ForgeFlowDesign.colors.textSecondary,
-                style = MaterialTheme.typography.bodySmall,
-            )
-            ForgeFlowOutlinedButton(
-                text = stringResource(R.string.account_donation_action),
-                onClick = onOpen,
-                modifier = Modifier.fillMaxWidth(),
-                icon = Icons.Outlined.WorkspacePremium,
-                iconContentDescription = null,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DonationOptionsDialog(onDismiss: () -> Unit) {
-    val options = listOf(
-        DonationOption(
-            title = R.string.account_pro_monthly,
-            amount = R.string.account_pro_monthly_amount,
-            description = R.string.account_pro_monthly_description,
-        ),
-        DonationOption(
-            title = R.string.account_pro_yearly,
-            amount = R.string.account_pro_yearly_amount,
-            description = R.string.account_pro_yearly_description,
-            recommended = true,
-        ),
-        DonationOption(
-            title = R.string.account_pro_lifetime,
-            amount = R.string.account_pro_lifetime_amount,
-            description = R.string.account_pro_lifetime_description,
-            lifetime = true,
-        ),
-    )
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.account_donation_options_title)) },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.account_donation_options_description),
-                    color = ForgeFlowDesign.colors.textSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(9.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.account_pro_includes),
-                            style = MaterialTheme.typography.labelLarge,
-                        )
-                        PRO_BENEFIT_RESOURCES.forEach { benefit ->
-                            SupporterBenefitRow(stringResource(benefit))
-                        }
-                    }
-                }
-                options.forEach { option -> DonationOptionRow(option) }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.account_donation_close))
-            }
-        },
-    )
-}
-
-@Composable
-private fun DonationOptionRow(option: DonationOption) {
-    val containerColor = when {
-        option.recommended -> MaterialTheme.colorScheme.primaryContainer
-        option.lifetime -> MaterialTheme.colorScheme.tertiaryContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = containerColor,
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (option.recommended) {
-                Text(
-                    text = stringResource(R.string.account_donation_recommended),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(option.title),
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-                Text(
-                    text = stringResource(option.amount),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            }
-            Text(
-                text = stringResource(option.description),
-                color = ForgeFlowDesign.colors.textSecondary,
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-    }
-}
-
-private data class DonationOption(
-    @param:StringRes val title: Int,
-    @param:StringRes val amount: Int,
-    @param:StringRes val description: Int,
-    val recommended: Boolean = false,
-    val lifetime: Boolean = false,
-)
 
 @Composable
 private fun SupporterBenefitRow(
